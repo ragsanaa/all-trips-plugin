@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vertical View with Load More</title>
+  <style>
+    /* Add necessary styles for the Load More button */
+    #load-more-button {
+      display: block;
+      width: 200px;
+      margin: 20px auto;
+      padding: 10px;
+      border: 1px solid #ddd;
+      background-color: #f4f4f4;
+      cursor: pointer;
+    }
+
+    #load-more-button:disabled {
+      cursor: not-allowed;
+      background-color: #ddd;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="trips-container" class="vertical">
+    <!-- Trip items will be loaded here -->
+    <div class="trip-item">Trip 1</div>
+    <div class="trip-item">Trip 2</div>
+    <div class="trip-item">Trip 3</div>
+    <div class="trip-item">Trip 4</div>
+    <div class="trip-item">Trip 5</div>
+  </div>
+
+  <button id="load-more-button" style="background-color: #0073aa;">Load More</button>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const tripsContainer = document.getElementById("trips-container");
+      const loadMoreButton = document.getElementById("load-more-button");
+      let currentPage = 1;
+      const itemsPerPage = 5;  // Can be dynamically set through Gutenberg block settings
+
+      function loadTrips() {
+        const trips = document.querySelectorAll(".trip-item");
+        const start = (currentPage - 1) * itemsPerPage;
+        const end = start + itemsPerPage;
+
+        trips.forEach((trip, index) => {
+          trip.style.display = index >= start && index < end ? "block" : "none";
+        });
+
+        if (end >= trips.length) {
+          loadMoreButton.style.display = "none";
+        } else {
+          loadMoreButton.style.display = "block";
+        }
+      }
+
+      loadMoreButton.addEventListener("click", function () {
+        currentPage++;
+        loadTrips();
+      });
+
+      loadTrips();
+    });
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,61 @@
+{
+  "data": {
+    "trip": {
+      "id": 75063,
+      "uuid": "35201134",
+      "creator_id": 9030,
+      "title": "Test Script",
+      "href": "https://demo.wetravel.to/trips/test-script-ragsana-alizada-35201134",
+      "banner_img": "https://process.filestackapi.com/resize=fit:clip,width:1440,height:1000/quality=v:79/compress/cache=expiry:604800/8ZpgKHBzQdWkB4t9y37m",
+      "location": "London, UK",
+      "latitude": null,
+      "longitude": null,
+      "min_people": 5,
+      "max_people": 20,
+      "price": 12000,
+      "deposit": 0,
+      "currency": "USD",
+      "is_private": false,
+      "has_deposit": false,
+      "waiting_list_enabled": false,
+      "trip_length": 7,
+      "all_year": true,
+      "start_date": null,
+      "end_date": null,
+      "participant_list_show_type": 3,
+      "custom_brochure_filestack_handle": null,
+      "is_payment_link": false,
+      "carbon_offset": {
+        "enabled": false,
+        "percentage": 1.0,
+        "paid_by_participant": true
+      }
+    },
+    "organizer": {
+      "id": 9030,
+      "fullname": "Ragsana Alizada",
+      "confirmed": "2024-01-18T15:30:39.000Z",
+      "href": "/users/ragsana-alizada",
+      "avatar_url": "https://process.filestackapi.com/resize=fit:crop,width:200,height:200/quality=v:79/compress/cache=expiry:604800/fallback=file:%22https%3A%2F%2Fcdn.filestackcontent.com%2F3KfZlXb6TTKzoVRJPFhe%22,cache:604800/3KfZlXb6TTKzoVRJPFhe",
+      "summary": "",
+      "slug": "ragsana-alizada",
+      "is_pro": true,
+      "verified": true,
+      "verifications": { "email": false, "payments_enabled": true }
+    },
+    "photos": [
+      {
+        "url": "https://process.filestackapi.com/resize=fit:clip,width:1440,height:1000/quality=v:79/compress/cache=expiry:604800/8ZpgKHBzQdWkB4t9y37m",
+        "thumb_url": "https://process.filestackapi.com/resize=fit:crop,width:70,height:70/quality=v:79/compress/cache=expiry:604800/8ZpgKHBzQdWkB4t9y37m"
+      }
+    ],
+    "paragraphs": [
+      { "title": "About this trip", "text": "Welcome. Update needed." }
+    ],
+    "participant_fees": "none",
+    "is_past": false,
+    "is_preview": false,
+    "location_path": "/trips/test-script-ragsana-alizada-35201134",
+    "location_search": {}
+  }
+}

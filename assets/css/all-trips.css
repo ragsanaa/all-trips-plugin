@@ -1,0 +1,152 @@
+/* General styles for All Trips plugin */
+.wp-block-all-trips-block {
+  margin-bottom: 30px;
+}
+
+/* Trip item styling */
+.trip-item {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 15px;
+  background-color: #fff;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.trip-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.trip-item img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 4px;
+  margin-bottom: 10px;
+}
+
+.trip-item h3 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-size: 18px;
+  line-height: 1.3;
+}
+
+.trip-content {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.trip-item .trip-date {
+  color: #666;
+  margin-bottom: 5px;
+  font-size: 14px;
+}
+
+.trip-item .trip-price {
+  font-weight: bold;
+  margin-bottom: 10px;
+  font-size: 16px;
+}
+
+.trip-button-container {
+  margin-top: auto;
+  width: 100%;
+}
+
+.trip-item .trip-button {
+  display: inline-block;
+  padding: 8px 16px;
+  border-radius: 4px;
+  text-decoration: none;
+  color: #fff; /* Change text color to white */
+  font-weight: bold;
+  text-align: center;
+  transition: opacity 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
+  background-color: #0073aa; /* Change background color to blue */
+}
+
+.trip-item .trip-button:hover {
+  opacity: 0.9;
+}
+
+/* Vertical Layout */
+.all-trips-container.vertical-view .trip-item {
+  margin-bottom: 15px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Grid Layout */
+.all-trips-container.grid-view {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+/* Carousel Layout */
+.all-trips-container.carousel-view .swiper {
+  padding: 10px 0 30px;
+}
+
+.all-trips-container.carousel-view .swiper-slide {
+  height: auto;
+}
+
+.all-trips-container.carousel-view .swiper-button-next,
+.all-trips-container.carousel-view .swiper-button-prev {
+  color: #333;
+}
+
+.all-trips-container.carousel-view .swiper-pagination-bullet-active {
+  background: #333;
+}
+
+/* Load More Button */
+#load-more-button {
+  display: block;
+  width: 200px;
+  margin: 20px auto;
+  padding: 10px;
+  border: none;
+  border-radius: 4px;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  text-align: center;
+  transition: opacity 0.2s ease;
+}
+
+#load-more-button:hover {
+  opacity: 0.9;
+}
+
+/* No trips message */
+.no-trips {
+  padding: 20px;
+  text-align: center;
+  background-color: #f8f8f8;
+  border-radius: 8px;
+  margin: 20px 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .all-trips-container.grid-view {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .all-trips-container.grid-view {
+    grid-template-columns: 1fr;
+  }
+}
