@@ -133,6 +133,15 @@ add_action('init', 'all_trips_register_block');
 // Include the block render function
 require_once ALL_TRIPS_PLUGIN_DIR . 'includes/block-renderer.php';
 
+// Include shortcode functionality
+require_once ALL_TRIPS_PLUGIN_DIR . 'includes/shortcode.php';
+
+// Register shortcode
+function all_trips_register_shortcode() {
+    add_shortcode('all_trips', 'all_trips_shortcode');
+}
+add_action('init', 'all_trips_register_shortcode');
+
 // Add this function to clear transient timeouts
 function all_trips_clear_transients() {
   global $wpdb;
@@ -175,6 +184,12 @@ if (!defined(\'ABSPATH\')) {
 require_once ALL_TRIPS_PLUGIN_DIR . \'includes/render-functions.php\';
 ',
         'includes/render-functions.php' => '',
+        'includes/shortcode.php' => '<?php
+// Shortcode file
+if (!defined(\'ABSPATH\')) {
+    exit;
+}
+',
     );
 
     foreach ($files as $file => $content) {
