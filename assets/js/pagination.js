@@ -1,62 +1,66 @@
 document.addEventListener("DOMContentLoaded", function () {
-  const tripsContainer = document.getElementById("trips-container");
-  const loadMoreButton = document.getElementById("load-more-button");
+  // Find all trip containers on the page (to support multiple blocks)
+  const tripsContainers = document.querySelectorAll("[id^='trips-container-']");
 
-  // If using carousel view or button doesn't exist, skip pagination
-  if (!loadMoreButton || !tripsContainer) {
+  if (!tripsContainers.length) {
     return;
   }
 
-  // Get settings from localized object
-  const settings = window.allTripsSettings || {
-    itemsPerPage: 10,
-    displayType: "vertical",
-    loadMoreText: "Load More",
-  };
+  // Process each container
+  tripsContainers.forEach(function(tripsContainer) {
+    // Get the container ID to fetch the corresponding settings and button
+    const containerId = tripsContainer.id;
+    const blockId = containerId.replace("trips-container-", "");
+    const loadMoreButton = document.getElementById(`load-more-button-${blockId}`);
 
-  const tripItems = tripsContainer.querySelectorAll(".trip-item");
-  let currentPage = 1;
-  const itemsPerPage = parseInt(settings.itemsPerPage) || 10;
-
-  // Set button text
-  if (loadMoreButton && settings.loadMoreText) {
-    loadMoreButton.textContent = settings.loadMoreText;
-  }
-
-  // Apply display styles
-  if (settings.displayType === "grid") {
-    tripsContainer.classList.add("grid-view");
-  } else {
-    tripsContainer.classList.add("vertical-view");
-  }
-
-  function loadTrips() {
-    const end = currentPage * itemsPerPage;
-
-    // Show items up to the current page limit
-    tripItems.forEach((trip, index) => {
-      if (index < end) {
-        trip.style.display = "block";
-      } else {
-        trip.style.display = "none";
-      }
-    });
-
-    // Hide load more button if all items are visible
-    if (end >= tripItems.length) {
-      loadMoreButton.style.display = "none";
-    } else {
-      loadMoreButton.style.display = "block";
+    // Skip if button doesn't exist
+    if (!loadMoreButton) {
+      return;
     }
-  }
 
-  if (loadMoreButton) {
+    // Get settings from data attributes on the container
+    const itemsPerPage = parseInt(tripsContainer.dataset.itemsPerPage) || 10;
+    const loadMoreText = tripsContainer.dataset.loadMoreText || "Load More";
+    const displayType = tripsContainer.dataset.displayType || "vertical";
+
+    // Set button text
+    loadMoreButton.textContent = loadMoreText;
+
+    // Apply display styles based on display type
+    if (displayType === "grid") {
+      tripsContainer.classList.add("grid-view");
+    } else {
+      tripsContainer.classList.add("vertical-view");
+    }
+
+    const tripItems = tripsContainer.querySelectorAll(".trip-item");
+    let currentPage = 1;
+
+    function loadTrips() {
+      // Calculate start and end indices for the current page
+      const startIndex = 0;
+      const endIndex = currentPage * itemsPerPage;
+
+      // Hide all items first
+      tripItems.forEach((trip, index) => {
+        trip.style.display = index < endIndex ? "block" : "none";
+      });
+
+      // Hide load more button if all items are visible
+      if (endIndex >= tripItems.length) {
+        loadMoreButton.style.display = "none";
+      } else {
+        loadMoreButton.style.display = "block";
+      }
+    }
+
+    // Add click event to load more button
     loadMoreButton.addEventListener("click", function () {
       currentPage++;
       loadTrips();
     });
-  }
 
-  // Initialize first page
-  loadTrips();
+    // Initialize first page
+    loadTrips();
+  });
 });

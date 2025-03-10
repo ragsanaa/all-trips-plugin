@@ -58,6 +58,10 @@
         const start = (currentPage - 1) * itemsPerPage;
         const end = start + itemsPerPage;
 
+        console.log(itemsPerPage);
+        console.log(start);
+        console.log(end);
+
         trips.forEach((trip, index) => {
           trip.style.display = index >= start && index < end ? "block" : "none";
         });

@@ -1,6 +1,9 @@
 <?php
 // Render callback for dynamic block
 function all_trips_block_render($attributes) {
+  // Generate a unique ID for this block instance
+  $block_id = wp_unique_id('wetravel-');
+
   // Use attributes if set, otherwise fall back to saved options
   $src = $attributes['src'] ?? get_option('all_trips_src', '');
   $slug = $attributes['slug'] ?? get_option('all_trips_slug', '');
@@ -13,9 +16,8 @@ function all_trips_block_render($attributes) {
   $buttonText = !empty($attributes['buttonText']) ? $attributes['buttonText'] : $default_button_text;
 
   $buttonColor = $attributes['buttonColor'] ?? get_option('all_trips_button_color', '#33ae3f');
-  $itemsPerPage = $attributes['itemsPerPage'] ?? get_option('all_trips_items_per_page', 10);
+  $itemsPerPage = intval($attributes['itemsPerPage'] ?? get_option('all_trips_items_per_page', 10));
   $loadMoreText = $attributes['loadMoreText'] ?? get_option('all_trips_load_more_text', 'Load More');
-
 
   // Clean up the environment URL if needed
   $env = rtrim($env, '/');
@@ -56,16 +58,11 @@ function all_trips_block_render($attributes) {
     );
   }
 
-  // Localize script with current block settings
-  wp_localize_script($displayType === 'carousel' ? 'all-trips-carousel' : 'all-trips-pagination', 'allTripsSettings', array(
-    'itemsPerPage' => $itemsPerPage,
-    'loadMoreText' => $loadMoreText,
-    'displayType' => $displayType,
-    'buttonColor' => $buttonColor
-  ));
-
   // Add custom CSS for the display type
   $custom_css = "
+    :root {
+      --button-color: {$buttonColor};
+    }
     /* Button styling */
     .trip-item .trip-button {
       background-color: {$buttonColor};
@@ -80,8 +77,28 @@ function all_trips_block_render($attributes) {
       box-sizing: border-box;
     }
 
-    #load-more-button {
+    #load-more-button-{$block_id} {
       background-color: {$buttonColor};
+      color: white;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      border: none;
+      text-align: center;
+      display: block;
+      width: 200px;
+      margin: 20px auto;
+    }
+
+    /* Display type specific styles */
+    .all-trips-container.grid-view {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 15px;
+    }
+
+    .all-trips-container.vertical-view .trip-item {
+      margin-bottom: 15px;
     }
 
     /* Equal height cards */
@@ -90,10 +107,15 @@ function all_trips_block_render($attributes) {
       flex-direction: column;
       height: 100%;
       box-sizing: border-box;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 15px;
+      background-color: #fff;
     }
 
     .trip-item h3 {
       flex-grow: 0;
+      margin-top: 10px;
     }
 
     .trip-item .trip-content {
@@ -106,6 +128,13 @@ function all_trips_block_render($attributes) {
       margin-top: auto;
       width: 100%;
     }
+
+    .trip-item img {
+      width: 100%;
+      border-radius: 4px;
+      height: 180px;
+      object-fit: cover;
+    }
   ";
 
   // Output custom styles
@@ -117,7 +146,12 @@ function all_trips_block_render($attributes) {
   ob_start();
   ?>
   <div class="wp-block-all-trips-block">
-    <div class="all-trips-container <?php echo esc_attr($displayType); ?>-view" id="trips-container">
+    <div class="all-trips-container <?php echo esc_attr($displayType); ?>-view"
+         id="trips-container-<?php echo esc_attr($block_id); ?>"
+         data-items-per-page="<?php echo esc_attr($itemsPerPage); ?>"
+         data-load-more-text="<?php echo esc_attr($loadMoreText); ?>"
+         data-display-type="<?php echo esc_attr($displayType); ?>"
+         data-button-color="<?php echo esc_attr($buttonColor); ?>">
       <?php if ($displayType === 'carousel'): ?>
         <div class="swiper">
           <div class="swiper-wrapper">
@@ -157,7 +191,7 @@ function all_trips_block_render($attributes) {
                           }
                         ?>
                         <a href="<?php echo esc_url($button_url); ?>" class="trip-button" target="_blank">
-                          <?php echo $buttonText; ?>
+                          <?php echo esc_html($buttonText); ?>
                         </a>
                       </div>
                     </div>
@@ -174,8 +208,12 @@ function all_trips_block_render($attributes) {
         </div>
       <?php else: ?>
         <?php if (!empty($trips)): ?>
-          <?php foreach ($trips as $trip): ?>
-            <div class="trip-item">
+          <?php
+          foreach ($trips as $index => $trip):
+            // Set display style - all items visible initially but controlled by JS
+            $display_style = ($index < $itemsPerPage) ? 'block' : 'none';
+          ?>
+            <div class="trip-item" style="display: <?php echo $display_style; ?>">
             <?php if (!empty($trip['default_image'])): ?>
               <img src="<?php echo esc_url($trip['default_image']); ?>" alt="<?php echo esc_attr($trip['title']); ?>">
             <?php else: ?>
@@ -208,7 +246,7 @@ function all_trips_block_render($attributes) {
                     }
                   ?>
                   <a href="<?php echo esc_url($button_url); ?>" class="trip-button" target="_blank">
-                    <?php echo $buttonText; ?>
+                    <?php echo esc_html($buttonText); ?>
                   </a>
                 </div>
               </div>
@@ -221,7 +259,7 @@ function all_trips_block_render($attributes) {
     </div>
 
     <?php if ($displayType !== 'carousel' && !empty($trips) && count($trips) > $itemsPerPage): ?>
-      <button id="load-more-button">
+      <button id="load-more-button-<?php echo esc_attr($block_id); ?>">
         <?php echo esc_html($loadMoreText); ?>
       </button>
     <?php endif; ?>

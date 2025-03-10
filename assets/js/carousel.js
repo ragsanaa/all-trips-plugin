@@ -1,59 +1,45 @@
 document.addEventListener("DOMContentLoaded", function () {
-  const container = document.querySelector(
+  // Find all carousel containers
+  const carouselContainers = document.querySelectorAll(
     ".all-trips-container.carousel-view"
   );
 
-  if (!container) {
+  if (!carouselContainers.length) {
     return;
   }
 
-  const swiperContainer = container.querySelector(".swiper");
+  // Initialize each carousel
+  carouselContainers.forEach(function (container) {
+    const swiperElement = container.querySelector(".swiper");
 
-  if (!swiperContainer) {
-    return;
-  }
+    if (!swiperElement) {
+      return;
+    }
 
-  // Get settings from localized object
-  const settings = window.allTripsSettings || {
-    buttonColor: "#33ae3f",
-  };
-
-  // Initialize Swiper
-  const swiper = new Swiper(swiperContainer, {
-    slidesPerView: "auto",
-    spaceBetween: 15,
-    pagination: {
-      el: ".swiper-pagination",
-      clickable: true,
-    },
-    navigation: {
-      nextEl: ".swiper-button-next",
-      prevEl: ".swiper-button-prev",
-    },
-    breakpoints: {
-      // when window width is >= 320px
-      320: {
-        slidesPerView: 1,
-        spaceBetween: 10,
+    // Initialize Swiper
+    const swiper = new Swiper(swiperElement, {
+      slidesPerView: 1,
+      spaceBetween: 10,
+      pagination: {
+        el: swiperElement.querySelector(".swiper-pagination"),
+        clickable: true,
       },
-      // when window width is >= 480px
-      480: {
-        slidesPerView: 2,
-        spaceBetween: 15,
+      navigation: {
+        nextEl: swiperElement.querySelector(".swiper-button-next"),
+        prevEl: swiperElement.querySelector(".swiper-button-prev"),
       },
-      // when window width is >= 768px
-      768: {
-        slidesPerView: 3,
-        spaceBetween: 15,
+      breakpoints: {
+        // when window width is >= 640px
+        640: {
+          slidesPerView: 2,
+          spaceBetween: 20,
+        },
+        // when window width is >= 992px
+        992: {
+          slidesPerView: 3,
+          spaceBetween: 30,
+        },
       },
-    },
-  });
-
-  // Apply button color from settings to any dynamic buttons
-  if (settings.buttonColor) {
-    const buttons = container.querySelectorAll(".trip-button");
-    buttons.forEach((button) => {
-      button.style.backgroundColor = settings.buttonColor;
     });
-  }
+  });
 });
