@@ -20,7 +20,6 @@ function all_trips_settings_page() {
 
     // Reset embed code if requested
     if (isset($_GET['reset_embed']) && $_GET['reset_embed'] == 'true') {
-      error_log('Resetting embed code...');
         delete_option('all_trips_embed_code');
         delete_option('all_trips_last_saved');
         wp_redirect(admin_url('admin.php?page=all-trips-settings'));
