@@ -36,7 +36,7 @@
     }
 
     // Build API endpoint
-    var apiUrl = env + "/api/trips/" + slug;
+    var apiUrl = env + "/api/v2/embeds/all_trips?slug=" + slug;
 
     // Build query parameters
     var params = {};
