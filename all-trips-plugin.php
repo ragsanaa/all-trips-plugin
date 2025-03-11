@@ -136,6 +136,12 @@ require_once ALL_TRIPS_PLUGIN_DIR . 'includes/block-renderer.php';
 // Include shortcode functionality
 require_once ALL_TRIPS_PLUGIN_DIR . 'includes/shortcode.php';
 
+// Include admin design library page
+require_once ALL_TRIPS_PLUGIN_DIR . 'admin/design-library-page.php';
+
+// Include admin create design page
+require_once ALL_TRIPS_PLUGIN_DIR . 'admin/create-design-page.php';
+
 // Register shortcode
 function all_trips_register_shortcode() {
     add_shortcode('all_trips', 'all_trips_shortcode');

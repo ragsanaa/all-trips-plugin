@@ -1,4 +1,5 @@
 <?php
+ob_start();
 // Admin settings page for All Trips Plugin
 
 if (!defined('ABSPATH')) {
@@ -7,73 +8,119 @@ if (!defined('ABSPATH')) {
 
 function all_trips_register_settings() {
     register_setting('all_trips_options', 'all_trips_embed_code');
-    register_setting('all_trips_options', 'all_trips_display_type');
-    register_setting('all_trips_options', 'all_trips_button_type');
-    register_setting('all_trips_options', 'all_trips_button_color');
-    register_setting('all_trips_options', 'all_trips_items_per_page');
-    register_setting('all_trips_options', 'all_trips_load_more_text');
+    register_setting('all_trips_options', 'all_trips_last_saved'); // Add timestamp for when embed code was saved
 }
 add_action('admin_init', 'all_trips_register_settings');
 
+
 function all_trips_settings_page() {
+    $embed_code = get_option('all_trips_embed_code', '');
+    $last_saved = get_option('all_trips_last_saved', '');
+    $has_embed_code = !empty($embed_code);
+
+    // Reset embed code if requested
+    if (isset($_GET['reset_embed']) && $_GET['reset_embed'] == 'true') {
+      error_log('Resetting embed code...');
+        delete_option('all_trips_embed_code');
+        delete_option('all_trips_last_saved');
+        wp_redirect(admin_url('admin.php?page=all-trips-settings'));
+        exit;
+    }
     ?>
     <div class="wrap">
         <h1>All Trips Plugin Settings</h1>
-        <form method="post" action="options.php">
-            <?php
-            settings_fields('all_trips_options');
-            do_settings_sections('all_trips_options');
-            ?>
-            <table class="form-table">
-                <tr valign="top">
-                    <th><label for="all_trips_embed_code">Embed Code</label></th>
-                    <td>
-                        <textarea id="all_trips_embed_code" name="all_trips_embed_code" class="large-text code" rows="5"><?php echo esc_textarea(get_option('all_trips_embed_code', '')); ?></textarea>
-                        <p class="description">Paste your WeTravel embed script here. The plugin will extract the necessary details automatically.</p>
-                    </td>
-                </tr>
-                <tr valign="top"><th><h2 style="margin:0">Default Settings</h2></th></tr>
-                <tr valign="top">
-                    <th><label for="all_trips_display_type">Trip Display Type</label></th>
-                    <td>
-                        <select id="all_trips_display_type" name="all_trips_display_type">
-                            <option value="vertical" <?php selected(get_option('all_trips_display_type', 'vertical'), 'vertical'); ?>>Vertical</option>
-                            <option value="carousel" <?php selected(get_option('all_trips_display_type', 'vertical'), 'carousel'); ?>>Carousel</option>
-                            <option value="grid" <?php selected(get_option('all_trips_display_type', 'vertical'), 'grid'); ?>>Grid</option>
-                        </select>
-                    </td>
-                </tr>
-                <tr valign="top">
-                    <th><label for="all_trips_button_type">Button Type</label></th>
-                    <td>
-                        <select id="all_trips_button_type" name="all_trips_button_type">
-                            <option value="book_now" <?php selected(get_option('all_trips_button_type', 'book_now'), 'book_now'); ?>>Book Now</option>
-                            <option value="trip_link" <?php selected(get_option('all_trips_button_type', 'book_now'), 'trip_link'); ?>>Trip Link</option>
-                        </select>
-                    </td>
-                </tr>
-                <tr valign="top">
-                    <th><label for="all_trips_button_color">Button Color</label></th>
-                    <td>
-                        <input type="color" id="all_trips_button_color" name="all_trips_button_color" value="<?php echo esc_attr(get_option('all_trips_button_color', '#33ae3f')); ?>">
-                    </td>
-                </tr>
-                <tr valign="top">
-                    <th scope="row">Items Per Page:</th>
-                    <td>
-                        <input type="number" name="all_trips_items_per_page" value="<?php echo esc_attr(get_option('all_trips_items_per_page', 10)); ?>" min="1" />
-                    </td>
-                </tr>
-                <tr valign="top">
-                    <th scope="row">Load More Button Text:</th>
-                    <td>
-                        <input type="text" name="all_trips_load_more_text" value="<?php echo esc_attr(get_option('all_trips_load_more_text', 'Load More')); ?>" />
-                    </td>
-                </tr>
-            </table>
-            <?php submit_button(); ?>
-        </form>
+
+        <div class="nav-tab-wrapper">
+            <a href="?page=all-trips-settings" class="nav-tab nav-tab-active">Settings</a>
+            <a href="?page=all-trips-design-library" class="nav-tab">Design Library</a>
+            <a href="?page=all-trips-create-design" class="nav-tab">Create Design</a>
+        </div>
+
+        <div class="all-trips-settings-container">
+            <h2>WeTravel Embed Code</h2>
+            <p>Configure your WeTravel integration by pasting your embed code below.</p>
+            <?php if (isset($_GET['saved']) && $_GET['saved'] == 'true'): ?>
+                <div class="notice notice-success is-dismissible">
+                    <p>Embed code saved successfully!</p>
+                </div>
+            <?php endif; ?>
+
+            <div class="all-trips-embed-form-container">
+                <?php if ($has_embed_code): ?>
+                    <div class="all-trips-embed-info">
+                        <div class="all-trips-embed-status">
+                            <span class="dashicons dashicons-yes-alt"></span>
+                            <span>Embed code saved successfully on <?php echo esc_html($last_saved); ?></span>
+                        </div>
+                        <div class="all-trips-extracted-info">
+                            <p><strong>Slug:</strong> <?php echo esc_html(get_option('all_trips_slug', '')); ?></p>
+                            <p><strong>Environment:</strong> <?php echo esc_html(get_option('all_trips_env', '')); ?></p>
+                        </div>
+                        <a href="?page=all-trips-settings&reset_embed=true" class="button button-secondary">Re-enter Embed Code</a>
+                    </div>
+                <?php else: ?>
+                    <form method="post" action="options.php" class="all-trips-embed-form">
+                        <?php
+                        settings_fields('all_trips_options');
+                        do_settings_sections('all_trips_options');
+                        ?>
+                        <div class="all-trips-embed-input-container">
+                            <textarea id="all_trips_embed_code" name="all_trips_embed_code" class="large-text code" rows="4" placeholder="Paste your WeTravel embed script here..."><?php echo esc_textarea($embed_code); ?></textarea>
+                            <p class="description">The plugin will extract the necessary details automatically.</p>
+                        </div>
+                        <div class="all-trips-embed-button-container">
+                            <?php submit_button(); ?>
+                        </div>
+                    </form>
+                <?php endif; ?>
+            </div>
+        </div>
     </div>
+
+    <style>
+        .all-trips-settings-container {
+            margin-top: 20px;
+        }
+        .all-trips-embed-form {
+            display: flex;
+            align-items: flex-start;
+            max-width: 900px;
+        }
+        .all-trips-embed-input-container {
+            flex: 1;
+            margin-right: 15px;
+        }
+        .all-trips-embed-button-container {
+            padding-top: 4px;
+        }
+        .all-trips-embed-info {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 15px 20px;
+            border-radius: 4px;
+            max-width: 900px;
+        }
+        .all-trips-embed-status {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .all-trips-embed-status .dashicons {
+            color: #46b450;
+            font-size: 24px;
+            margin-right: 8px;
+        }
+        .all-trips-extracted-info {
+            background: #fff;
+            border: 1px solid #e5e5e5;
+            padding: 10px 15px;
+            margin-bottom: 15px;
+            border-radius: 3px;
+        }
+        .all-trips-extracted-info p {
+            margin: 5px 0;
+        }
+    </style>
     <?php
 }
 
@@ -83,24 +130,40 @@ function all_trips_add_admin_menu() {
         'All Trips',
         'manage_options',
         'all-trips-settings',
-        'all_trips_settings_page'
+        'all_trips_settings_page',
+        'dashicons-location-alt'
+    );
+
+    // Add Design Library submenu
+    add_submenu_page(
+        'all-trips-settings',
+        'Design Library',
+        'Design Library',
+        'manage_options',
+        'all-trips-design-library',
+        'all_trips_design_library_page'
+    );
+
+    // Add Create Design submenu
+    add_submenu_page(
+        'all-trips-settings',
+        'Create Design',
+        'Create Design',
+        'manage_options',
+        'all-trips-create-design',
+        'all_trips_create_design_page'
     );
 }
 add_action('admin_menu', 'all_trips_add_admin_menu');
 
-
-/// Enqueue scripts for pagination
-function all_trips_enqueue_pagination_scripts() {
-    wp_enqueue_script(
-        'all-trips-pagination',
-        plugins_url('assets/js/pagination.js', __FILE__),
-        array('jquery'),
-        null,
-        true
-    );
-    wp_localize_script('all-trips-pagination', 'allTripsSettings', array(
-        'itemsPerPage' => get_option('all_trips_items_per_page', 10),
-        'loadMoreText' => get_option('all_trips_load_more_text', 'Load More')
-    ));
+// Enqueue admin scripts and styles
+function all_trips_admin_enqueue_scripts($hook) {
+    if (strpos($hook, 'all-trips') !== false) {
+        wp_enqueue_style('wp-color-picker');
+        wp_enqueue_script('wp-color-picker');
+        wp_enqueue_style('all-trips-admin-styles', ALL_TRIPS_PLUGIN_URL . 'admin/css/admin-styles.css', array(), filemtime(ALL_TRIPS_PLUGIN_DIR . 'admin/css/admin-styles.css'));
+        wp_enqueue_script('all-trips-admin-scripts', ALL_TRIPS_PLUGIN_URL . 'admin/js/admin-scripts.js', array('jquery', 'wp-color-picker'), filemtime(ALL_TRIPS_PLUGIN_DIR . 'admin/js/admin-scripts.js'), true);
+    }
 }
-add_action('wp_enqueue_scripts', 'all_trips_enqueue_pagination_scripts');
+add_action('admin_enqueue_scripts', 'all_trips_admin_enqueue_scripts');
+?>
