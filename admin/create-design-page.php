@@ -13,6 +13,10 @@ function all_trips_create_design_page() {
         'buttonType' => 'book_now',
         'buttonText' => 'Book Now',
         'buttonColor' => '#33ae3f',
+        'keyword' => '',
+        'tripType' => 'all',
+        'dateRangeStart' => '',
+        'dateRangeEnd' => '',
         'created' => time()
     );
 
@@ -32,30 +36,60 @@ function all_trips_create_design_page() {
 
     // Handle form submission
     if (isset($_POST['save_design'])) {
-        $new_design = array(
-            'name' => sanitize_text_field($_POST['design_name']),
-            'displayType' => sanitize_text_field($_POST['display_type']),
-            'buttonType' => sanitize_text_field($_POST['button_type']),
-            'buttonText' => sanitize_text_field($_POST['button_text']),
-            'buttonColor' => sanitize_hex_color($_POST['button_color']),
-            'created' => $design['created'],
-            'modified' => time()
-        );
+        // Validate keyword uniqueness if provided
+        $keyword = sanitize_text_field($_POST['design_keyword']);
+        $keyword_error = false;
 
-        $designs = get_option('all_trips_designs', array());
-
-        // Generate a new ID if we're not editing
-        if (!$editing) {
-            $design_id = 'design_' . time() . '_' . mt_rand(1000, 9999);
+        if (!empty($keyword)) {
+            $designs = get_option('all_trips_designs', array());
+            foreach ($designs as $id => $existing_design) {
+                if (isset($existing_design['keyword']) && $existing_design['keyword'] === $keyword && $id !== $design_id) {
+                    $keyword_error = true;
+                    break;
+                }
+            }
         }
 
-        $designs[$design_id] = $new_design;
-        update_option('all_trips_designs', $designs);
+        if ($keyword_error) {
+            $error_message = 'This keyword is already in use. Please choose a unique keyword.';
+        } else {
+            // Get date range values if trip type is one-time
+            $date_range_start = '';
+            $date_range_end = '';
+            if ($_POST['trip_type'] === 'one-time') {
+                $date_range_start = sanitize_text_field($_POST['date_range_start']);
+                $date_range_end = sanitize_text_field($_POST['date_range_end']);
+            }
 
-        $success_message = $editing ? 'Design updated successfully.' : 'Design created successfully.';
+            $new_design = array(
+                'name' => sanitize_text_field($_POST['design_name']),
+                'displayType' => sanitize_text_field($_POST['display_type']),
+                'buttonType' => sanitize_text_field($_POST['button_type']),
+                'buttonText' => sanitize_text_field($_POST['button_text']),
+                'buttonColor' => sanitize_hex_color($_POST['button_color']),
+                'keyword' => $keyword,
+                'tripType' => sanitize_text_field($_POST['trip_type']),
+                'dateRangeStart' => $date_range_start,
+                'dateRangeEnd' => $date_range_end,
+                'created' => $design['created'],
+                'modified' => time()
+            );
 
-        // Generate shortcode for user
-        $shortcode = '[all_trips design="' . $design_id . '"]';
+            $designs = get_option('all_trips_designs', array());
+
+            // Generate a new ID if we're not editing
+            if (!$editing) {
+                $design_id = 'design_' . time() . '_' . mt_rand(1000, 9999);
+            }
+
+            $designs[$design_id] = $new_design;
+            update_option('all_trips_designs', $designs);
+
+            $success_message = $editing ? 'Design updated successfully.' : 'Design created successfully.';
+
+            // Generate shortcode for user
+            $shortcode = '[all_trips design="' . ($keyword ? $keyword : $design_id) . '"]';
+        }
     }
 
     ?>
@@ -77,14 +111,26 @@ function all_trips_create_design_page() {
             </div>
         <?php endif; ?>
 
+        <?php if (isset($error_message)): ?>
+            <div class="notice notice-error is-dismissible">
+                <p><?php echo esc_html($error_message); ?></p>
+            </div>
+        <?php endif; ?>
+
         <div class="all-trips-create-design-container">
             <div class="all-trips-design-form-and-preview">
                 <div class="all-trips-design-form">
                     <form method="post" action="">
                         <div class="all-trips-form-field">
-                            <label for="design_name">Design Name</label>
+                            <label for="design_name">Design Name <span style="color:red;">*</span></label>
                             <input type="text" id="design_name" name="design_name" value="<?php echo esc_attr($design['name']); ?>" required>
                             <p class="description">Give your design a name to help you identify it later.</p>
+                        </div>
+
+                        <div class="all-trips-form-field">
+                            <label for="design_keyword">Design Keyword</label>
+                            <input type="text" id="design_keyword" name="design_keyword" value="<?php echo isset($design['keyword']) ? esc_attr($design['keyword']) : ''; ?>">
+                            <p class="description">Optional. Set a unique keyword to use in shortcode. If not provided, the design ID will be used.</p>
                         </div>
 
                         <div class="all-trips-form-field">
@@ -94,6 +140,29 @@ function all_trips_create_design_page() {
                                 <option value="carousel" <?php selected($design['displayType'], 'carousel'); ?>>Carousel</option>
                                 <option value="grid" <?php selected($design['displayType'], 'grid'); ?>>Grid</option>
                             </select>
+                        </div>
+
+                        <div class="all-trips-form-field">
+                            <label for="trip_type">Trip Type</label>
+                            <select id="trip_type" name="trip_type">
+                                <option value="all" <?php selected(isset($design['tripType']) ? $design['tripType'] : 'all', 'all'); ?>>All Trips</option>
+                                <option value="recurring" <?php selected(isset($design['tripType']) ? $design['tripType'] : '', 'recurring'); ?>>Recurring Trips</option>
+                                <option value="one-time" <?php selected(isset($design['tripType']) ? $design['tripType'] : '', 'one-time'); ?>>One-Time Trips</option>
+                            </select>
+                        </div>
+
+                        <div id="date-range-container" class="all-trips-form-field" style="display: none;">
+                            <label>Date Range</label>
+                            <div class="date-range-inputs">
+                                <div>
+                                    <label for="date_range_start">Start Date</label>
+                                    <input type="date" id="date_range_start" name="date_range_start" value="<?php echo isset($design['dateRangeStart']) ? esc_attr($design['dateRangeStart']) : ''; ?>">
+                                </div>
+                                <div>
+                                    <label for="date_range_end">End Date</label>
+                                    <input type="date" id="date_range_end" name="date_range_end" value="<?php echo isset($design['dateRangeEnd']) ? esc_attr($design['dateRangeEnd']) : ''; ?>">
+                                </div>
+                            </div>
                         </div>
 
                         <div class="all-trips-form-field">
@@ -137,8 +206,9 @@ function all_trips_create_design_page() {
                         <h4>Generated Shortcode</h4>
                         <div class="shortcode-preview">
                             <?php if ($editing): ?>
-                                <code>[all_trips design="<?php echo esc_attr($design_id); ?>"]</code>
-                                <button class="button button-small all-trips-copy-shortcode" data-shortcode='[all_trips design="<?php echo esc_attr($design_id); ?>"]'>Copy</button>
+                                <code>[all_trips design="<?php echo !empty($design['keyword']) ? esc_attr($design['keyword']) : esc_attr($design_id); ?>"]</code>
+                                <button class="button button-small all-trips-copy-shortcode"
+                                        data-shortcode='[all_trips design="<?php echo !empty($design['keyword']) ? esc_attr($design['keyword']) : esc_attr($design_id); ?>"]'>Copy</button>
                             <?php else: ?>
                                 <p>Shortcode will be generated after saving.</p>
                             <?php endif; ?>
@@ -177,8 +247,16 @@ function all_trips_create_design_page() {
             font-weight: 600;
         }
         .all-trips-form-field input[type="text"],
-        .all-trips-form-field select {
+        .all-trips-form-field select,
+        .all-trips-form-field input[type="date"] {
             width: 100%;
+        }
+        .date-range-inputs {
+            display: flex;
+            gap: 10px;
+        }
+        .date-range-inputs > div {
+            flex: 1;
         }
         .all-trips-form-actions {
             margin-top: 30px;
@@ -211,5 +289,55 @@ function all_trips_create_design_page() {
             border-radius: 3px;
         }
     </style>
+
+    <script>
+    jQuery(document).ready(function($) {
+        // Create a nonce field in the form
+        var nonceField = $('<input>').attr({
+            type: 'hidden',
+            name: 'all_trips_nonce',
+            value: '<?php echo wp_create_nonce("all_trips_nonce"); ?>'
+        });
+        $('form').append(nonceField);
+
+        // Keyword uniqueness checker
+        var checkKeywordTimeout;
+        $('#design_keyword').on('keyup blur', function() {
+            var keyword = $(this).val();
+            clearTimeout(checkKeywordTimeout);
+
+            // Clear any existing validation messages
+            $('#keyword-validation-message').remove();
+
+            // Only check if keyword has content
+            if (keyword.length > 0) {
+                // Add a small delay to prevent too many requests
+                checkKeywordTimeout = setTimeout(function() {
+                    $.ajax({
+                        url: ajaxurl,
+                        type: 'POST',
+                        data: {
+                            action: 'check_keyword_unique',
+                            keyword: keyword,
+                            design_id: '<?php echo esc_js($design_id); ?>',
+                            nonce: '<?php echo wp_create_nonce("all_trips_nonce"); ?>'
+                        },
+                        success: function(response) {
+                            if (!response.unique) {
+                                // Display validation message
+                                $('<p id="keyword-validation-message" class="validation-error" style="color:red;">This keyword is already in use. Please choose a unique keyword.</p>')
+                                    .insertAfter('#design_keyword');
+                            } else {
+                                // Show success message
+                                $('<p id="keyword-validation-message" class="validation-success" style="color:green;">Keyword is available!</p>')
+                                    .insertAfter('#design_keyword');
+                            }
+                        }
+                    });
+                }, 500);
+            }
+        });
+    });
+    </script>
     <?php
 }

@@ -1,58 +1,104 @@
 <?php
-/**
- * Shortcode functionality for All Trips Plugin
- */
-
-// Exit if accessed directly.
+// Shortcode file
 if (!defined('ABSPATH')) {
     exit;
 }
 
-/**
- * Add shortcode support for All Trips
- *
- * @param array $atts Shortcode attributes
- * @return string Rendered HTML
- */
 function all_trips_shortcode($atts) {
-    // Define default attributes
-    $default_atts = array(
-        'src'           => get_option('all_trips_src', ''),
-        'slug'          => get_option('all_trips_slug', ''),
-        'env'           => get_option('all_trips_env', 'https://pre.wetravel.to'),
-        'display_type'  => get_option('all_trips_display_type', 'vertical'),
-        'button_type'   => get_option('all_trips_button_type', 'book_now'),
-        'button_text'   => '',
-        'button_color'  => get_option('all_trips_button_color', '#33ae3f'),
-        'items_per_page' => get_option('all_trips_items_per_page', 10),
-        'load_more_text' => get_option('all_trips_load_more_text', 'Load More'),
-        'trip_type'     => 0,
-        'date_range'    => '',
+    $atts = shortcode_atts(
+        array(
+            'design' => '',
+        ),
+        $atts,
+        'all_trips'
     );
 
-    // Parse incoming attributes into an array and merge it with defaults
-    $atts = shortcode_atts($default_atts, $atts, 'all_trips');
-
-    // Convert shortcode attribute names to match block attribute names
-    $block_atts = array(
-        'src'          => $atts['src'],
-        'slug'         => $atts['slug'],
-        'env'          => $atts['env'],
-        'displayType'  => $atts['display_type'],
-        'buttonType'   => $atts['button_type'],
-        'buttonText'   => $atts['button_text'],
-        'buttonColor'  => $atts['button_color'],
-        'itemsPerPage' => intval($atts['items_per_page']),
-        'loadMoreText' => $atts['load_more_text'],
-        'tripType'     => intval($atts['trip_type']),
-        'dateRange'    => $atts['date_range'],
-    );
-
-    // Set default buttonText based on buttonType if not provided
-    if (empty($block_atts['buttonText'])) {
-        $block_atts['buttonText'] = $block_atts['buttonType'] === 'book_now' ? 'Book Now' : 'View Trip';
+    // Check if design attribute is provided
+    if (empty($atts['design'])) {
+        return '<div class="all-trips-error">Please specify a design ID or keyword.</div>';
     }
 
-    // Use the existing block render function to maintain consistency
-    return all_trips_block_render($block_atts);
+    // Get all designs
+    $designs = get_option('all_trips_designs', array());
+    $design_id = $atts['design'];
+    $design = null;
+
+    // First try to find design by keyword
+    foreach ($designs as $id => $design_data) {
+        if (isset($design_data['keyword']) && $design_data['keyword'] === $design_id) {
+            $design = $design_data;
+            break;
+        }
+    }
+
+    // If not found by keyword, try to find by design ID
+    if ($design === null) {
+        if (isset($designs[$design_id])) {
+            $design = $designs[$design_id];
+        } else {
+            return '<div class="all-trips-error">Design not found: ' . esc_html($design_id) . '</div>';
+        }
+    }
+
+    // Get trip parameters based on design settings
+    $trip_params = array();
+
+    // Add trip type filter if specified
+    if (isset($design['tripType']) && $design['tripType'] !== 'all') {
+        $trip_params['type'] = $design['tripType'];
+
+        // Add date range for one-time trips if both dates are set
+        if ($design['tripType'] === 'one-time' &&
+            !empty($design['dateRangeStart']) &&
+            !empty($design['dateRangeEnd'])) {
+            $trip_params['dateStart'] = $design['dateRangeStart'];
+            $trip_params['dateEnd'] = $design['dateRangeEnd'];
+        }
+    }
+
+    // Get the necessary settings
+    $slug = get_option('all_trips_slug', '');
+    $env = get_option('all_trips_env', 'https://pre.wetravel.to');
+
+    // Build the trips display
+    $output = '<div class="all-trips-container"
+        data-display-type="' . esc_attr($design['displayType']) . '"
+        data-button-type="' . esc_attr($design['buttonType']) . '"
+        data-button-text="' . esc_attr($design['buttonText']) . '"
+        data-button-color="' . esc_attr($design['buttonColor']) . '"
+        data-slug="' . esc_attr($slug) . '"
+        data-env="' . esc_attr($env) . '"
+        data-trip-type="' . (isset($design['tripType']) ? esc_attr($design['tripType']) : 'all') . '"';
+
+    // Add date range attributes if present
+    if (isset($design['tripType']) && $design['tripType'] === 'one-time' &&
+        !empty($design['dateRangeStart']) && !empty($design['dateRangeEnd'])) {
+        $output .= ' data-date-start="' . esc_attr($design['dateRangeStart']) . '"';
+        $output .= ' data-date-end="' . esc_attr($design['dateRangeEnd']) . '"';
+    }
+
+    $output .= '>';
+
+    // Loading state
+    $output .= '<div class="all-trips-loading">Loading trips...</div>';
+
+    // Container for trips
+    $output .= '<div class="all-trips-list"></div>';
+
+    $output .= '</div>';
+
+    // Enqueue specific JS based on display type
+    if ($design['displayType'] === 'carousel') {
+        wp_enqueue_script('all-trips-carousel', ALL_TRIPS_PLUGIN_URL . 'assets/js/carousel.js', array('jquery'), null, true);
+    }
+
+    // Enqueue the main trips loader script
+    wp_enqueue_script('all-trips-loader', ALL_TRIPS_PLUGIN_URL . 'assets/js/trips-loader.js', array('jquery'), null, true);
+    wp_localize_script('all-trips-loader', 'allTripsData', array(
+        'ajaxUrl' => admin_url('admin-ajax.php'),
+        'env' => $env,
+        'slug' => $slug
+    ));
+
+    return $output;
 }

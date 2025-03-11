@@ -61,7 +61,7 @@ function all_trips_design_library_page() {
                                 <div class="all-trips-design-actions">
                                     <a href="?page=all-trips-create-design&edit=<?php echo esc_attr($design_id); ?>" class="button button-small">Edit</a>
                                     <a href="?page=all-trips-design-library&delete_design=<?php echo esc_attr($design_id); ?>" class="button button-small" onclick="return confirm('Are you sure you want to delete this design?')">Delete</a>
-                                    <button class="button button-small all-trips-copy-shortcode" data-shortcode='[all_trips design="<?php echo esc_attr($design_id); ?>"]'>Copy Shortcode</button>
+                                    <button class="button button-small all-trips-copy-shortcode" data-shortcode='[all_trips design="<?php echo esc_attr($design['keyword']); ?>"]'>Copy Shortcode</button>
                                 </div>
                             </div>
                         </div>

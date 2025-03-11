@@ -31,14 +31,14 @@
           text-align: center;
       `;
 
-    // Create sample trip items
+    // Create sample trip item
     function createTripItem(index) {
       return `
               <div class="preview-trip-item">
                   <div class="preview-trip-image">Trip Image</div>
                   <h3>Sample Trip ${index}</h3>
                   <p>This is a preview of your trip display style.</p>
-                  <a href="#" style="${buttonStyle}">${buttonText}</a>
+                  <a href="#" style="${buttonStyle}" class="button-${buttonType}">${buttonText}</a>
               </div>
           `;
     }
@@ -165,8 +165,14 @@
     // Update preview initially
     updatePreview();
 
-    // Update preview when form fields change
-    $("#display_type, #button_type, #button_text").on("change", updatePreview);
+    // Update preview when form fields change - using input event too for more immediate response
+    $("#display_type, #button_type, #button_text").on(
+      "change input",
+      function () {
+        // Force immediate update when any field changes
+        setTimeout(updatePreview, 0);
+      }
+    );
 
     // Init copy shortcode functionality
     initCopyShortcode();
@@ -179,6 +185,9 @@
       if (buttonText.val() === "Book Now" || buttonText.val() === "View Trip") {
         buttonText.val(buttonType === "book_now" ? "Book Now" : "View Trip");
       }
+
+      // Force update preview immediately after changing button type
+      updatePreview();
     });
   });
 })(jQuery);

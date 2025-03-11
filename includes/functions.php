@@ -41,3 +41,34 @@ function all_trips_save_embed_code() {
 }
 add_action('admin_init', 'all_trips_save_embed_code');
 
+// Register AJAX endpoint for keyword validation
+function all_trips_register_ajax() {
+    add_action('wp_ajax_check_keyword_unique', 'all_trips_check_keyword_unique');
+}
+add_action('init', 'all_trips_register_ajax');
+
+// AJAX callback to check keyword uniqueness
+function all_trips_check_keyword_unique() {
+    // Check nonce for security
+    check_ajax_referer('all_trips_nonce', 'nonce');
+
+    $keyword = sanitize_text_field($_POST['keyword']);
+    $current_design_id = isset($_POST['design_id']) ? sanitize_text_field($_POST['design_id']) : '';
+    $is_unique = true;
+
+    if (!empty($keyword)) {
+        $designs = get_option('all_trips_designs', array());
+        foreach ($designs as $id => $existing_design) {
+            if (isset($existing_design['keyword']) &&
+                $existing_design['keyword'] === $keyword &&
+                $id !== $current_design_id) {
+                $is_unique = false;
+                break;
+            }
+        }
+    }
+
+    wp_send_json(array(
+        'unique' => $is_unique
+    ));
+}
