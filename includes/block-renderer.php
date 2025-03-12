@@ -4,20 +4,41 @@ function all_trips_block_render($attributes) {
   // Generate a unique ID for this block instance
   $block_id = wp_unique_id('wetravel-');
 
-  // Use attributes if set, otherwise fall back to saved options
+  // Check if there's a selected design and apply its settings
+  $designs = get_option('all_trips_designs', array());
+  $selected_design = isset($attributes['selectedDesign']) ? $attributes['selectedDesign'] : '';
+
+  // Start with block attributes
   $src = $attributes['src'] ?? get_option('all_trips_src', '');
   $slug = $attributes['slug'] ?? get_option('all_trips_slug', '');
   $env = $attributes['env'] ?? get_option('all_trips_env', 'https://pre.wetravel.to');
   $displayType = $attributes['displayType'] ?? get_option('all_trips_display_type', 'vertical');
   $buttonType = $attributes['buttonType'] ?? get_option('all_trips_button_type', 'book_now');
+  $buttonColor = $attributes['buttonColor'] ?? get_option('all_trips_button_color', '#33ae3f');
+  $itemsPerPage = intval($attributes['itemsPerPage'] ?? get_option('all_trips_items_per_page', 10));
+  $loadMoreText = $attributes['loadMoreText'] ?? get_option('all_trips_load_more_text', 'Load More');
+
+  // Override with design settings if a design is selected
+  if (!empty($selected_design) && isset($designs[$selected_design])) {
+    $design = $designs[$selected_design];
+
+    // Apply design settings, keeping block attributes as fallbacks
+    $displayType = isset($design['displayType']) ? $design['displayType'] : $displayType;
+    $buttonType = isset($design['buttonType']) ? $design['buttonType'] : $buttonType;
+    $buttonColor = isset($design['buttonColor']) ? $design['buttonColor'] : $buttonColor;
+
+    // If the design has custom CSS, we'll add it later
+    $custom_css_design = isset($design['customCSS']) ? $design['customCSS'] : '';
+  }
 
   // Set default buttonText based on buttonType if not provided
   $default_button_text = $buttonType === 'book_now' ? 'Book Now' : 'View Trip';
   $buttonText = !empty($attributes['buttonText']) ? $attributes['buttonText'] : $default_button_text;
 
-  $buttonColor = $attributes['buttonColor'] ?? get_option('all_trips_button_color', '#33ae3f');
-  $itemsPerPage = intval($attributes['itemsPerPage'] ?? get_option('all_trips_items_per_page', 10));
-  $loadMoreText = $attributes['loadMoreText'] ?? get_option('all_trips_load_more_text', 'Load More');
+  // If design has buttonText, override the default
+  if (!empty($selected_design) && isset($designs[$selected_design]['buttonText'])) {
+    $buttonText = $designs[$selected_design]['buttonText'];
+  }
 
   // Clean up the environment URL if needed
   $env = rtrim($env, '/');
@@ -137,6 +158,11 @@ function all_trips_block_render($attributes) {
     }
   ";
 
+  // Add design-specific custom CSS if available
+  if (!empty($custom_css_design)) {
+    $custom_css .= "\n/* Design-specific custom CSS */\n{$custom_css_design}";
+  }
+
   // Output custom styles
   wp_add_inline_style('all-trips-styles', $custom_css);
 
@@ -151,7 +177,10 @@ function all_trips_block_render($attributes) {
          data-items-per-page="<?php echo esc_attr($itemsPerPage); ?>"
          data-load-more-text="<?php echo esc_attr($loadMoreText); ?>"
          data-display-type="<?php echo esc_attr($displayType); ?>"
-         data-button-color="<?php echo esc_attr($buttonColor); ?>">
+         data-button-color="<?php echo esc_attr($buttonColor); ?>"
+         <?php if (!empty($selected_design)) : ?>
+         data-design="<?php echo esc_attr($selected_design); ?>"
+         <?php endif; ?>>
       <?php if ($displayType === 'carousel'): ?>
         <div class="swiper">
           <div class="swiper-wrapper">

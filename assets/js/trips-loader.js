@@ -63,6 +63,18 @@
       apiUrl += "?" + queryString;
     }
 
+    // Try to get cached data first
+    $cache_key = "wetravel_trips_".md5($api_url);
+    $cached_data = get_transient($cache_key);
+
+    if (false !== $cached_data) {
+      return renderTrips(container, $cached_data, {
+        displayType: displayType,
+        buttonType: buttonType,
+        buttonText: buttonText,
+        buttonColor: buttonColor,
+      });
+    }
     // Fetch trips from the API
     $.ajax({
       url: apiUrl,
@@ -82,6 +94,9 @@
           .html("Error loading trips: " + error);
       },
     });
+
+    // Cache for 1 minutes
+    set_transient($cache_key, $data['trips'], 60);
   }
 
   /**

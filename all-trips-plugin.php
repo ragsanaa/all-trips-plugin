@@ -61,7 +61,8 @@ function all_trips_enqueue_block_assets() {
       'buttonType' => get_option('all_trips_button_type', 'book_now'),
       'buttonColor' => get_option('all_trips_button_color', '#33ae3f'),
       'itemsPerPage' => (int)get_option('all_trips_items_per_page', 10),
-      'loadMoreText' => get_option('all_trips_load_more_text', 'Load More')
+      'loadMoreText' => get_option('all_trips_load_more_text', 'Load More'),
+      'designs' => get_option('all_trips_designs', array())
     ];
 
     // Localize the script with settings
@@ -89,6 +90,10 @@ function all_trips_register_block() {
         'editor_script' => 'all-trips-block',
         'render_callback' => 'all_trips_block_render',
         'attributes' => array(
+            'designs' => array(
+                'type' => 'array',
+                'default' => array(),
+            ),
             'src' => array(
                 'type' => 'string',
                 'default' => '',
