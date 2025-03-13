@@ -3,6 +3,10 @@
  * Backend API endpoint for fetching trips from WeTravel with detailed information
  */
 
+// Register AJAX handlers
+add_action('wp_ajax_fetch_wetravel_trips', 'fetch_wetravel_trips_handler');
+add_action('wp_ajax_nopriv_fetch_wetravel_trips', 'fetch_wetravel_trips_handler');
+
 /**
  * AJAX handler for fetching trips from WeTravel API
  */
@@ -66,12 +70,12 @@ function fetch_wetravel_trips_handler() {
  */
 function get_wetravel_trips_data($api_url, $env = '') {
     // Try to get cached data first (1 minute cache)
-    // $cache_key = 'wetravel_trips_' . md5($api_url . '_details');
-    // $cached_data = get_transient($cache_key);
+    $cache_key = 'wetravel_trips_' . md5($api_url . '_details');
+    $cached_data = get_transient($cache_key);
 
-    // if (false !== $cached_data) {
-    //     return $cached_data;
-    // }
+    if (false !== $cached_data) {
+        return $cached_data;
+    }
 
     // No cache, fetch from API
     $response = wp_remote_get($api_url, array(
@@ -82,6 +86,7 @@ function get_wetravel_trips_data($api_url, $env = '') {
     ));
 
     if (is_wp_error($response)) {
+        error_log('Error fetching trips: ' . $response->get_error_message());
         return false;
     }
 
@@ -90,6 +95,7 @@ function get_wetravel_trips_data($api_url, $env = '') {
 
     // Check if we have valid data
     if (!isset($data['trips']) || !is_array($data['trips'])) {
+        error_log('Invalid API response: ' . print_r($data, true));
         return false;
     }
 
@@ -99,7 +105,7 @@ function get_wetravel_trips_data($api_url, $env = '') {
     $trips = fetch_trip_details($trips, $env);
 
     // Cache for 1 minute (60 seconds)
-    // set_transient($cache_key, $trips, 60);
+    set_transient($cache_key, $trips, 60);
 
     return $trips;
 }

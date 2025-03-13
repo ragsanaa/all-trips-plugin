@@ -96,7 +96,7 @@
     });
 
     // Cache for 1 minutes
-    set_transient($cache_key, $data['trips'], 60);
+    set_transient($cache_key, $data["trips"], 60);
   }
 
   /**

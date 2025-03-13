@@ -5,52 +5,52 @@ function all_trips_block_render($attributes) {
   $block_id = wp_unique_id('wetravel-');
 
   // Check if there's a selected design and apply its settings
-$designs = get_option('all_trips_designs', array());
-$selected_design_id = isset($attributes['selectedDesignID']) ? $attributes['selectedDesignID'] : '';
+  $designs = get_option('all_trips_designs', array());
+  $selected_design_id = isset($attributes['selectedDesignID']) ? $attributes['selectedDesignID'] : '';
 
-// Start with block attributes
-$src = $attributes['src'] ?? get_option('all_trips_src', '');
-$slug = $attributes['slug'] ?? get_option('all_trips_slug', '');
-$env = $attributes['env'] ?? get_option('all_trips_env', 'https://pre.wetravel.to');
-$displayType = $attributes['displayType'] ?? get_option('all_trips_display_type', 'vertical');
-$buttonType = $attributes['buttonType'] ?? get_option('all_trips_button_type', 'book_now');
-$buttonColor = $attributes['buttonColor'] ?? get_option('all_trips_button_color', '#33ae3f');
-$itemsPerPage = intval($attributes['itemsPerPage'] ?? get_option('all_trips_items_per_page', 10));
-$loadMoreText = $attributes['loadMoreText'] ?? get_option('all_trips_load_more_text', 'Load More');
+  // Start with block attributes
+  $src = $attributes['src'] ?? get_option('all_trips_src', '');
+  $slug = $attributes['slug'] ?? get_option('all_trips_slug', '');
+  $env = $attributes['env'] ?? get_option('all_trips_env', 'https://pre.wetravel.to');
+  $displayType = $attributes['displayType'] ?? get_option('all_trips_display_type', 'vertical');
+  $buttonType = $attributes['buttonType'] ?? get_option('all_trips_button_type', 'book_now');
+  $buttonColor = $attributes['buttonColor'] ?? get_option('all_trips_button_color', '#33ae3f');
+  $itemsPerPage = intval($attributes['itemsPerPage'] ?? get_option('all_trips_items_per_page', 10));
+  $loadMoreText = $attributes['loadMoreText'] ?? get_option('all_trips_load_more_text', 'Load More');
 
-// Override with design settings if a design is selected
-if (!empty($selected_design_id)) {
-  // Handle both array and object format for designs
-  $design = null;
+  // Override with design settings if a design is selected
+  if (!empty($selected_design_id)) {
+    // Handle both array and object format for designs
+    $design = null;
 
-  if (isset($designs[$selected_design_id])) {
-    // Object format
-    $design = $designs[$selected_design_id];
-  } else {
-    // Array format - find by ID
-    foreach ($designs as $d) {
-      if (isset($d['id']) && $d['id'] === $selected_design_id) {
-        $design = $d;
-        break;
+    if (isset($designs[$selected_design_id])) {
+      // Object format
+      $design = $designs[$selected_design_id];
+    } else {
+      // Array format - find by ID
+      foreach ($designs as $d) {
+        if (isset($d['id']) && $d['id'] === $selected_design_id) {
+          $design = $d;
+          break;
+        }
+      }
+    }
+
+    // Apply design settings, keeping block attributes as fallbacks
+    if ($design) {
+      $displayType = isset($design['displayType']) ? $design['displayType'] : $displayType;
+      $buttonType = isset($design['buttonType']) ? $design['buttonType'] : $buttonType;
+      $buttonColor = isset($design['buttonColor']) ? $design['buttonColor'] : $buttonColor;
+
+      // If the design has custom CSS, we'll add it later
+      $custom_css_design = isset($design['customCSS']) ? $design['customCSS'] : '';
+
+      // Check for buttonText in design
+      if (!empty($design['buttonText'])) {
+        $buttonText = $design['buttonText'];
       }
     }
   }
-
-  // Apply design settings, keeping block attributes as fallbacks
-  if ($design) {
-    $displayType = isset($design['displayType']) ? $design['displayType'] : $displayType;
-    $buttonType = isset($design['buttonType']) ? $design['buttonType'] : $buttonType;
-    $buttonColor = isset($design['buttonColor']) ? $design['buttonColor'] : $buttonColor;
-
-    // If the design has custom CSS, we'll add it later
-    $custom_css_design = isset($design['customCSS']) ? $design['customCSS'] : '';
-
-    // Check for buttonText in design
-    if (!empty($design['buttonText'])) {
-      $buttonText = $design['buttonText'];
-    }
-  }
-}
 
   // Set default buttonText based on buttonType if not provided
   $default_button_text = $buttonType === 'book_now' ? 'Book Now' : 'View Trip';
@@ -66,6 +66,18 @@ if (!empty($selected_design_id)) {
 
   // Create API URL
   $api_url = "{$env}/api/v2/embeds/all_trips?slug={$slug}";
+
+  // IMPORTANT CHANGE: Fetch trips data here
+  // Make sure fetch-trips.php functions are available
+  require_once ALL_TRIPS_PLUGIN_DIR . 'includes/fetch-trips.php';
+
+  // Get trips data using the function from fetch-trips.php
+  $trips = get_wetravel_trips_data($api_url, $env);
+
+  // If no trips found, set empty array
+  if (empty($trips)) {
+    $trips = array();
+  }
 
   // Enqueue necessary assets based on display type
   if ($displayType === 'carousel') {
@@ -105,6 +117,12 @@ if (!empty($selected_design_id)) {
     :root {
       --button-color: {$buttonColor};
     }
+
+    /* General container styles */
+    .wp-block-all-trips-block {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+    }
+
     /* Button styling */
     .trip-item .trip-button {
       background-color: {$buttonColor};
@@ -117,12 +135,18 @@ if (!empty($selected_design_id)) {
       text-align: center;
       width: calc(100% - 20px);
       box-sizing: border-box;
+      transition: background-color 0.3s ease;
+      font-weight: 500;
+    }
+
+    .trip-item .trip-button:hover {
+      opacity: 0.9;
     }
 
     #load-more-button-{$block_id} {
       background-color: {$buttonColor};
       color: white;
-      padding: 8px 16px;
+      padding: 10px 20px;
       border-radius: 4px;
       cursor: pointer;
       border: none;
@@ -130,52 +154,154 @@ if (!empty($selected_design_id)) {
       display: block;
       width: 200px;
       margin: 20px auto;
+      font-weight: 500;
+      transition: background-color 0.3s ease;
     }
 
-    /* Display type specific styles */
+    #load-more-button-{$block_id}:hover {
+      opacity: 0.9;
+    }
+
+    /* Grid view styles */
     .all-trips-container.grid-view {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
       gap: 15px;
     }
 
-    .all-trips-container.vertical-view .trip-item {
-      margin-bottom: 15px;
-    }
-
-    /* Equal height cards */
-    .trip-item {
+    .all-trips-container.grid-view .trip-item {
       display: flex;
       flex-direction: column;
+    }
+
+    .all-trips-container.grid-view img {
+      height: 160px;
+      object-fit: cover;
+      border-radius: 4px 4px 0 0;
+      width: 100%;
+    }
+
+    /* Vertical view styles */
+    .all-trips-container.vertical-view .trip-item {
+      margin-bottom: 15px;
+      display: grid;
+      grid-template-columns: 3fr 4fr 2fr;
+      gap: 15px;
+      align-items: center;
+    }
+
+    .all-trips-container.vertical-view img {
       height: 100%;
+      width: 100%;
+      object-fit: cover;
+      border-radius: 4px;
+      max-height: 180px;
+    }
+
+    .all-trips-container.vertical-view .trip-content {
+      padding: 0;
+    }
+
+    .all-trips-container.vertical-view .trip-price-button {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    /* Carousel view styles */
+    .all-trips-container.carousel-view .swiper {
+      padding: 10px 5px 40px;
+    }
+
+    .all-trips-container.carousel-view .swiper-slide {
+      height: auto;
+    }
+
+    .all-trips-container.carousel-view .swiper-pagination {
+      bottom: 0;
+    }
+
+    .all-trips-container.carousel-view .swiper-button-next,
+    .all-trips-container.carousel-view .swiper-button-prev {
+      color: {$buttonColor};
+    }
+
+    /* Trip item shared styles */
+    .trip-item {
       box-sizing: border-box;
       border: 1px solid #ddd;
       border-radius: 4px;
-      padding: 15px;
       background-color: #fff;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      overflow: hidden;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .trip-item:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     }
 
     .trip-item h3 {
-      flex-grow: 0;
-      margin-top: 10px;
+      margin-top: 0;
+      margin-bottom: 8px;
+      font-size: 18px;
+      color: #333;
     }
 
-    .trip-item .trip-content {
+    .trip-content {
+      padding: 15px;
       flex-grow: 1;
       display: flex;
       flex-direction: column;
     }
 
-    .trip-item .trip-button-container {
-      margin-top: auto;
-      width: 100%;
+    .trip-description {
+      color: #666;
+      font-size: 14px;
+      margin-bottom: 8px;
+      flex-grow: 1;
     }
 
-    .trip-item img {
-      width: 100%;
-      border-radius: 4px;
+    .trip-date, .trip-duration {
+      font-weight: 500;
+      font-size: 14px;
+      color: #555;
+      margin-bottom: 8px;
+    }
+
+    .trip-price {
+      font-weight: bold;
+      font-size: 16px;
+      color: #333;
+      margin-bottom: 10px;
+    }
+
+    .no-image-placeholder {
       height: 180px;
-      object-fit: cover;
+      background-color: #f0f0f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #888;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+
+    /* Handle responsive layout */
+    @media screen and (max-width: 768px) {
+      .all-trips-container.vertical-view .trip-item {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+
+      .all-trips-container.grid-view {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      }
+
+      .trip-item h3 {
+        font-size: 16px;
+      }
     }
   ";
 
@@ -186,9 +312,6 @@ if (!empty($selected_design_id)) {
 
   // Output custom styles
   wp_add_inline_style('all-trips-styles', $custom_css);
-
-  // Get trips data
-  // $trips = all_trips_get_trips_data($api_url);
 
   ob_start();
   ?>
@@ -212,21 +335,30 @@ if (!empty($selected_design_id)) {
                   <?php if (!empty($trip['default_image'])): ?>
                     <img src="<?php echo esc_url($trip['default_image']); ?>" alt="<?php echo esc_attr($trip['title']); ?>">
                   <?php else: ?>
-                    <div style="height: 180px; background-color: #f0f0f0; display: flex; align-items: center; justify-content: center; color: #888; border-radius: 4px;">
+                    <div class="no-image-placeholder">
                       <span>No Image Available</span>
                     </div>
                   <?php endif; ?>
                     <div class="trip-content">
                       <h3><?php echo esc_html($trip['title']); ?></h3>
+
+                      <?php if (!empty($trip['short_description'])): ?>
+                        <div class="trip-description"><?php echo wp_trim_words(esc_html($trip['short_description']), 15, '...'); ?></div>
+                      <?php endif; ?>
+
                       <?php if (!empty($trip['startDate'])): ?>
                         <div class="trip-date"><?php echo esc_html(date('M j, Y', strtotime($trip['startDate']))); ?></div>
+                      <?php elseif (!empty($trip['duration'])): ?>
+                        <div class="trip-duration"><?php echo esc_html($trip['duration']); ?> days</div>
                       <?php endif; ?>
+
                       <?php if (!empty($trip['price'])): ?>
-                        <div class="trip-price"><?php echo esc_html($trip['price']['currencySymbol'] . $trip['price']['amount']); ?></div>
+                        <div class="trip-price">From <?php echo esc_html($trip['price']['currencySymbol'] . $trip['price']['amount']); ?></div>
                       <?php endif; ?>
+
                       <div class="trip-button-container">
                         <?php
-                          // Update the button URL logic within the block-renderer.php file
+                          // Update the button URL logic
                           $button_url = '';
                           if ($buttonType === 'book_now') {
                             $button_url = $env . '/checkout_embed?uuid=' . $trip['uuid'];
@@ -264,32 +396,42 @@ if (!empty($selected_design_id)) {
             $display_style = ($index < $itemsPerPage) ? 'block' : 'none';
           ?>
             <div class="trip-item" style="display: <?php echo $display_style; ?>">
-            <?php if (!empty($trip['default_image'])): ?>
-              <img src="<?php echo esc_url($trip['default_image']); ?>" alt="<?php echo esc_attr($trip['title']); ?>">
-            <?php else: ?>
-              <div style="height: 180px; background-color: #f0f0f0; display: flex; align-items: center; justify-content: center; color: #888; border-radius: 4px;">
-                <span>No Image Available</span>
-              </div>
-            <?php endif; ?>
-              <div class="trip-content">
-                <h3><?php echo esc_html($trip['title']); ?></h3>
-                <?php if (!empty($trip['startDate'])): ?>
-                  <div class="trip-date"><?php echo esc_html(date('M j, Y', strtotime($trip['startDate']))); ?></div>
+              <?php if ($displayType === 'vertical'): ?>
+                <!-- Vertical layout -->
+                <?php if (!empty($trip['default_image'])): ?>
+                  <img src="<?php echo esc_url($trip['default_image']); ?>" alt="<?php echo esc_attr($trip['title']); ?>">
+                <?php else: ?>
+                  <div class="no-image-placeholder">
+                    <span>No Image Available</span>
+                  </div>
                 <?php endif; ?>
-                <?php if (!empty($trip['price'])): ?>
-                  <div class="trip-price"><?php echo esc_html($trip['price']['currencySymbol'] . $trip['price']['amount']); ?></div>
-                <?php endif; ?>
-                <div class="trip-button-container">
+
+                <div class="trip-content">
+                  <h3><?php echo esc_html($trip['title']); ?></h3>
+
+                  <?php if (!empty($trip['short_description'])): ?>
+                    <div class="trip-description"><?php echo wp_trim_words(esc_html($trip['short_description']), 20, '...'); ?></div>
+                  <?php endif; ?>
+
+                  <?php if (!empty($trip['startDate'])): ?>
+                    <div class="trip-date"><?php echo esc_html(date('M j, Y', strtotime($trip['startDate']))); ?></div>
+                  <?php elseif (!empty($trip['duration'])): ?>
+                    <div class="trip-duration"><?php echo esc_html($trip['duration']); ?> days</div>
+                  <?php endif; ?>
+                </div>
+
+                <div class="trip-price-button">
+                  <?php if (!empty($trip['price'])): ?>
+                    <div class="trip-price">From <?php echo esc_html($trip['price']['currencySymbol'] . $trip['price']['amount']); ?></div>
+                  <?php endif; ?>
+
                   <?php
-                    // Update the button URL logic within the block-renderer.php file
+                    // Button URL logic
                     $button_url = '';
                     if ($buttonType === 'book_now') {
                       $button_url = $env . '/checkout_embed?uuid=' . $trip['uuid'];
                     } else {
-                      // For trip_link, we should link to the trip page directly
                       $button_url = $env . '/trips/' . $trip['uuid'];
-
-                      // If we have a trip slug in the data, use it for better SEO
                       if (!empty($trip['href'])) {
                         $button_url = $trip['href'];
                       }
@@ -299,7 +441,51 @@ if (!empty($selected_design_id)) {
                     <?php echo esc_html($buttonText); ?>
                   </a>
                 </div>
-              </div>
+
+              <?php else: ?>
+                <!-- Grid layout -->
+                <?php if (!empty($trip['default_image'])): ?>
+                  <img src="<?php echo esc_url($trip['default_image']); ?>" alt="<?php echo esc_attr($trip['title']); ?>">
+                <?php else: ?>
+                  <div class="no-image-placeholder">
+                    <span>No Image Available</span>
+                  </div>
+                <?php endif; ?>
+
+                <div class="trip-content">
+                  <h3><?php echo esc_html($trip['title']); ?></h3>
+
+                  <?php if (!empty($trip['short_description'])): ?>
+                    <div class="trip-description"><?php echo wp_trim_words(esc_html($trip['short_description']), 15, '...'); ?></div>
+                  <?php endif; ?>
+
+                  <?php if (!empty($trip['startDate'])): ?>
+                    <div class="trip-date"><?php echo esc_html(date('M j, Y', strtotime($trip['startDate']))); ?></div>
+                  <?php elseif (!empty($trip['duration'])): ?>
+                    <div class="trip-duration"><?php echo esc_html($trip['duration']); ?> days</div>
+                  <?php endif; ?>
+
+                  <?php if (!empty($trip['price'])): ?>
+                    <div class="trip-price">From <?php echo esc_html($trip['price']['currencySymbol'] . $trip['price']['amount']); ?></div>
+                  <?php endif; ?>
+
+                  <?php
+                    // Button URL logic
+                    $button_url = '';
+                    if ($buttonType === 'book_now') {
+                      $button_url = $env . '/checkout_embed?uuid=' . $trip['uuid'];
+                    } else {
+                      $button_url = $env . '/trips/' . $trip['uuid'];
+                      if (!empty($trip['href'])) {
+                        $button_url = $trip['href'];
+                      }
+                    }
+                  ?>
+                  <a href="<?php echo esc_url($button_url); ?>" class="trip-button" target="_blank">
+                    <?php echo esc_html($buttonText); ?>
+                  </a>
+                </div>
+              <?php endif; ?>
             </div>
           <?php endforeach; ?>
         <?php else: ?>
@@ -309,7 +495,7 @@ if (!empty($selected_design_id)) {
     </div>
 
     <?php if ($displayType !== 'carousel' && !empty($trips) && count($trips) > $itemsPerPage): ?>
-      <button id="load-more-button-<?php echo esc_attr($block_id); ?>">
+      <button id="load-more-button-<?php echo esc_attr($block_id); ?>" class="load-more-button">
         <?php echo esc_html($loadMoreText); ?>
       </button>
     <?php endif; ?>
@@ -317,41 +503,3 @@ if (!empty($selected_design_id)) {
   <?php
   return ob_get_clean();
 }
-
-/**
- * Get trips data from WeTravel API
- */
-// function all_trips_get_trips_data($api_url) {
-//   // Try to get cached data first
-//   $cache_key = 'wetravel_trips_' . md5($api_url);
-//   $cached_data = get_transient($cache_key);
-
-//   if (false !== $cached_data) {
-//     return $cached_data;
-//   }
-
-//   // No cache, fetch from API
-//   $response = wp_remote_get($api_url, array(
-//     'timeout' => 15,
-//     'headers' => array(
-//       'Accept' => 'application/json'
-//     )
-//   ));
-
-//   if (is_wp_error($response)) {
-//     return array(); // Return empty array on error
-//   }
-
-//   $body = wp_remote_retrieve_body($response);
-//   $data = json_decode($body, true);
-
-//   // Check if we have valid data
-//   if (!isset($data['trips']) || !is_array($data['trips'])) {
-//     return array();
-//   }
-
-//   // Cache for 1 hour
-//   set_transient($cache_key, $data['trips'], HOUR_IN_SECONDS);
-
-//   return $data['trips'];
-// }

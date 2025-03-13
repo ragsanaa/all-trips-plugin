@@ -22,6 +22,12 @@ define('ALL_TRIPS_PLUGIN_URL', plugin_dir_url(__FILE__));
 // Include admin settings page
 require_once ALL_TRIPS_PLUGIN_DIR . 'admin/settings-page.php';
 
+// In all-trips-plugin.php, add this line to include the fetch-trips.php file
+// Add this after the other require_once statements near the top of the file
+
+// Include fetch trips functionality
+require_once ALL_TRIPS_PLUGIN_DIR . 'includes/fetch-trips.php';
+
 // Include functions
 require_once ALL_TRIPS_PLUGIN_DIR . 'includes/functions.php';
 
