@@ -14,7 +14,7 @@
         type: "array",
         default: [],
       },
-      selectedDesign: {
+      selectedDesignID: {
         type: "string",
         default: "",
       },
@@ -57,9 +57,10 @@
     },
 
     edit: function (props) {
+      // Debug log - add to the edit function
       const { attributes, setAttributes } = props;
       const {
-        selectedDesign,
+        selectedDesignID,
         designs,
         displayType,
         buttonText,
@@ -67,11 +68,12 @@
         itemsPerPage,
         loadMoreText,
       } = attributes;
-      const settings = window.allTripsSettings || {};
 
       // Set default values from PHP settings on first load only
       React.useEffect(() => {
-        // Only update attributes that are still at their default values
+        // Ensure settings exist
+        const settings = window.allTripsSettings || {};
+
         const updatedAttributes = {};
 
         if (!attributes.src && settings.src)
@@ -91,8 +93,11 @@
         if (attributes.loadMoreText === "Load More" && settings.loadMoreText)
           updatedAttributes.loadMoreText = settings.loadMoreText;
 
-        // Set designs from settings
-        updatedAttributes.designs = settings.designs || [];
+        // Properly load designs
+        if (settings.designs) {
+          // Make sure designs is properly processed into a consistent format
+          updatedAttributes.designs = settings.designs;
+        }
 
         // Only update if there are changes
         if (Object.keys(updatedAttributes).length > 0) {
@@ -100,10 +105,11 @@
         }
       }, []);
 
-      // Apply selected design when it changes
+      // Track when designs become available
       React.useEffect(() => {
-        if (selectedDesign && designs[selectedDesign]) {
-          const design = designs[selectedDesign];
+        // This will run whenever designs changes
+        if (designs && selectedDesignID && designs[selectedDesignID]) {
+          const design = designs[selectedDesignID];
 
           // Apply design settings to block attributes
           const designAttributes = {
@@ -111,18 +117,21 @@
             buttonColor: design.buttonColor || buttonColor,
             buttonType: design.buttonType || attributes.buttonType,
             buttonText: design.buttonText || buttonText,
+            tripType: design.tripType || "all",
           };
 
           setAttributes(designAttributes);
         }
-      }, [selectedDesign]);
+      }, [designs, selectedDesignID]);
 
       // Generate preview based on display type
       const renderPreview = () => {
+        console.log(selectedDesignID);
+        console.log(designs);
         // Get current design details
         const currentDesign =
-          selectedDesign && designs[selectedDesign]
-            ? designs[selectedDesign]
+          selectedDesignID && designs[selectedDesignID]
+            ? designs[selectedDesignID]
             : { name: "Default" };
 
         // Preview styles
@@ -138,6 +147,11 @@
           marginBottom: "10px",
           borderRadius: "4px",
           backgroundColor: "white",
+          ...(displayType === "vertical" && {
+            display: "grid",
+            gap: "15px",
+            gridTemplateColumns: "3fr 4fr 2fr",
+          }),
         };
 
         const buttonStyle = {
@@ -147,6 +161,7 @@
           borderRadius: "4px",
           display: "inline-block",
           cursor: "pointer",
+          fontSize: "16px",
         };
 
         const loadMoreStyle = {
@@ -160,6 +175,18 @@
           textAlign: "center",
         };
 
+        const pStyle = {
+          color: "#888",
+          fontSize: "16px",
+          margin: "0",
+        };
+
+        const spanStyle = {
+          fontSize: "16px",
+          fontWeight: "bold",
+          color: "#333",
+        };
+
         // Create trip items
         const tripItems = [];
         for (let i = 0; i < 3; i++) {
@@ -171,24 +198,44 @@
                 "div",
                 {
                   style: {
-                    height: "150px",
                     backgroundColor: "#eee",
-                    marginBottom: "10px",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     color: "#888",
+                    ...(displayType !== "vertical" && {
+                      height: "150px",
+                      marginBottom: "10px",
+                    }),
                   },
                 },
                 "Trip Image"
               ),
-              createElement("h3", {}, `Sample Trip ${i + 1}`),
               createElement(
-                "p",
+                "div",
                 {},
-                "This is a preview of how your trips will appear."
+                createElement("h3", {}, `Sample Trip ${i + 1}`),
+                createElement(
+                  "p",
+                  { style: pStyle },
+                  "About your trip description goes here."
+                ),
+                createElement(
+                  "span",
+                  { style: spanStyle },
+                  currentDesign.tripType === "one-time" ? "Dates" : "Duration"
+                )
               ),
-              createElement("span", { style: buttonStyle }, buttonText)
+              createElement(
+                "div",
+                {},
+                createElement(
+                  "p",
+                  { style: { fontSize: "16px", fontWeight: "bold" } },
+                  "From $1,000"
+                ),
+                createElement("span", { style: buttonStyle }, buttonText)
+              )
             )
           );
         }
@@ -249,6 +296,7 @@
           );
         } else {
           // Vertical view (default)
+
           return createElement(
             Fragment,
             {},
@@ -268,13 +316,24 @@
       };
 
       // Create options for design dropdown
-      const designOptions = [
-        { label: "Choose a design...", value: "" },
-        ...Object.keys(designs).map((key) => ({
-          label: designs[key].name,
-          value: key,
-        })),
-      ];
+      const designOptions = [{ label: "Choose a design...", value: "" }];
+
+      // Add designs from either array or object format
+      if (Array.isArray(designs)) {
+        designs.forEach((design) => {
+          designOptions.push({
+            label: design.name,
+            value: design.id,
+          });
+        });
+      } else {
+        Object.keys(designs).forEach((key) => {
+          designOptions.push({
+            label: designs[key].name,
+            value: key,
+          });
+        });
+      }
 
       return createElement(
         Fragment,
@@ -291,9 +350,9 @@
             { title: "Design Library", initialOpen: true },
             createElement(SelectControl, {
               label: "Select Design",
-              value: selectedDesign,
+              value: selectedDesignID,
               options: designOptions,
-              onChange: (value) => setAttributes({ selectedDesign: value }),
+              onChange: (value) => setAttributes({ selectedDesignID: value }),
               help: "Select a design from your Design Library",
             })
           ),

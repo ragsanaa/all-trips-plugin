@@ -52,7 +52,6 @@ function all_trips_enqueue_block_assets() {
     );
 
     // Prepare settings
-    // Prepare settings
     $all_trips_settings = [
       'src' => get_option('all_trips_src', ''),
       'slug' => get_option('all_trips_slug', ''),
@@ -93,6 +92,10 @@ function all_trips_register_block() {
             'designs' => array(
                 'type' => 'array',
                 'default' => array(),
+            ),
+            'selectedDesignID' => array(
+                'type' => 'string',
+                'default' => '',
             ),
             'src' => array(
                 'type' => 'string',

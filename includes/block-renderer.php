@@ -5,39 +5,60 @@ function all_trips_block_render($attributes) {
   $block_id = wp_unique_id('wetravel-');
 
   // Check if there's a selected design and apply its settings
-  $designs = get_option('all_trips_designs', array());
-  $selected_design = isset($attributes['selectedDesign']) ? $attributes['selectedDesign'] : '';
+$designs = get_option('all_trips_designs', array());
+$selected_design_id = isset($attributes['selectedDesignID']) ? $attributes['selectedDesignID'] : '';
 
-  // Start with block attributes
-  $src = $attributes['src'] ?? get_option('all_trips_src', '');
-  $slug = $attributes['slug'] ?? get_option('all_trips_slug', '');
-  $env = $attributes['env'] ?? get_option('all_trips_env', 'https://pre.wetravel.to');
-  $displayType = $attributes['displayType'] ?? get_option('all_trips_display_type', 'vertical');
-  $buttonType = $attributes['buttonType'] ?? get_option('all_trips_button_type', 'book_now');
-  $buttonColor = $attributes['buttonColor'] ?? get_option('all_trips_button_color', '#33ae3f');
-  $itemsPerPage = intval($attributes['itemsPerPage'] ?? get_option('all_trips_items_per_page', 10));
-  $loadMoreText = $attributes['loadMoreText'] ?? get_option('all_trips_load_more_text', 'Load More');
+// Start with block attributes
+$src = $attributes['src'] ?? get_option('all_trips_src', '');
+$slug = $attributes['slug'] ?? get_option('all_trips_slug', '');
+$env = $attributes['env'] ?? get_option('all_trips_env', 'https://pre.wetravel.to');
+$displayType = $attributes['displayType'] ?? get_option('all_trips_display_type', 'vertical');
+$buttonType = $attributes['buttonType'] ?? get_option('all_trips_button_type', 'book_now');
+$buttonColor = $attributes['buttonColor'] ?? get_option('all_trips_button_color', '#33ae3f');
+$itemsPerPage = intval($attributes['itemsPerPage'] ?? get_option('all_trips_items_per_page', 10));
+$loadMoreText = $attributes['loadMoreText'] ?? get_option('all_trips_load_more_text', 'Load More');
 
-  // Override with design settings if a design is selected
-  if (!empty($selected_design) && isset($designs[$selected_design])) {
-    $design = $designs[$selected_design];
+// Override with design settings if a design is selected
+if (!empty($selected_design_id)) {
+  // Handle both array and object format for designs
+  $design = null;
 
-    // Apply design settings, keeping block attributes as fallbacks
+  if (isset($designs[$selected_design_id])) {
+    // Object format
+    $design = $designs[$selected_design_id];
+  } else {
+    // Array format - find by ID
+    foreach ($designs as $d) {
+      if (isset($d['id']) && $d['id'] === $selected_design_id) {
+        $design = $d;
+        break;
+      }
+    }
+  }
+
+  // Apply design settings, keeping block attributes as fallbacks
+  if ($design) {
     $displayType = isset($design['displayType']) ? $design['displayType'] : $displayType;
     $buttonType = isset($design['buttonType']) ? $design['buttonType'] : $buttonType;
     $buttonColor = isset($design['buttonColor']) ? $design['buttonColor'] : $buttonColor;
 
     // If the design has custom CSS, we'll add it later
     $custom_css_design = isset($design['customCSS']) ? $design['customCSS'] : '';
+
+    // Check for buttonText in design
+    if (!empty($design['buttonText'])) {
+      $buttonText = $design['buttonText'];
+    }
   }
+}
 
   // Set default buttonText based on buttonType if not provided
   $default_button_text = $buttonType === 'book_now' ? 'Book Now' : 'View Trip';
   $buttonText = !empty($attributes['buttonText']) ? $attributes['buttonText'] : $default_button_text;
 
   // If design has buttonText, override the default
-  if (!empty($selected_design) && isset($designs[$selected_design]['buttonText'])) {
-    $buttonText = $designs[$selected_design]['buttonText'];
+  if (!empty($selected_design_id) && isset($designs[$selected_design_id]['buttonText'])) {
+    $buttonText = $designs[$selected_design_id]['buttonText'];
   }
 
   // Clean up the environment URL if needed
@@ -167,7 +188,7 @@ function all_trips_block_render($attributes) {
   wp_add_inline_style('all-trips-styles', $custom_css);
 
   // Get trips data
-  $trips = all_trips_get_trips_data($api_url);
+  // $trips = all_trips_get_trips_data($api_url);
 
   ob_start();
   ?>
@@ -178,8 +199,8 @@ function all_trips_block_render($attributes) {
          data-load-more-text="<?php echo esc_attr($loadMoreText); ?>"
          data-display-type="<?php echo esc_attr($displayType); ?>"
          data-button-color="<?php echo esc_attr($buttonColor); ?>"
-         <?php if (!empty($selected_design)) : ?>
-         data-design="<?php echo esc_attr($selected_design); ?>"
+         <?php if (!empty($selected_design_id)) : ?>
+         data-design="<?php echo esc_attr($selected_design_id); ?>"
          <?php endif; ?>>
       <?php if ($displayType === 'carousel'): ?>
         <div class="swiper">
@@ -300,37 +321,37 @@ function all_trips_block_render($attributes) {
 /**
  * Get trips data from WeTravel API
  */
-function all_trips_get_trips_data($api_url) {
-  // Try to get cached data first
-  $cache_key = 'wetravel_trips_' . md5($api_url);
-  $cached_data = get_transient($cache_key);
+// function all_trips_get_trips_data($api_url) {
+//   // Try to get cached data first
+//   $cache_key = 'wetravel_trips_' . md5($api_url);
+//   $cached_data = get_transient($cache_key);
 
-  if (false !== $cached_data) {
-    return $cached_data;
-  }
+//   if (false !== $cached_data) {
+//     return $cached_data;
+//   }
 
-  // No cache, fetch from API
-  $response = wp_remote_get($api_url, array(
-    'timeout' => 15,
-    'headers' => array(
-      'Accept' => 'application/json'
-    )
-  ));
+//   // No cache, fetch from API
+//   $response = wp_remote_get($api_url, array(
+//     'timeout' => 15,
+//     'headers' => array(
+//       'Accept' => 'application/json'
+//     )
+//   ));
 
-  if (is_wp_error($response)) {
-    return array(); // Return empty array on error
-  }
+//   if (is_wp_error($response)) {
+//     return array(); // Return empty array on error
+//   }
 
-  $body = wp_remote_retrieve_body($response);
-  $data = json_decode($body, true);
+//   $body = wp_remote_retrieve_body($response);
+//   $data = json_decode($body, true);
 
-  // Check if we have valid data
-  if (!isset($data['trips']) || !is_array($data['trips'])) {
-    return array();
-  }
+//   // Check if we have valid data
+//   if (!isset($data['trips']) || !is_array($data['trips'])) {
+//     return array();
+//   }
 
-  // Cache for 1 hour
-  set_transient($cache_key, $data['trips'], HOUR_IN_SECONDS);
+//   // Cache for 1 hour
+//   set_transient($cache_key, $data['trips'], HOUR_IN_SECONDS);
 
-  return $data['trips'];
-}
+//   return $data['trips'];
+// }
