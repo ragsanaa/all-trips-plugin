@@ -19,7 +19,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // Initialize Swiper
     const swiper = new Swiper(swiperElement, {
       slidesPerView: 1,
-      spaceBetween: 10,
+      spaceBetween: 20, // Increased space between slides
       pagination: {
         el: swiperElement.querySelector(".swiper-pagination"),
         clickable: true,
@@ -32,12 +32,12 @@ document.addEventListener("DOMContentLoaded", function () {
         // when window width is >= 640px
         640: {
           slidesPerView: 1,
-          spaceBetween: 20,
+          spaceBetween: 30, // Increased space
         },
         // when window width is >= 992px
         992: {
-          slidesPerView: 2,
-          spaceBetween: 30,
+          slidesPerView: 2, // Show 3 cards at once on larger screens
+          spaceBetween: 30, // Consistent spacing
         },
       },
     });

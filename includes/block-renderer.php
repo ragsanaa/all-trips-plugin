@@ -114,11 +114,62 @@ function all_trips_block_render($attributes) {
 
   // Only add dynamic CSS that depends on block attributes
   $custom_css = "
-    /* Set dynamic CSS variables for this block instance */
-    #trips-container-{$block_id} {
-      --button-color: {$buttonColor};
-    }
-  ";
+  /* Set dynamic CSS variables for this block instance */
+  #trips-container-{$block_id} {
+    --button-color: {$buttonColor};
+  }
+
+  /* Carousel styling for this specific instance */
+  #trips-container-{$block_id}.carousel-view .swiper {
+    padding: 0 40px;
+    position: relative;
+  }
+
+  #trips-container-{$block_id}.carousel-view .swiper-button-next,
+  #trips-container-{$block_id}.carousel-view .swiper-button-prev {
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    background-color: var(--button-color, #6a3bff);
+    border-radius: 50%;
+    color: white;
+  }
+
+  #trips-container-{$block_id}.carousel-view .swiper-button-next {
+    right: 0;
+  }
+
+  #trips-container-{$block_id}.carousel-view .swiper-button-prev {
+    left: 0;
+  }
+
+  #trips-container-{$block_id}.carousel-view .swiper-button-next:after,
+  #trips-container-{$block_id}.carousel-view .swiper-button-prev:after {
+    font-size: 18px;
+    font-weight: bold;
+  }
+
+  #trips-container-{$block_id}.carousel-view .swiper-pagination {
+    position: relative;
+    margin-top: 20px;
+  }
+
+  #trips-container-{$block_id}.carousel-view .swiper-pagination-bullet {
+    width: 12px;
+    height: 12px;
+    margin: 0 5px;
+  }
+
+  #trips-container-{$block_id}.carousel-view .swiper-pagination-bullet-active {
+    background-color: var(--button-color, #6a3bff);
+  }
+";
+
+// Add design-specific custom CSS if available
+if (!empty($custom_css_design)) {
+  $custom_css .= "\n/* Design-specific custom CSS */\n{$custom_css_design}";
+}
 
   // Add design-specific custom CSS if available
   if (!empty($custom_css_design)) {
