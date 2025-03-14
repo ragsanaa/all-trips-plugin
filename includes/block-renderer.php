@@ -288,6 +288,12 @@ function all_trips_block_render($attributes) {
       font-size: 14px;
     }
 
+    .trip-item.vertical-view {
+      display: grid;
+      gap: 15px;
+      grid-template-columns: 3fr 4fr 2fr;
+    }
+
     /* Handle responsive layout */
     @media screen and (max-width: 768px) {
       .all-trips-container.vertical-view .trip-item {
@@ -342,8 +348,8 @@ function all_trips_block_render($attributes) {
                     <div class="trip-content">
                       <h3><?php echo esc_html($trip['title']); ?></h3>
 
-                      <?php if (!empty($trip['short_description'])): ?>
-                        <div class="trip-description"><?php echo wp_trim_words(esc_html($trip['short_description']), 15, '...'); ?></div>
+                      <?php if (!empty($trip['full_description'])): ?>
+                        <div class="trip-description"><?php echo wp_trim_words(esc_html($trip['full_description']), 15, '...'); ?></div>
                       <?php endif; ?>
 
                       <?php if (!empty($trip['startDate'])): ?>
@@ -395,7 +401,7 @@ function all_trips_block_render($attributes) {
             // Set display style - all items visible initially but controlled by JS
             $display_style = ($index < $itemsPerPage) ? 'block' : 'none';
           ?>
-            <div class="trip-item" style="display: <?php echo $display_style; ?>">
+            <div class="trip-item <?php echo esc_attr($displayType); ?>-view" style="display: <?php echo $display_style; ?>">
               <?php if ($displayType === 'vertical'): ?>
                 <!-- Vertical layout -->
                 <?php if (!empty($trip['default_image'])): ?>
@@ -409,14 +415,14 @@ function all_trips_block_render($attributes) {
                 <div class="trip-content">
                   <h3><?php echo esc_html($trip['title']); ?></h3>
 
-                  <?php if (!empty($trip['short_description'])): ?>
-                    <div class="trip-description"><?php echo wp_trim_words(esc_html($trip['short_description']), 20, '...'); ?></div>
+                  <?php if (!empty($trip['full_description'])): ?>
+                    <div class="trip-description"><?php echo wp_trim_words(esc_html(strip_tags($trip['full_description'])), 20, '...'); ?></div>
                   <?php endif; ?>
 
-                  <?php if (!empty($trip['startDate'])): ?>
-                    <div class="trip-date"><?php echo esc_html(date('M j, Y', strtotime($trip['startDate']))); ?></div>
-                  <?php elseif (!empty($trip['duration'])): ?>
-                    <div class="trip-duration"><?php echo esc_html($trip['duration']); ?> days</div>
+                  <?php if (!$trip['all_year']): ?>
+                    <div class="trip-date"><?php echo esc_html($trip['start_end_dates']); ?></div>
+                  <?php elseif (!empty($trip['custom_duration'])): ?>
+                    <div class="trip-duration"><?php echo esc_html($trip['custom_duration']); ?> days</div>
                   <?php endif; ?>
                 </div>
 
@@ -455,8 +461,8 @@ function all_trips_block_render($attributes) {
                 <div class="trip-content">
                   <h3><?php echo esc_html($trip['title']); ?></h3>
 
-                  <?php if (!empty($trip['short_description'])): ?>
-                    <div class="trip-description"><?php echo wp_trim_words(esc_html($trip['short_description']), 15, '...'); ?></div>
+                  <?php if (!empty($trip['full_description'])): ?>
+                    <div class="trip-description"><?php echo wp_trim_words(esc_html($trip['full_description']), 15, '...'); ?></div>
                   <?php endif; ?>
 
                   <?php if (!empty($trip['startDate'])): ?>

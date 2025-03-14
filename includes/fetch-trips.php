@@ -158,15 +158,11 @@ function fetch_trip_details($trips, $env) {
 
         // Find specific paragraphs
         $full_description = '';
-        $duration = '';
+        $duration = $detail_data['data']['trip']['trip_length'] ?? '';
 
         foreach ($paragraphs as $paragraph) {
             if (isset($paragraph['title']) && $paragraph['title'] === 'About this trip' && isset($paragraph['text'])) {
                 $full_description = $paragraph['text'];
-            }
-
-            if (isset($paragraph['title']) && $paragraph['title'] === 'Duration' && isset($paragraph['text'])) {
-                $duration = strip_tags($paragraph['text']);
             }
         }
 
