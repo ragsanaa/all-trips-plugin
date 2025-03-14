@@ -50,10 +50,7 @@
         type: "number",
         default: 10,
       },
-      loadMoreText: {
-        type: "string",
-        default: "Load More",
-      },
+      // Removed loadMoreText attribute as it's no longer needed
     },
 
     edit: function (props) {
@@ -66,7 +63,6 @@
         buttonText,
         buttonColor,
         itemsPerPage,
-        loadMoreText,
       } = attributes;
 
       // Set default values from PHP settings on first load only
@@ -90,8 +86,6 @@
           updatedAttributes.buttonColor = settings.buttonColor;
         if (attributes.itemsPerPage === 10 && settings.itemsPerPage)
           updatedAttributes.itemsPerPage = parseInt(settings.itemsPerPage);
-        if (attributes.loadMoreText === "Load More" && settings.loadMoreText)
-          updatedAttributes.loadMoreText = settings.loadMoreText;
 
         // Properly load designs
         if (settings.designs) {
@@ -124,10 +118,135 @@
         }
       }, [designs, selectedDesignID]);
 
+      // Generate pagination controls
+      const renderPagination = () => {
+        // Create a sample pagination UI
+        const paginationStyle = {
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          margin: "20px 0",
+          flexWrap: "wrap",
+        };
+
+        const pageItemStyle = {
+          margin: "0 3px",
+        };
+
+        const pageLinkStyle = {
+          display: "inline-block",
+          padding: "8px 12px",
+          color: "#333",
+          border: "1px solid #ddd",
+          borderRadius: "4px",
+          textDecoration: "none",
+          cursor: "pointer",
+        };
+
+        const activePageStyle = {
+          ...pageLinkStyle,
+          backgroundColor: buttonColor,
+          color: "white",
+          borderColor: buttonColor,
+        };
+
+        const disabledPageStyle = {
+          ...pageLinkStyle,
+          color: "#999",
+          pointerEvents: "none",
+          cursor: "default",
+        };
+
+        // Create sample pagination elements
+        return createElement(
+          "div",
+          { style: paginationStyle, className: "all-trips-pagination" },
+          createElement(
+            "div",
+            { style: pageItemStyle, className: "page-item" },
+            createElement(
+              "span",
+              { style: pageLinkStyle, className: "page-link" },
+              "«"
+            )
+          ),
+          createElement(
+            "div",
+            { style: pageItemStyle, className: "page-item" },
+            createElement(
+              "span",
+              { style: pageLinkStyle, className: "page-link" },
+              "‹"
+            )
+          ),
+          createElement(
+            "div",
+            { style: pageItemStyle, className: "page-item active" },
+            createElement(
+              "span",
+              { style: activePageStyle, className: "page-link" },
+              "1"
+            )
+          ),
+          createElement(
+            "div",
+            { style: pageItemStyle, className: "page-item" },
+            createElement(
+              "span",
+              { style: pageLinkStyle, className: "page-link" },
+              "2"
+            )
+          ),
+          createElement(
+            "div",
+            { style: pageItemStyle, className: "page-item" },
+            createElement(
+              "span",
+              { style: pageLinkStyle, className: "page-link" },
+              "3"
+            )
+          ),
+          createElement(
+            "div",
+            { style: pageItemStyle, className: "page-item disabled" },
+            createElement(
+              "span",
+              { style: disabledPageStyle, className: "page-link" },
+              "..."
+            )
+          ),
+          createElement(
+            "div",
+            { style: pageItemStyle, className: "page-item" },
+            createElement(
+              "span",
+              { style: pageLinkStyle, className: "page-link" },
+              "10"
+            )
+          ),
+          createElement(
+            "div",
+            { style: pageItemStyle, className: "page-item" },
+            createElement(
+              "span",
+              { style: pageLinkStyle, className: "page-link" },
+              "›"
+            )
+          ),
+          createElement(
+            "div",
+            { style: pageItemStyle, className: "page-item" },
+            createElement(
+              "span",
+              { style: pageLinkStyle, className: "page-link" },
+              "»"
+            )
+          )
+        );
+      };
+
       // Generate preview based on display type
       const renderPreview = () => {
-        console.log(selectedDesignID);
-        console.log(designs);
         // Get current design details
         const currentDesign =
           selectedDesignID && designs[selectedDesignID]
@@ -162,17 +281,6 @@
           display: "inline-block",
           cursor: "pointer",
           fontSize: "16px",
-        };
-
-        const loadMoreStyle = {
-          backgroundColor: buttonColor,
-          color: "white",
-          padding: "8px 16px",
-          borderRadius: "4px",
-          display: displayType !== "carousel" ? "block" : "none",
-          width: "200px",
-          margin: "20px auto",
-          textAlign: "center",
         };
 
         const pStyle = {
@@ -260,7 +368,8 @@
                 `Design: ${currentDesign.name || "Default"} (Grid View)`
               ),
               createElement("div", { style: gridStyle }, ...tripItems),
-              createElement("div", { style: loadMoreStyle }, loadMoreText)
+              // Replace load more button with pagination
+              displayType !== "carousel" && renderPagination()
             )
           );
         } else if (displayType === "carousel") {
@@ -296,7 +405,6 @@
           );
         } else {
           // Vertical view (default)
-
           return createElement(
             Fragment,
             {},
@@ -309,7 +417,8 @@
                 `Design: ${currentDesign.name || "Default"} (Vertical View)`
               ),
               createElement("div", {}, ...tripItems),
-              createElement("div", { style: loadMoreStyle }, loadMoreText)
+              // Replace load more button with pagination
+              displayType !== "carousel" && renderPagination()
             )
           );
         }
@@ -366,12 +475,6 @@
                 onChange: (value) => setAttributes({ itemsPerPage: value }),
                 min: 1,
                 max: 50,
-              }),
-            attributes.displayType !== "carousel" &&
-              createElement(TextControl, {
-                label: "Load More Button Text",
-                value: loadMoreText,
-                onChange: (value) => setAttributes({ loadMoreText: value }),
               }),
             attributes.displayType === "carousel" &&
               createElement(Notice, {

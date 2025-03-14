@@ -112,202 +112,11 @@ function all_trips_block_render($attributes) {
     );
   }
 
-  // Add custom CSS for the display type
+  // Only add dynamic CSS that depends on block attributes
   $custom_css = "
-    :root {
+    /* Set dynamic CSS variables for this block instance */
+    #trips-container-{$block_id} {
       --button-color: {$buttonColor};
-    }
-
-    /* General container styles */
-    .wp-block-all-trips-block {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
-    }
-
-    /* Button styling */
-    .trip-item .trip-button {
-      background-color: {$buttonColor};
-      color: white;
-      padding: 8px 16px;
-      border-radius: 4px;
-      text-decoration: none;
-      display: inline-block;
-      margin-top: 10px;
-      text-align: center;
-      width: calc(100% - 20px);
-      box-sizing: border-box;
-      transition: background-color 0.3s ease;
-      font-weight: 500;
-    }
-
-    .trip-item .trip-button:hover {
-      opacity: 0.9;
-    }
-
-    #load-more-button-{$block_id} {
-      background-color: {$buttonColor};
-      color: white;
-      padding: 10px 20px;
-      border-radius: 4px;
-      cursor: pointer;
-      border: none;
-      text-align: center;
-      display: block;
-      width: 200px;
-      margin: 20px auto;
-      font-weight: 500;
-      transition: background-color 0.3s ease;
-    }
-
-    #load-more-button-{$block_id}:hover {
-      opacity: 0.9;
-    }
-
-    /* Grid view styles */
-    .all-trips-container.grid-view {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-      gap: 15px;
-    }
-
-    .all-trips-container.grid-view .trip-item {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .all-trips-container.grid-view img {
-      height: 160px;
-      object-fit: cover;
-      border-radius: 4px 4px 0 0;
-      width: 100%;
-    }
-
-    /* Vertical view styles */
-    .all-trips-container.vertical-view .trip-item {
-      margin-bottom: 15px;
-      display: grid;
-      grid-template-columns: 3fr 4fr 2fr;
-      gap: 15px;
-      align-items: center;
-    }
-
-    .all-trips-container.vertical-view img {
-      height: 100%;
-      width: 100%;
-      object-fit: cover;
-      border-radius: 4px;
-      max-height: 180px;
-    }
-
-    .all-trips-container.vertical-view .trip-content {
-      padding: 0;
-    }
-
-    .all-trips-container.vertical-view .trip-price-button {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-    }
-
-    /* Carousel view styles */
-    .all-trips-container.carousel-view .swiper {
-      padding: 10px 5px 40px;
-    }
-
-    .all-trips-container.carousel-view .swiper-slide {
-      height: auto;
-    }
-
-    .all-trips-container.carousel-view .swiper-pagination {
-      bottom: 0;
-    }
-
-    .all-trips-container.carousel-view .swiper-button-next,
-    .all-trips-container.carousel-view .swiper-button-prev {
-      color: {$buttonColor};
-    }
-
-    /* Trip item shared styles */
-    .trip-item {
-      box-sizing: border-box;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      background-color: #fff;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-      overflow: hidden;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    .trip-item:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    }
-
-    .trip-item h3 {
-      margin-top: 0;
-      margin-bottom: 8px;
-      font-size: 18px;
-      color: #333;
-    }
-
-    .trip-content {
-      padding: 15px;
-      flex-grow: 1;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .trip-description {
-      color: #666;
-      font-size: 14px;
-      margin-bottom: 8px;
-      flex-grow: 1;
-    }
-
-    .trip-date, .trip-duration {
-      font-weight: 500;
-      font-size: 14px;
-      color: #555;
-      margin-bottom: 8px;
-    }
-
-    .trip-price {
-      font-weight: bold;
-      font-size: 16px;
-      color: #333;
-      margin-bottom: 10px;
-    }
-
-    .no-image-placeholder {
-      height: 180px;
-      background-color: #f0f0f0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #888;
-      border-radius: 4px;
-      font-size: 14px;
-    }
-
-    .trip-item.vertical-view {
-      display: grid;
-      gap: 15px;
-      grid-template-columns: 3fr 4fr 2fr;
-    }
-
-    /* Handle responsive layout */
-    @media screen and (max-width: 768px) {
-      .all-trips-container.vertical-view .trip-item {
-        grid-template-columns: 1fr;
-        gap: 10px;
-      }
-
-      .all-trips-container.grid-view {
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      }
-
-      .trip-item h3 {
-        font-size: 16px;
-      }
     }
   ";
 
@@ -325,7 +134,6 @@ function all_trips_block_render($attributes) {
     <div class="all-trips-container <?php echo esc_attr($displayType); ?>-view"
          id="trips-container-<?php echo esc_attr($block_id); ?>"
          data-items-per-page="<?php echo esc_attr($itemsPerPage); ?>"
-         data-load-more-text="<?php echo esc_attr($loadMoreText); ?>"
          data-display-type="<?php echo esc_attr($displayType); ?>"
          data-button-color="<?php echo esc_attr($buttonColor); ?>"
          <?php if (!empty($selected_design_id)) : ?>
@@ -336,54 +144,31 @@ function all_trips_block_render($attributes) {
           <div class="swiper-wrapper">
             <?php if (!empty($trips)): ?>
               <?php foreach ($trips as $trip): ?>
+                <?php
+                    $button_url = $env . '/trips/' . $trip['uuid'];
+                ?>
                 <div class="swiper-slide">
-                  <div class="trip-item">
-                  <?php if (!empty($trip['default_image'])): ?>
-                    <img src="<?php echo esc_url($trip['default_image']); ?>" alt="<?php echo esc_attr($trip['title']); ?>">
-                  <?php else: ?>
-                    <div class="no-image-placeholder">
-                      <span>No Image Available</span>
-                    </div>
-                  <?php endif; ?>
+                  <a class="trip-item" style="display: block;" href="<?php echo esc_url($button_url); ?>" target="_blank">
+                    <?php if (!empty($trip['default_image'])): ?>
+                      <img src="<?php echo esc_url($trip['default_image']); ?>" alt="<?php echo esc_attr($trip['title']); ?>">
+                    <?php else: ?>
+                      <div class="no-image-placeholder">
+                        <span>No Image Available</span>
+                      </div>
+                    <?php endif; ?>
                     <div class="trip-content">
                       <h3><?php echo esc_html($trip['title']); ?></h3>
-
-                      <?php if (!empty($trip['full_description'])): ?>
-                        <div class="trip-description"><?php echo wp_trim_words(esc_html($trip['full_description']), 15, '...'); ?></div>
-                      <?php endif; ?>
-
-                      <?php if (!empty($trip['startDate'])): ?>
-                        <div class="trip-date"><?php echo esc_html(date('M j, Y', strtotime($trip['startDate']))); ?></div>
-                      <?php elseif (!empty($trip['duration'])): ?>
-                        <div class="trip-duration"><?php echo esc_html($trip['duration']); ?> days</div>
+                      <?php if (!$trip['all_year']): ?>
+                        <div class="trip-date"><?php echo esc_html($trip['start_end_dates']); ?></div>
+                      <?php elseif (!empty($trip['custom_duration'])): ?>
+                        <div class="trip-duration"><?php echo esc_html($trip['custom_duration']); ?> days</div>
                       <?php endif; ?>
 
                       <?php if (!empty($trip['price'])): ?>
-                        <div class="trip-price">From <?php echo esc_html($trip['price']['currencySymbol'] . $trip['price']['amount']); ?></div>
+                        <div class="trip-price">from <span><?php echo esc_html($trip['price']['currencySymbol'] . $trip['price']['amount']); ?></span></div>
                       <?php endif; ?>
-
-                      <div class="trip-button-container">
-                        <?php
-                          // Update the button URL logic
-                          $button_url = '';
-                          if ($buttonType === 'book_now') {
-                            $button_url = $env . '/checkout_embed?uuid=' . $trip['uuid'];
-                          } else {
-                            // For trip_link, we should link to the trip page directly
-                            $button_url = $env . '/trips/' . $trip['uuid'];
-
-                            // If we have a trip slug in the data, use it for better SEO
-                            if (!empty($trip['href'])) {
-                              $button_url = $trip['href'];
-                            }
-                          }
-                        ?>
-                        <a href="<?php echo esc_url($button_url); ?>" class="trip-button" target="_blank">
-                          <?php echo esc_html($buttonText); ?>
-                        </a>
-                      </div>
                     </div>
-                  </div>
+                  </a>
                 </div>
               <?php endforeach; ?>
             <?php else: ?>
@@ -399,100 +184,84 @@ function all_trips_block_render($attributes) {
           <?php
           foreach ($trips as $index => $trip):
             // Set display style - all items visible initially but controlled by JS
-            $display_style = ($index < $itemsPerPage) ? 'block' : 'none';
+            $visibility_class = ($index < $itemsPerPage) ? 'visible-item' : 'hidden-item';
           ?>
-            <div class="trip-item <?php echo esc_attr($displayType); ?>-view" style="display: <?php echo $display_style; ?>">
+            <?php
+              $button_url = $env . '/trips/' . $trip['uuid'];
+            ?>
+
               <?php if ($displayType === 'vertical'): ?>
                 <!-- Vertical layout -->
-                <?php if (!empty($trip['default_image'])): ?>
-                  <img src="<?php echo esc_url($trip['default_image']); ?>" alt="<?php echo esc_attr($trip['title']); ?>">
-                <?php else: ?>
-                  <div class="no-image-placeholder">
-                    <span>No Image Available</span>
+                <div class="trip-item <?php echo $visibility_class; ?>">
+                  <?php if (!empty($trip['default_image'])): ?>
+                    <img src="<?php echo esc_url($trip['default_image']); ?>" alt="<?php echo esc_attr($trip['title']); ?>">
+                  <?php else: ?>
+                    <div class="no-image-placeholder">
+                      <span>No Image Available</span>
+                    </div>
+                  <?php endif; ?>
+
+                  <div class="trip-content">
+                    <h3><?php echo esc_html($trip['title']); ?></h3>
+
+                    <?php if (!empty($trip['full_description'])): ?>
+                      <div class="trip-description"><?php echo wp_trim_words(esc_html(strip_tags($trip['full_description'])), 20, '...'); ?></div>
+                    <?php endif; ?>
+
+                    <?php if (!$trip['all_year']): ?>
+                      <div class="trip-date"><?php echo esc_html($trip['start_end_dates']); ?></div>
+                    <?php elseif (!empty($trip['custom_duration'])): ?>
+                      <div class="trip-duration"><?php echo esc_html($trip['custom_duration']); ?> days</div>
+                    <?php endif; ?>
                   </div>
-                <?php endif; ?>
 
-                <div class="trip-content">
-                  <h3><?php echo esc_html($trip['title']); ?></h3>
+                  <div class="trip-price-button">
+                    <?php if (!empty($trip['price'])): ?>
+                      <div class="trip-price">from <br><span><?php echo esc_html($trip['price']['currencySymbol'] . $trip['price']['amount']); ?></span></div>
+                    <?php endif; ?>
 
-                  <?php if (!empty($trip['full_description'])): ?>
-                    <div class="trip-description"><?php echo wp_trim_words(esc_html(strip_tags($trip['full_description'])), 20, '...'); ?></div>
-                  <?php endif; ?>
-
-                  <?php if (!$trip['all_year']): ?>
-                    <div class="trip-date"><?php echo esc_html($trip['start_end_dates']); ?></div>
-                  <?php elseif (!empty($trip['custom_duration'])): ?>
-                    <div class="trip-duration"><?php echo esc_html($trip['custom_duration']); ?> days</div>
-                  <?php endif; ?>
-                </div>
-
-                <div class="trip-price-button">
-                  <?php if (!empty($trip['price'])): ?>
-                    <div class="trip-price">From <?php echo esc_html($trip['price']['currencySymbol'] . $trip['price']['amount']); ?></div>
-                  <?php endif; ?>
-
-                  <?php
-                    // Button URL logic
-                    $button_url = '';
-                    if ($buttonType === 'book_now') {
-                      $button_url = $env . '/checkout_embed?uuid=' . $trip['uuid'];
-                    } else {
-                      $button_url = $env . '/trips/' . $trip['uuid'];
-                      if (!empty($trip['href'])) {
-                        $button_url = $trip['href'];
+                    <?php
+                      // Button URL logic
+                      $button_url = '';
+                      if ($buttonType === 'book_now') {
+                        $button_url = $env . '/checkout_embed?uuid=' . $trip['uuid'];
+                      } else {
+                        $button_url = $env . '/trips/' . $trip['uuid'];
+                        if (!empty($trip['href'])) {
+                          $button_url = $trip['href'];
+                        }
                       }
-                    }
-                  ?>
-                  <a href="<?php echo esc_url($button_url); ?>" class="trip-button" target="_blank">
-                    <?php echo esc_html($buttonText); ?>
-                  </a>
+                    ?>
+                    <a href="<?php echo esc_url($button_url); ?>" class="trip-button" target="_blank">
+                      <?php echo esc_html($buttonText); ?>
+                    </a>
+                  </div>
                 </div>
-
               <?php else: ?>
                 <!-- Grid layout -->
-                <?php if (!empty($trip['default_image'])): ?>
-                  <img src="<?php echo esc_url($trip['default_image']); ?>" alt="<?php echo esc_attr($trip['title']); ?>">
-                <?php else: ?>
-                  <div class="no-image-placeholder">
-                    <span>No Image Available</span>
+                <a class="trip-item <?php echo $visibility_class; ?>" href="<?php echo esc_url($button_url); ?>" target="_blank" style="display: block;">
+                  <?php if (!empty($trip['default_image'])): ?>
+                    <img src="<?php echo esc_url($trip['default_image']); ?>" alt="<?php echo esc_attr($trip['title']); ?>">
+                  <?php else: ?>
+                    <div class="no-image-placeholder">
+                      <span>No Image Available</span>
+                    </div>
+                  <?php endif; ?>
+
+                  <div class="trip-content">
+                    <h3><?php echo esc_html($trip['title']); ?></h3>
+                    <?php if (!$trip['all_year']): ?>
+                      <div class="trip-date"><?php echo esc_html($trip['start_end_dates']); ?></div>
+                    <?php elseif (!empty($trip['custom_duration'])): ?>
+                      <div class="trip-duration"><?php echo esc_html($trip['custom_duration']); ?> days</div>
+                    <?php endif; ?>
+
+                    <?php if (!empty($trip['price'])): ?>
+                      <div class="trip-price">from <span><?php echo esc_html($trip['price']['currencySymbol'] . $trip['price']['amount']); ?></span></div>
+                    <?php endif; ?>
                   </div>
-                <?php endif; ?>
-
-                <div class="trip-content">
-                  <h3><?php echo esc_html($trip['title']); ?></h3>
-
-                  <?php if (!empty($trip['full_description'])): ?>
-                    <div class="trip-description"><?php echo wp_trim_words(esc_html($trip['full_description']), 15, '...'); ?></div>
-                  <?php endif; ?>
-
-                  <?php if (!empty($trip['startDate'])): ?>
-                    <div class="trip-date"><?php echo esc_html(date('M j, Y', strtotime($trip['startDate']))); ?></div>
-                  <?php elseif (!empty($trip['duration'])): ?>
-                    <div class="trip-duration"><?php echo esc_html($trip['duration']); ?> days</div>
-                  <?php endif; ?>
-
-                  <?php if (!empty($trip['price'])): ?>
-                    <div class="trip-price">From <?php echo esc_html($trip['price']['currencySymbol'] . $trip['price']['amount']); ?></div>
-                  <?php endif; ?>
-
-                  <?php
-                    // Button URL logic
-                    $button_url = '';
-                    if ($buttonType === 'book_now') {
-                      $button_url = $env . '/checkout_embed?uuid=' . $trip['uuid'];
-                    } else {
-                      $button_url = $env . '/trips/' . $trip['uuid'];
-                      if (!empty($trip['href'])) {
-                        $button_url = $trip['href'];
-                      }
-                    }
-                  ?>
-                  <a href="<?php echo esc_url($button_url); ?>" class="trip-button" target="_blank">
-                    <?php echo esc_html($buttonText); ?>
-                  </a>
-                </div>
+                    </a>
               <?php endif; ?>
-            </div>
           <?php endforeach; ?>
         <?php else: ?>
           <div class="no-trips">No trips found</div>
@@ -500,10 +269,9 @@ function all_trips_block_render($attributes) {
       <?php endif; ?>
     </div>
 
-    <?php if ($displayType !== 'carousel' && !empty($trips) && count($trips) > $itemsPerPage): ?>
-      <button id="load-more-button-<?php echo esc_attr($block_id); ?>" class="load-more-button">
-        <?php echo esc_html($loadMoreText); ?>
-      </button>
+    <?php if ($displayType !== 'carousel' && !empty($trips)): ?>
+      <!-- Numbered pagination container - will be populated by JavaScript -->
+      <div id="pagination-<?php echo esc_attr($block_id); ?>" class="all-trips-pagination"></div>
     <?php endif; ?>
   </div>
   <?php

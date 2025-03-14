@@ -31,12 +31,12 @@ document.addEventListener("DOMContentLoaded", function () {
       breakpoints: {
         // when window width is >= 640px
         640: {
-          slidesPerView: 2,
+          slidesPerView: 1,
           spaceBetween: 20,
         },
         // when window width is >= 992px
         992: {
-          slidesPerView: 3,
+          slidesPerView: 2,
           spaceBetween: 30,
         },
       },
