@@ -32,13 +32,27 @@
       `;
 
     // Create sample trip item
-    function createTripItem(index) {
+    function createTripItem(index, displayType) {
       return `
               <div class="preview-trip-item">
                   <div class="preview-trip-image">Trip Image</div>
                   <h3>Sample Trip ${index}</h3>
-                  <p>This is a preview of your trip display style.</p>
-                  <a href="#" style="${buttonStyle}" class="button-${buttonType}">${buttonText}</a>
+                  ${
+                    displayType === "vertical"
+                      ? `
+                      <p>About your trip description goes here.</p>
+                      `
+                      : ""
+                  }
+                  <p>Duration</p>
+                  <p style="direction:rtl;">Price: $100</p>
+                  ${
+                    displayType === "vertical"
+                      ? `
+                      <a href="#" style="${buttonStyle}" class="button-${buttonType}">${buttonText}</a>
+                      `
+                      : ""
+                  }
               </div>
           `;
     }
@@ -48,19 +62,26 @@
       previewHtml = `
               <h4>Grid Layout Preview</h4>
               <div class="preview-grid">
-                  ${createTripItem(1)}
-                  ${createTripItem(2)}
-                  ${createTripItem(3)}
+                  ${createTripItem(1, "grid")}
+                  ${createTripItem(2, "grid")}
+                  ${createTripItem(3, "grid")}
               </div>
           `;
     } else if (displayType === "carousel") {
       previewHtml = `
               <h4>Carousel Layout Preview</h4>
               <div class="preview-carousel">
-                  ${createTripItem(1)}
-                  <div class="preview-carousel-controls">
-                      <span>◀</span>
-                      <span>▶</span>
+                  <div class="preview-carousel-controls" style="flex-direction: column;">
+                      <div style="display: flex; align-items: center; width: 100%;">
+                        <span>◀</span>
+                        ${createTripItem(1, "carousel")}
+                        <span>▶</span>
+                      </div>
+                      <div class="swiper-pagination" style="display: flex; justify-content: center;">
+                          <span class="swiper-pagination-bullet active"></span>
+                          <span class="swiper-pagination-bullet"></span>
+                          <span class="swiper-pagination-bullet"></span>
+                      </div>
                   </div>
               </div>
           `;
@@ -68,7 +89,7 @@
       previewHtml = `
               <h4>Vertical Layout Preview</h4>
               <div class="preview-vertical">
-                  ${createTripItem(1)}
+                  ${createTripItem(1, "vertical")}
               </div>
           `;
     }
@@ -84,6 +105,8 @@
                   padding: 15px;
                   margin-bottom: 10px;
                   border-radius: 4px;
+                  width: 90%;
+                  display: inline-block;
               }
               .preview-trip-image {
                   height: 150px;
@@ -104,7 +127,7 @@
               }
               .preview-carousel-controls {
                   display: flex;
-                  justify-content: space-between;
+                  align-items: center;
                   margin-top: 10px;
               }
               .preview-carousel-controls span {
@@ -117,6 +140,20 @@
                   align-items: center;
                   justify-content: center;
                   border-radius: 50%;
+              }
+
+              .swiper-pagination {
+                position: relative;
+                margin-top: 20px;
+              }
+              .preview-carousel-controls .swiper-pagination-bullet {
+                width: 12px;
+                height: 12px;
+                margin: 0 5px;
+                background-color: #ddd;
+              }
+              .preview-carousel-controls .active {
+                background-color: ${buttonColor};
               }
           </style>
       `);

@@ -328,11 +328,7 @@
                   { style: pStyle },
                   "About your trip description goes here."
                 ),
-                createElement(
-                  "span",
-                  { style: spanStyle },
-                  currentDesign.tripType === "one-time" ? "Dates" : "Duration"
-                )
+                createElement("span", { style: spanStyle }, "Duration")
               ),
               createElement(
                 "div",
