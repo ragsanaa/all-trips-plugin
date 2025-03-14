@@ -1,16 +1,8 @@
 (function (blocks, element, editor, components) {
   const { registerBlockType } = blocks;
   const { createElement, Fragment } = element;
-  const {
-    PanelBody,
-    SelectControl,
-    ColorPicker,
-    TextControl,
-    RangeControl,
-    Button,
-    ComboboxControl,
-    DatePicker,
-  } = components;
+  const { PanelBody, SelectControl, RangeControl, TextControl, Notice } =
+    components;
   const { InspectorControls } = editor;
 
   registerBlockType("all-trips/block", {
@@ -18,6 +10,14 @@
     icon: "location-alt",
     category: "widgets",
     attributes: {
+      designs: {
+        type: "array",
+        default: [],
+      },
+      selectedDesignID: {
+        type: "string",
+        default: "",
+      },
       src: {
         type: "string",
         default: "",
@@ -34,13 +34,13 @@
         type: "string",
         default: "vertical",
       },
-      buttonText: {
-        type: "string",
-        default: "Book Now",
-      },
       buttonType: {
         type: "string",
         default: "book_now",
+      },
+      buttonText: {
+        type: "string",
+        default: "Book Now",
       },
       buttonColor: {
         type: "string",
@@ -50,28 +50,26 @@
         type: "number",
         default: 10,
       },
-      loadMoreText: {
-        type: "string",
-        default: "Load More",
-      },
-      tripType: {
-        type: "number",
-        default: 0,
-      },
-      dateRange: {
-        type: "string",
-        default: "",
-      },
+      // Removed loadMoreText attribute as it's no longer needed
     },
 
     edit: function (props) {
+      // Debug log - add to the edit function
       const { attributes, setAttributes } = props;
-      const settings = window.allTripsSettings || {};
+      const {
+        selectedDesignID,
+        designs,
+        displayType,
+        buttonText,
+        buttonColor,
+        itemsPerPage,
+      } = attributes;
 
       // Set default values from PHP settings on first load only
-      // In the edit function, modify useEffect like this
       React.useEffect(() => {
-        // Only update attributes that are still at their default values
+        // Ensure settings exist
+        const settings = window.allTripsSettings || {};
+
         const updatedAttributes = {};
 
         if (!attributes.src && settings.src)
@@ -88,13 +86,11 @@
           updatedAttributes.buttonColor = settings.buttonColor;
         if (attributes.itemsPerPage === 10 && settings.itemsPerPage)
           updatedAttributes.itemsPerPage = parseInt(settings.itemsPerPage);
-        if (attributes.loadMoreText === "Load More" && settings.loadMoreText)
-          updatedAttributes.loadMoreText = settings.loadMoreText;
 
-        // Set default buttonText based on buttonType if not already set
-        if (!attributes.buttonText) {
-          updatedAttributes.buttonText =
-            attributes.buttonType === "book_now" ? "Book Now" : "View Trip";
+        // Properly load designs
+        if (settings.designs) {
+          // Make sure designs is properly processed into a consistent format
+          updatedAttributes.designs = settings.designs;
         }
 
         // Only update if there are changes
@@ -103,23 +99,159 @@
         }
       }, []);
 
-      // Also add an effect to update buttonText when buttonType changes
+      // Track when designs become available
       React.useEffect(() => {
-        // Only update buttonText if it's still the default value
-        if (
-          attributes.buttonText === "Book Now" ||
-          attributes.buttonText === "View Trip"
-        ) {
-          setAttributes({
-            buttonText:
-              attributes.buttonType === "book_now" ? "Book Now" : "View Trip",
-          });
+        // This will run whenever designs changes
+        if (designs && selectedDesignID && designs[selectedDesignID]) {
+          const design = designs[selectedDesignID];
+
+          // Apply design settings to block attributes
+          const designAttributes = {
+            displayType: design.displayType || displayType,
+            buttonColor: design.buttonColor || buttonColor,
+            buttonType: design.buttonType || attributes.buttonType,
+            buttonText: design.buttonText || buttonText,
+            tripType: design.tripType || "all",
+          };
+
+          setAttributes(designAttributes);
         }
-      }, [attributes.buttonType]);
+      }, [designs, selectedDesignID]);
+
+      // Generate pagination controls
+      const renderPagination = () => {
+        // Create a sample pagination UI
+        const paginationStyle = {
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          margin: "20px 0",
+          flexWrap: "wrap",
+        };
+
+        const pageItemStyle = {
+          margin: "0 3px",
+        };
+
+        const pageLinkStyle = {
+          display: "inline-block",
+          padding: "8px 12px",
+          color: "#333",
+          border: "1px solid #ddd",
+          borderRadius: "4px",
+          textDecoration: "none",
+          cursor: "pointer",
+        };
+
+        const activePageStyle = {
+          ...pageLinkStyle,
+          backgroundColor: buttonColor,
+          color: "white",
+          borderColor: buttonColor,
+        };
+
+        const disabledPageStyle = {
+          ...pageLinkStyle,
+          color: "#999",
+          pointerEvents: "none",
+          cursor: "default",
+        };
+
+        // Create sample pagination elements
+        return createElement(
+          "div",
+          { style: paginationStyle, className: "all-trips-pagination" },
+          createElement(
+            "div",
+            { style: pageItemStyle, className: "page-item" },
+            createElement(
+              "span",
+              { style: pageLinkStyle, className: "page-link" },
+              "«"
+            )
+          ),
+          createElement(
+            "div",
+            { style: pageItemStyle, className: "page-item" },
+            createElement(
+              "span",
+              { style: pageLinkStyle, className: "page-link" },
+              "‹"
+            )
+          ),
+          createElement(
+            "div",
+            { style: pageItemStyle, className: "page-item active" },
+            createElement(
+              "span",
+              { style: activePageStyle, className: "page-link" },
+              "1"
+            )
+          ),
+          createElement(
+            "div",
+            { style: pageItemStyle, className: "page-item" },
+            createElement(
+              "span",
+              { style: pageLinkStyle, className: "page-link" },
+              "2"
+            )
+          ),
+          createElement(
+            "div",
+            { style: pageItemStyle, className: "page-item" },
+            createElement(
+              "span",
+              { style: pageLinkStyle, className: "page-link" },
+              "3"
+            )
+          ),
+          createElement(
+            "div",
+            { style: pageItemStyle, className: "page-item disabled" },
+            createElement(
+              "span",
+              { style: disabledPageStyle, className: "page-link" },
+              "..."
+            )
+          ),
+          createElement(
+            "div",
+            { style: pageItemStyle, className: "page-item" },
+            createElement(
+              "span",
+              { style: pageLinkStyle, className: "page-link" },
+              "10"
+            )
+          ),
+          createElement(
+            "div",
+            { style: pageItemStyle, className: "page-item" },
+            createElement(
+              "span",
+              { style: pageLinkStyle, className: "page-link" },
+              "›"
+            )
+          ),
+          createElement(
+            "div",
+            { style: pageItemStyle, className: "page-item" },
+            createElement(
+              "span",
+              { style: pageLinkStyle, className: "page-link" },
+              "»"
+            )
+          )
+        );
+      };
 
       // Generate preview based on display type
       const renderPreview = () => {
-        const { displayType, buttonText, buttonType, buttonColor } = attributes;
+        // Get current design details
+        const currentDesign =
+          selectedDesignID && designs[selectedDesignID]
+            ? designs[selectedDesignID]
+            : { name: "Default" };
 
         // Preview styles
         const containerStyle = {
@@ -134,6 +266,11 @@
           marginBottom: "10px",
           borderRadius: "4px",
           backgroundColor: "white",
+          ...(displayType === "vertical" && {
+            display: "grid",
+            gap: "15px",
+            gridTemplateColumns: "3fr 4fr 2fr",
+          }),
         };
 
         const buttonStyle = {
@@ -143,17 +280,19 @@
           borderRadius: "4px",
           display: "inline-block",
           cursor: "pointer",
+          fontSize: "16px",
         };
 
-        const loadMoreStyle = {
-          backgroundColor: buttonColor,
-          color: "white",
-          padding: "8px 16px",
-          borderRadius: "4px",
-          display: attributes.displayType !== "carousel" ? "block" : "none",
-          width: "200px",
-          margin: "20px auto",
-          textAlign: "center",
+        const pStyle = {
+          color: "#888",
+          fontSize: "16px",
+          margin: "0",
+        };
+
+        const spanStyle = {
+          fontSize: "16px",
+          fontWeight: "bold",
+          color: "#333",
         };
 
         // Create trip items
@@ -167,24 +306,40 @@
                 "div",
                 {
                   style: {
-                    height: "150px",
                     backgroundColor: "#eee",
-                    marginBottom: "10px",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     color: "#888",
+                    ...(displayType !== "vertical" && {
+                      height: "150px",
+                      marginBottom: "10px",
+                    }),
                   },
                 },
                 "Trip Image"
               ),
-              createElement("h3", {}, `Sample Trip ${i + 1}`),
               createElement(
-                "p",
+                "div",
                 {},
-                "This is a preview of how your trips will appear."
+                createElement("h3", {}, `Sample Trip ${i + 1}`),
+                createElement(
+                  "p",
+                  { style: pStyle },
+                  "About your trip description goes here."
+                ),
+                createElement("span", { style: spanStyle }, "Duration")
               ),
-              createElement("span", { style: buttonStyle }, buttonText)
+              createElement(
+                "div",
+                {},
+                createElement(
+                  "p",
+                  { style: { fontSize: "16px", fontWeight: "bold" } },
+                  "From $1,000"
+                ),
+                createElement("span", { style: buttonStyle }, buttonText)
+              )
             )
           );
         }
@@ -203,13 +358,14 @@
             createElement(
               "div",
               { style: containerStyle },
-              createElement("h2", {}, "Grid View Preview"),
-              createElement("div", { style: gridStyle }, ...tripItems),
               createElement(
-                "div",
-                { style: loadMoreStyle },
-                attributes.loadMoreText
-              )
+                "h2",
+                {},
+                `Design: ${currentDesign.name || "Default"} (Grid View)`
+              ),
+              createElement("div", { style: gridStyle }, ...tripItems),
+              // Replace load more button with pagination
+              displayType !== "carousel" && renderPagination()
             )
           );
         } else if (displayType === "carousel") {
@@ -219,7 +375,11 @@
             createElement(
               "div",
               { style: containerStyle },
-              createElement("h2", {}, "Carousel View Preview"),
+              createElement(
+                "h2",
+                {},
+                `Design: ${currentDesign.name || "Default"} (Carousel View)`
+              ),
               createElement(
                 "div",
                 {
@@ -247,17 +407,38 @@
             createElement(
               "div",
               { style: containerStyle },
-              createElement("h2", {}, "Vertical View Preview"),
-              createElement("div", {}, ...tripItems),
               createElement(
-                "div",
-                { style: loadMoreStyle },
-                attributes.loadMoreText
-              )
+                "h2",
+                {},
+                `Design: ${currentDesign.name || "Default"} (Vertical View)`
+              ),
+              createElement("div", {}, ...tripItems),
+              // Replace load more button with pagination
+              displayType !== "carousel" && renderPagination()
             )
           );
         }
       };
+
+      // Create options for design dropdown
+      const designOptions = [{ label: "Choose a design...", value: "" }];
+
+      // Add designs from either array or object format
+      if (Array.isArray(designs)) {
+        designs.forEach((design) => {
+          designOptions.push({
+            label: design.name,
+            value: design.id,
+          });
+        });
+      } else {
+        Object.keys(designs).forEach((key) => {
+          designOptions.push({
+            label: designs[key].name,
+            value: key,
+          });
+        });
+      }
 
       return createElement(
         Fragment,
@@ -265,42 +446,19 @@
         // Block Preview
         renderPreview(),
 
-        // Sidebar Controls
+        // Sidebar Controls - Simplified
         createElement(
           InspectorControls,
           {},
           createElement(
             PanelBody,
-            { title: "Display Options", initialOpen: true },
+            { title: "Design Library", initialOpen: true },
             createElement(SelectControl, {
-              label: "Trip Display Type",
-              value: attributes.displayType,
-              options: [
-                { label: "Vertical", value: "vertical" },
-                { label: "Carousel", value: "carousel" },
-                { label: "Grid", value: "grid" },
-              ],
-              onChange: (value) => setAttributes({ displayType: value }),
-            }),
-            createElement(TextControl, {
-              label: "Button Text",
-              value: attributes.buttonText,
-              onChange: (value) => setAttributes({ buttonText: value }),
-            }),
-            createElement(SelectControl, {
-              label: "Button Type",
-              value: attributes.buttonType,
-              options: [
-                { label: "Book Now", value: "book_now" },
-                { label: "Trip Link", value: "trip_link" },
-              ],
-              onChange: (value) => setAttributes({ buttonType: value }),
-            }),
-            createElement("label", {}, "Button Color"),
-            createElement(ColorPicker, {
-              color: attributes.buttonColor,
-              onChangeComplete: (value) =>
-                setAttributes({ buttonColor: value.hex }),
+              label: "Select Design",
+              value: selectedDesignID,
+              options: designOptions,
+              onChange: (value) => setAttributes({ selectedDesignID: value }),
+              help: "Select a design from your Design Library",
             })
           ),
           createElement(
@@ -309,57 +467,17 @@
             attributes.displayType !== "carousel" &&
               createElement(RangeControl, {
                 label: "Items Per Page",
-                value: attributes.itemsPerPage,
+                value: itemsPerPage,
                 onChange: (value) => setAttributes({ itemsPerPage: value }),
                 min: 1,
                 max: 50,
               }),
-            attributes.displayType !== "carousel" &&
-              createElement(TextControl, {
-                label: "Load More Button Text",
-                value: attributes.loadMoreText,
-                onChange: (value) => setAttributes({ loadMoreText: value }),
+            attributes.displayType === "carousel" &&
+              createElement(Notice, {
+                status: "warning",
+                children: "Carousel view does not support pagination.",
+                isDismissible: false,
               })
-          ),
-          createElement(
-            PanelBody,
-            { title: "Filter Settings", initialOpen: true },
-            createElement(ComboboxControl, {
-              label: "Trip Type",
-              value: attributes.tripType,
-              onChange: (value) => setAttributes({ tripType: value }),
-              options: [
-                { label: "Recurring Trips", value: 0 },
-                { label: "One Time Trips", value: 1 },
-              ],
-            }),
-            createElement(DatePicker, {
-              label: "Date Range",
-              value: attributes.dateRange,
-              onChange: (value) => setAttributes({ dateRange: value }),
-            })
-          ),
-          createElement(
-            PanelBody,
-            { title: "WeTravel Settings", initialOpen: true },
-            createElement(TextControl, {
-              label: "Embed Slug",
-              value: attributes.slug,
-              onChange: (value) => setAttributes({ slug: value }),
-              help: "Enter the WeTravel slug for your trips",
-            }),
-            createElement(TextControl, {
-              label: "Embed Environment",
-              value: attributes.env,
-              onChange: (value) => setAttributes({ env: value }),
-              help: "Enter the WeTravel env for your trips",
-            }),
-            createElement(TextControl, {
-              label: "Embed SRC",
-              value: attributes.src,
-              onChange: (value) => setAttributes({ src: value }),
-              help: "Enter the WeTravel env for your trips",
-            })
           )
         )
       );

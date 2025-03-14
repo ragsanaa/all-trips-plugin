@@ -22,6 +22,12 @@ define('ALL_TRIPS_PLUGIN_URL', plugin_dir_url(__FILE__));
 // Include admin settings page
 require_once ALL_TRIPS_PLUGIN_DIR . 'admin/settings-page.php';
 
+// In all-trips-plugin.php, add this line to include the fetch-trips.php file
+// Add this after the other require_once statements near the top of the file
+
+// Include fetch trips functionality
+require_once ALL_TRIPS_PLUGIN_DIR . 'includes/fetch-trips.php';
+
 // Include functions
 require_once ALL_TRIPS_PLUGIN_DIR . 'includes/functions.php';
 
@@ -52,7 +58,6 @@ function all_trips_enqueue_block_assets() {
     );
 
     // Prepare settings
-    // Prepare settings
     $all_trips_settings = [
       'src' => get_option('all_trips_src', ''),
       'slug' => get_option('all_trips_slug', ''),
@@ -61,7 +66,8 @@ function all_trips_enqueue_block_assets() {
       'buttonType' => get_option('all_trips_button_type', 'book_now'),
       'buttonColor' => get_option('all_trips_button_color', '#33ae3f'),
       'itemsPerPage' => (int)get_option('all_trips_items_per_page', 10),
-      'loadMoreText' => get_option('all_trips_load_more_text', 'Load More')
+      'loadMoreText' => get_option('all_trips_load_more_text', 'Load More'),
+      'designs' => get_option('all_trips_designs', array())
     ];
 
     // Localize the script with settings
@@ -89,6 +95,14 @@ function all_trips_register_block() {
         'editor_script' => 'all-trips-block',
         'render_callback' => 'all_trips_block_render',
         'attributes' => array(
+            'designs' => array(
+                'type' => 'array',
+                'default' => array(),
+            ),
+            'selectedDesignID' => array(
+                'type' => 'string',
+                'default' => '',
+            ),
             'src' => array(
                 'type' => 'string',
                 'default' => '',
@@ -135,6 +149,12 @@ require_once ALL_TRIPS_PLUGIN_DIR . 'includes/block-renderer.php';
 
 // Include shortcode functionality
 require_once ALL_TRIPS_PLUGIN_DIR . 'includes/shortcode.php';
+
+// Include admin design library page
+require_once ALL_TRIPS_PLUGIN_DIR . 'admin/design-library-page.php';
+
+// Include admin create design page
+require_once ALL_TRIPS_PLUGIN_DIR . 'admin/create-design-page.php';
 
 // Register shortcode
 function all_trips_register_shortcode() {
