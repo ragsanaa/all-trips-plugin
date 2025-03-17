@@ -75,51 +75,6 @@ function all_trips_settings_page() {
             </div>
         </div>
     </div>
-
-    <style>
-        .all-trips-settings-container {
-            margin-top: 20px;
-        }
-        .all-trips-embed-form {
-            display: flex;
-            align-items: flex-start;
-            max-width: 900px;
-        }
-        .all-trips-embed-input-container {
-            flex: 1;
-            margin-right: 15px;
-        }
-        .all-trips-embed-button-container {
-            padding-top: 4px;
-        }
-        .all-trips-embed-info {
-            background: #f9f9f9;
-            border: 1px solid #ddd;
-            padding: 15px 20px;
-            border-radius: 4px;
-            max-width: 900px;
-        }
-        .all-trips-embed-status {
-            display: flex;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-        .all-trips-embed-status .dashicons {
-            color: #46b450;
-            font-size: 24px;
-            margin-right: 8px;
-        }
-        .all-trips-extracted-info {
-            background: #fff;
-            border: 1px solid #e5e5e5;
-            padding: 10px 15px;
-            margin-bottom: 15px;
-            border-radius: 3px;
-        }
-        .all-trips-extracted-info p {
-            margin: 5px 0;
-        }
-    </style>
     <?php
 }
 

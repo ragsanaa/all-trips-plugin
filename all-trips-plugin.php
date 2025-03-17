@@ -199,11 +199,7 @@ function all_trips_activation() {
 if (!defined(\'ABSPATH\')) {
     exit;
 }
-
-// Include the render function
-require_once ALL_TRIPS_PLUGIN_DIR . \'includes/render-functions.php\';
 ',
-        'includes/render-functions.php' => '',
         'includes/shortcode.php' => '<?php
 // Shortcode file
 if (!defined(\'ABSPATH\')) {
