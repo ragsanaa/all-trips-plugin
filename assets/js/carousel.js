@@ -18,6 +18,13 @@
       const swiper = new Swiper(swiperElement, {
         slidesPerView: itemsPerPage,
         spaceBetween: 20, // Increased space between slides
+        loop: false,
+        watchOverflow: true,
+        loopAdditionalSlides: 0,
+        watchSlidesProgress: true,
+        slidesOffsetBefore: 0,
+        slidesOffsetAfter: 0,
+        centeredSlides: false,
         pagination: {
           el: swiperElement.querySelector(".swiper-pagination"),
           clickable: true,
