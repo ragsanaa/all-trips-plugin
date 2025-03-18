@@ -319,13 +319,6 @@ a {
   display: none;
 }
 
-/* Ensure vertical view items use grid display when visible */
-.all-trips-container.vertical-view .trip-item.visible-item {
-  display: grid;
-  grid-template-columns: 3fr 5fr 2fr;
-  gap: 20px;
-}
-
 /* No trips message */
 .no-trips {
   padding: 20px;
@@ -336,16 +329,10 @@ a {
 }
 
 /* Handle responsive layout */
-@media screen and (max-width: 768px) {
+@media screen and (max-width: 640px) {
   .all-trips-container.vertical-view .trip-item {
     grid-template-columns: 1fr;
     gap: 15px;
-  }
-
-  .all-trips-container.vertical-view .trip-price-button {
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
   }
 
   .all-trips-container.vertical-view .trip-price {

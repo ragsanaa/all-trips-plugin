@@ -332,13 +332,19 @@
               ),
               createElement(
                 "div",
-                {},
+                {
+                  style: {
+                    direction: "rtl",
+                    alignContent: "end",
+                  },
+                },
                 createElement(
                   "p",
                   { style: { fontSize: "16px", fontWeight: "bold" } },
                   "From $1,000"
                 ),
-                createElement("span", { style: buttonStyle }, buttonText)
+                attributes.displayType === "vertical" &&
+                  createElement("span", { style: buttonStyle }, buttonText)
               )
             )
           );

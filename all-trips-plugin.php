@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: All Trips Plugin
+ * Plugin Name: WeTravel All Trips Widgets
  * Plugin URI:  https://wetravel.com
  * Description: A plugin to embed WeTravel trips dynamically.
  * Version:     1.0

@@ -16,7 +16,7 @@
 
       // Initialize Swiper
       const swiper = new Swiper(swiperElement, {
-        slidesPerView: itemsPerPage,
+        slidesPerView: 1,
         spaceBetween: 20, // Increased space between slides
         loop: false,
         watchOverflow: true,
@@ -33,29 +33,25 @@
           nextEl: swiperElement.querySelector(".swiper-button-next"),
           prevEl: swiperElement.querySelector(".swiper-button-prev"),
         },
+        breakpoints: {
+          // when window width is >= 480px
+          480: {
+            slidesPerView: 1,
+            spaceBetween: 10,
+          },
+          // when window width is >= 640px
+          640: {
+            slidesPerView: 2,
+            spaceBetween: 20,
+          },
+          // when window width is >= 960px
+          960: { slidesPerView: 3, spaceBetween: 20 },
+          // when window width is >= 1024px
+
+          1024: { slidesPerView: itemsPerPage, spaceBetween: 20 },
+        },
         on: {
           init: function () {
-            // Apply custom button color to pagination bullets
-            const bullets = swiperElement.querySelectorAll(
-              ".swiper-pagination-bullet"
-            );
-            bullets.forEach((bullet) => {
-              bullet.addEventListener("click", function () {
-                // Reset all bullets
-                bullets.forEach((b) => (b.style.backgroundColor = ""));
-                // Set active bullet color
-                this.style.backgroundColor = buttonColor;
-              });
-            });
-
-            // Set active bullet color initially
-            const activeBullet = swiperElement.querySelector(
-              ".swiper-pagination-bullet-active"
-            );
-            if (activeBullet) {
-              activeBullet.style.backgroundColor = buttonColor;
-            }
-
             // Apply custom color to navigation buttons
             const nextButton = swiperElement.querySelector(
               ".swiper-button-next"
@@ -65,9 +61,22 @@
             );
             if (nextButton) nextButton.style.backgroundColor = buttonColor;
             if (prevButton) prevButton.style.backgroundColor = buttonColor;
+
+            // Apply custom color to pagination bullets on initialization
+            applyPaginationStyles(swiperElement, buttonColor);
+          },
+          slideChange: function () {
+            // Reapply styles after slide change
+            applyPaginationStyles(swiperElement, buttonColor);
           },
         },
       });
+      function applyPaginationStyles(element, color) {
+        const activeBullet = element.querySelector(
+          ".swiper-pagination-bullet-active"
+        );
+        activeBullet.style.backgroundColor = color;
+      }
     }
   );
 })(jQuery);
