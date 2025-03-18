@@ -1,14 +1,13 @@
-document.addEventListener("DOMContentLoaded", function () {
-  // Find all carousel containers
-  initializeAllCarousels();
-
+(function ($) {
   // Also listen for dynamically loaded trips
-  jQuery(document).on(
+  $(document).on(
     "tripsRendered",
     ".all-trips-container.carousel-view",
     function () {
       // Initialize this specific carousel
       const container = this;
+      const itemsPerPage = parseInt($(this).data("items-per-page")) || 10;
+      const buttonColor = $(this).data("button-color") || "#33ae3f";
       const swiperElement = container.querySelector(".swiper");
 
       if (!swiperElement) {
@@ -17,7 +16,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
       // Initialize Swiper
       const swiper = new Swiper(swiperElement, {
-        slidesPerView: 1,
+        slidesPerView: itemsPerPage,
         spaceBetween: 20, // Increased space between slides
         pagination: {
           el: swiperElement.querySelector(".swiper-pagination"),
@@ -27,64 +26,41 @@ document.addEventListener("DOMContentLoaded", function () {
           nextEl: swiperElement.querySelector(".swiper-button-next"),
           prevEl: swiperElement.querySelector(".swiper-button-prev"),
         },
-        breakpoints: {
-          // when window width is >= 640px
-          640: {
-            slidesPerView: 1,
-            spaceBetween: 30, // Increased space
-          },
-          // when window width is >= 992px
-          992: {
-            slidesPerView: 2, // Show 2 cards at once on larger screens
-            spaceBetween: 30, // Consistent spacing
+        on: {
+          init: function () {
+            // Apply custom button color to pagination bullets
+            const bullets = swiperElement.querySelectorAll(
+              ".swiper-pagination-bullet"
+            );
+            bullets.forEach((bullet) => {
+              bullet.addEventListener("click", function () {
+                // Reset all bullets
+                bullets.forEach((b) => (b.style.backgroundColor = ""));
+                // Set active bullet color
+                this.style.backgroundColor = buttonColor;
+              });
+            });
+
+            // Set active bullet color initially
+            const activeBullet = swiperElement.querySelector(
+              ".swiper-pagination-bullet-active"
+            );
+            if (activeBullet) {
+              activeBullet.style.backgroundColor = buttonColor;
+            }
+
+            // Apply custom color to navigation buttons
+            const nextButton = swiperElement.querySelector(
+              ".swiper-button-next"
+            );
+            const prevButton = swiperElement.querySelector(
+              ".swiper-button-prev"
+            );
+            if (nextButton) nextButton.style.backgroundColor = buttonColor;
+            if (prevButton) prevButton.style.backgroundColor = buttonColor;
           },
         },
       });
     }
   );
-
-  function initializeAllCarousels() {
-    const carouselContainers = document.querySelectorAll(
-      ".all-trips-container.carousel-view"
-    );
-
-    if (!carouselContainers.length) {
-      return;
-    }
-
-    // Initialize each carousel
-    carouselContainers.forEach(function (container) {
-      const swiperElement = container.querySelector(".swiper");
-
-      if (!swiperElement) {
-        return;
-      }
-
-      // Initialize Swiper
-      const swiper = new Swiper(swiperElement, {
-        slidesPerView: 1,
-        spaceBetween: 20, // Increased space between slides
-        pagination: {
-          el: swiperElement.querySelector(".swiper-pagination"),
-          clickable: true,
-        },
-        navigation: {
-          nextEl: swiperElement.querySelector(".swiper-button-next"),
-          prevEl: swiperElement.querySelector(".swiper-button-prev"),
-        },
-        breakpoints: {
-          // when window width is >= 640px
-          640: {
-            slidesPerView: 1,
-            spaceBetween: 30, // Increased space
-          },
-          // when window width is >= 992px
-          992: {
-            slidesPerView: 2, // Show 2 cards at once on larger screens
-            spaceBetween: 30, // Consistent spacing
-          },
-        },
-      });
-    });
-  }
-});
+})(jQuery);

@@ -473,10 +473,12 @@
                 max: 50,
               }),
             attributes.displayType === "carousel" &&
-              createElement(Notice, {
-                status: "warning",
-                children: "Carousel view does not support pagination.",
-                isDismissible: false,
+              createElement(RangeControl, {
+                label: "Items Per Slide",
+                value: itemsPerPage,
+                onChange: (value) => setAttributes({ itemsPerPage: value }),
+                min: 1,
+                max: 5,
               })
           )
         )

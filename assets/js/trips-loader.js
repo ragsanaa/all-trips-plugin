@@ -284,7 +284,7 @@
       html +=
         '<a href="' +
         buttonUrl +
-        '" class="trip-button" target="_blank">' +
+        `" class="trip-button" target="_blank" style="background-color: ${options.buttonColor};">` +
         options.buttonText +
         "</a>";
 
