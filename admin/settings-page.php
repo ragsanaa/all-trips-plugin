@@ -6,12 +6,19 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+function all_trips_sanitize_embed_code($input) {
+    return wp_kses_post($input); // Allows safe HTML while stripping dangerous elements
+}
+
+function all_trips_sanitize_text($input) {
+    return sanitize_text_field($input); // Ensures plain text only
+}
+
 function all_trips_register_settings() {
-    register_setting('all_trips_options', 'all_trips_embed_code');
-    register_setting('all_trips_options', 'all_trips_last_saved'); // Add timestamp for when embed code was saved
+    register_setting('all_trips_options', 'all_trips_embed_code', 'all_trips_sanitize_embed_code');
+    register_setting('all_trips_options', 'all_trips_last_saved', 'all_trips_sanitize_text');
 }
 add_action('admin_init', 'all_trips_register_settings');
-
 
 function all_trips_settings_page() {
     $embed_code = get_option('all_trips_embed_code', '');
@@ -20,6 +27,11 @@ function all_trips_settings_page() {
 
     // Reset embed code if requested
     if (isset($_GET['reset_embed']) && $_GET['reset_embed'] == 'true') {
+        // Only verify nonce when actually processing a reset action
+        if (!isset($_GET['_wpnonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['_wpnonce'])), 'all_trips_reset_nonce')) {
+            wp_die('Security check failed');
+        }
+
         delete_option('all_trips_embed_code');
         delete_option('all_trips_last_saved');
         wp_redirect(admin_url('admin.php?page=all-trips-settings'));
@@ -55,7 +67,15 @@ function all_trips_settings_page() {
                             <p><strong>Slug:</strong> <?php echo esc_html(get_option('all_trips_slug', '')); ?></p>
                             <p><strong>Environment:</strong> <?php echo esc_html(get_option('all_trips_env', '')); ?></p>
                         </div>
-                        <a href="?page=all-trips-settings&reset_embed=true" class="button button-secondary">Re-enter Embed Code</a>
+                        <?php
+                        // Create a reset link with a proper nonce
+                        $reset_url = wp_nonce_url(
+                            admin_url('admin.php?page=all-trips-settings&reset_embed=true'),
+                            'all_trips_reset_nonce',
+                            '_wpnonce'
+                        );
+                        ?>
+                        <a href="<?php echo esc_url($reset_url); ?>" class="button button-secondary">Re-enter Embed Code</a>
                     </div>
                 <?php else: ?>
                     <form method="post" action="options.php" class="all-trips-embed-form">

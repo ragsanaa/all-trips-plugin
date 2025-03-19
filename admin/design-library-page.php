@@ -6,9 +6,15 @@ if (!defined('ABSPATH')) {
 }
 
 function all_trips_design_library_page() {
+
     // Handle design deletion
     if (isset($_GET['delete_design']) && !empty($_GET['delete_design'])) {
-        $design_id = sanitize_text_field($_GET['delete_design']);
+        // Only check nonce when deleting
+        if (!isset($_GET['_wpnonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['_wpnonce'])), 'all_trips_delete_nonce')) {
+            wp_die('Security check failed');
+        }
+
+        $design_id = sanitize_text_field(wp_unslash($_GET['delete_design']));
         $designs = get_option('all_trips_designs', array());
 
         if (isset($designs[$design_id])) {
@@ -51,19 +57,19 @@ function all_trips_design_library_page() {
                     <?php foreach ($designs as $design_id => $design): ?>
                         <div class="all-trips-design-card">
                             <div class="all-trips-design-preview" style="background-color: <?php echo esc_attr($design['buttonColor']); ?>">
-                                <div class="all-trips-design-display-type"><?php echo ucfirst(esc_html($design['displayType'])); ?> Layout</div>
+                                <div class="all-trips-design-display-type"><?php echo esc_attr(ucfirst(esc_html($design['displayType']))); ?> Layout</div>
                             </div>
                             <div class="all-trips-design-info">
                                 <h3><?php echo esc_html($design['name']); ?></h3>
                                 <div class="all-trips-design-meta">
-                                    <span>Created: <?php echo date_i18n(get_option('date_format'), $design['created']); ?></span>
+                                    <span>Created: <?php echo esc_attr(date_i18n(get_option('date_format'), $design['created'])); ?></span>
                                     <br>
-                                    <span>Updated: <?php echo date_i18n(get_option('date_format'), $design['modified']); ?></span>
+                                    <span>Updated: <?php echo esc_attr(date_i18n(get_option('date_format'), $design['modified'])); ?></span>
                                 </div>
                                 <div class="all-trips-design-actions">
-                                    <a href="?page=all-trips-create-design&edit=<?php echo esc_attr($design_id); ?>" class="button button-small">Edit</a>
-                                    <a href="?page=all-trips-design-library&delete_design=<?php echo esc_attr($design_id); ?>" class="button button-small" onclick="return confirm('Are you sure you want to delete this design?')">Delete</a>
-                                    <button class="button button-small all-trips-copy-shortcode" data-shortcode='[all_trips design="<?php echo esc_attr($design['keyword'] ?? $design_id); ?>"]'>Copy Shortcode</button>
+                                    <a href="<?php echo esc_url(wp_nonce_url(admin_url('admin.php?page=all-trips-create-design&edit=' . esc_attr($design_id)), 'all_trips_edit_nonce')); ?>" class="button button-small">Edit</a>
+                                    <a href="<?php echo esc_url(wp_nonce_url(admin_url('admin.php?page=all-trips-design-library&delete_design=' . esc_attr($design_id)), 'all_trips_delete_nonce')); ?>" class="button button-small" onclick="return confirm('Are you sure you want to delete this design?')">Delete</a>
+                                    <button class="button button-small all-trips-copy-shortcode" data-shortcode='[all_trips design="<?php echo esc_attr(empty($design['keyword']) ? $design_id : $design['keyword']); ?>"]'>Copy Shortcode</button>
                                 </div>
                             </div>
                         </div>

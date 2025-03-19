@@ -23,9 +23,29 @@ function all_trips_create_design_page() {
     $editing = false;
     $design_id = '';
 
+    if (isset($_GET['updated']) && $_GET['updated'] === '1') {
+        $success_message = 'Design updated successfully.';
+
+        // If we're in edit mode, generate the shortcode
+        if (isset($_GET['edit']) && !empty($_GET['edit'])) {
+            $design_id = sanitize_text_field(wp_unslash($_GET['edit']));
+            $designs = get_option('all_trips_designs', array());
+
+            if (isset($designs[$design_id])) {
+                $design = $designs[$design_id];
+                $shortcode = '[all_trips design="' . (!empty($design['keyword']) ? $design['keyword'] : $design_id) . '"]';
+            }
+        }
+    }
+
     // Check if we're editing an existing design
     if (isset($_GET['edit']) && !empty($_GET['edit'])) {
-        $design_id = sanitize_text_field($_GET['edit']);
+        // Only check nonce when editing
+        if (isset($_GET['edit']) && (!isset($_GET['_wpnonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['_wpnonce'])), 'all_trips_edit_nonce'))) {
+            wp_die('Security check failed');
+        }
+
+        $design_id = sanitize_text_field(wp_unslash($_GET['edit']));
         $designs = get_option('all_trips_designs', array());
 
         if (isset($designs[$design_id])) {
@@ -37,7 +57,7 @@ function all_trips_create_design_page() {
     // Handle form submission
     if (isset($_POST['save_design'])) {
         // Validate keyword uniqueness if provided
-        $keyword = sanitize_text_field($_POST['design_keyword']);
+        $keyword = isset($_POST['design_keyword']) ? sanitize_text_field(wp_unslash($_POST['design_keyword'])) : "";
         $keyword_error = false;
 
         if (!empty($keyword)) {
@@ -56,19 +76,19 @@ function all_trips_create_design_page() {
             // Get date range values if trip type is one-time
             $date_range_start = '';
             $date_range_end = '';
-            if ($_POST['trip_type'] === 'one-time') {
-                $date_range_start = sanitize_text_field($_POST['date_range_start']);
-                $date_range_end = sanitize_text_field($_POST['date_range_end']);
+            if (isset($_POST['trip_type']) && $_POST['trip_type'] === 'one-time') {
+                $date_range_start = isset($_POST['date_range_start']) ? sanitize_text_field(wp_unslash($_POST['date_range_start'])) : "";
+                $date_range_end = isset($_POST['date_range_end']) ? sanitize_text_field(wp_unslash($_POST['date_range_end'])) : "";
             }
 
             $new_design = array(
-                'name' => sanitize_text_field($_POST['design_name']),
-                'displayType' => sanitize_text_field($_POST['display_type']),
-                'buttonType' => sanitize_text_field($_POST['button_type']),
-                'buttonText' => sanitize_text_field($_POST['button_text']),
-                'buttonColor' => sanitize_hex_color($_POST['button_color']),
+                'name' => isset($_POST['design_name']) ? sanitize_text_field(wp_unslash($_POST['design_name'])) : "",
+                'displayType' => isset($_POST['display_type']) ? sanitize_text_field(wp_unslash($_POST['display_type'])) : "",
+                'buttonType' => isset($_POST['button_type']) ? sanitize_text_field(wp_unslash($_POST['button_type'])) : "",
+                'buttonText' => isset($_POST['button_text']) ? sanitize_text_field(wp_unslash($_POST['button_text'])) : "",
+                'buttonColor' => isset($_POST['button_color']) ? sanitize_hex_color(wp_unslash($_POST['button_color'])) : "",
                 'keyword' => $keyword,
-                'tripType' => sanitize_text_field($_POST['trip_type']),
+                'tripType' => isset($_POST['trip_type']) ? sanitize_text_field(wp_unslash($_POST['trip_type'])) : "",
                 'dateRangeStart' => $date_range_start,
                 'dateRangeEnd' => $date_range_end,
                 'created' => $design['created'],
@@ -79,7 +99,7 @@ function all_trips_create_design_page() {
 
             // Generate a new ID if we're not editing
             if (!$editing) {
-                $design_id = 'design_' . time() . '_' . mt_rand(1000, 9999);
+                $design_id = 'design_' . time() . '_' . wp_rand(1000, 9999);
             }
 
             $designs[$design_id] = $new_design;
@@ -89,6 +109,18 @@ function all_trips_create_design_page() {
 
             // Generate shortcode for user
             $shortcode = '[all_trips design="' . ($keyword ? $keyword : $design_id) . '"]';
+
+            $redirect_url = add_query_arg(
+                array(
+                    'page' => 'all-trips-create-design',
+                    'edit' => $design_id,
+                    'updated' => '1',
+                    '_wpnonce' => wp_create_nonce('all_trips_edit_nonce')
+                ),
+                admin_url('admin.php')
+            );
+            wp_redirect($redirect_url);
+            exit;
         }
     }
 

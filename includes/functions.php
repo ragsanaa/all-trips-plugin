@@ -22,7 +22,22 @@ function all_trips_save_embed_code() {
     if (isset($_POST['all_trips_embed_code'])) {
         check_admin_referer('all_trips_options-options'); // Verify nonce
 
-        $new_embed_code = wp_unslash($_POST['all_trips_embed_code']);
+        $allowed_html = array(
+            'div' => array(),
+            'script' => array(
+                'src' => array(),
+                'id' => array(),
+                'data-env' => array(),
+                'data-version' => array(),
+                'data-uid' => array(),
+                'data-slug' => array(),
+                'data-color' => array(),
+                'data-text' => array(),
+                'data-name' => array()
+            )
+        );
+
+        $new_embed_code = wp_kses(wp_unslash($_POST['all_trips_embed_code']), $allowed_html);
         update_option('all_trips_embed_code', $new_embed_code);
 
         // Extract and save the details
@@ -52,8 +67,9 @@ function all_trips_check_keyword_unique() {
     // Check nonce for security
     check_ajax_referer('all_trips_nonce', 'nonce');
 
-    $keyword = sanitize_text_field($_POST['keyword']);
-    $current_design_id = isset($_POST['design_id']) ? sanitize_text_field($_POST['design_id']) : '';
+
+    $keyword = isset($_POST['keyword']) ? sanitize_text_field(wp_unslash($_POST['keyword'])) : '';
+    $current_design_id = isset($_POST['design_id']) ? sanitize_text_field(wp_unslash($_POST['design_id'])) : '';
     $is_unique = true;
 
     if (!empty($keyword)) {

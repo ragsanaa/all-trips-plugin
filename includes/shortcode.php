@@ -130,15 +130,15 @@ function render_all_trips_fallback($atts) {
     if ($atts['displayType'] === 'carousel') {
         wp_enqueue_style(
             'swiper-css',
-            'https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css',
+            plugin_dir_url(dirname(__FILE__)) . 'assets/css/swiper-bundle.min.css',
             array(),
-            null
+            filemtime(plugin_dir_path(dirname(__FILE__)) . 'assets/css/swiper-bundle.min.css')
         );
         wp_enqueue_script(
             'swiper-js',
-            'https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.js',
+            plugin_dir_url(dirname(__FILE__))  . 'assets/js/swiper-bundle.min.js',
             array(),
-            null,
+            filemtime(plugin_dir_path(dirname(__FILE__)) . 'assets/js/swiper-bundle.min.js'),
             true
         );
         wp_enqueue_script(
@@ -223,7 +223,7 @@ function render_all_trips_fallback($atts) {
     if (wp_style_is('all-trips-styles', 'registered')) {
         wp_add_inline_style('all-trips-styles', $custom_css);
     } else {
-        echo '<style>' . $custom_css . '</style>';
+        echo '<style>' . esc_attr($custom_css) . '</style>';
     }
 
     // Build the output HTML
@@ -301,6 +301,6 @@ function all_trips_loader_ready() {
     });
     </script>
     ";
-    echo $inline_script;
+    echo esc_js($inline_script);
 }
 add_action('wp_footer', 'all_trips_loader_ready', 100);

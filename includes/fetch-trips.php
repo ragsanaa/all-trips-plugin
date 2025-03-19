@@ -12,17 +12,17 @@ add_action('wp_ajax_nopriv_fetch_wetravel_trips', 'fetch_wetravel_trips_handler'
  */
 function fetch_wetravel_trips_handler() {
     // Validate nonce for security
-    if (!isset($_GET['nonce']) || !wp_verify_nonce($_GET['nonce'], 'all_trips_nonce')) {
+    if (!isset($_GET['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['nonce'])), 'all_trips_nonce')) {
         wp_send_json_error('Invalid security token');
         return;
     }
 
     // Get required parameters
-    $slug = isset($_GET['slug']) ? sanitize_text_field($_GET['slug']) : '';
-    $env = isset($_GET['env']) ? sanitize_text_field($_GET['env']) : '';
-    $trip_type = isset($_GET['trip_type']) ? sanitize_text_field($_GET['trip_type']) : 'all';
-    $date_start = isset($_GET['date_start']) ? sanitize_text_field($_GET['date_start']) : '';
-    $date_end = isset($_GET['date_end']) ? sanitize_text_field($_GET['date_end']) : '';
+    $slug = isset($_GET['slug']) ? sanitize_text_field(wp_unslash($_GET['slug'])) : '';
+    $env = isset($_GET['env']) ? sanitize_text_field(wp_unslash($_GET['env'])) : '';
+    $trip_type = isset($_GET['trip_type']) ? sanitize_text_field(wp_unslash($_GET['trip_type'])) : 'all';
+    $date_start = isset($_GET['date_start']) ? sanitize_text_field(wp_unslash($_GET['date_start'])) : '';
+    $date_end = isset($_GET['date_end']) ? sanitize_text_field(wp_unslash($_GET['date_end'])) : '';
 
     // Validate required parameters
     if (empty($slug) || empty($env)) {
@@ -54,9 +54,6 @@ function fetch_wetravel_trips_handler() {
         return;
     }
 
-    error_log('Trips fetched successfully');
-    error_log(print_r($trips, true));
-
     wp_send_json_success($trips);
 }
 
@@ -85,7 +82,6 @@ function get_wetravel_trips_data($api_url, $env = '') {
     ));
 
     if (is_wp_error($response)) {
-        error_log('Error fetching trips: ' . $response->get_error_message());
         return false;
     }
 
@@ -94,7 +90,6 @@ function get_wetravel_trips_data($api_url, $env = '') {
 
     // Check if we have valid data
     if (!isset($data['trips']) || !is_array($data['trips'])) {
-        error_log('Invalid API response: ' . print_r($data, true));
         return false;
     }
 

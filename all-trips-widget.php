@@ -1,13 +1,13 @@
 <?php
 /**
- * Plugin Name: WeTravel All Trips Widgets
+ * Plugin Name: WeTravel All Trips Widget
  * Plugin URI:  https://wetravel.com
  * Description: A plugin to embed WeTravel trips dynamically.
  * Version:     1.0
  * Author:      WeTravel
  * Author URI:  https://wetravel.com
  * License:     GPL2
- * Text Domain: all-trips-plugin
+ * Text Domain: all-trips-widget
  */
 
 // Exit if accessed directly.
@@ -157,10 +157,19 @@ add_action('init', 'all_trips_register_shortcode');
 
 // Add this function to clear transient timeouts
 function all_trips_clear_transients() {
-  global $wpdb;
+    global $wpdb;
 
-  $sql = "DELETE FROM $wpdb->options WHERE option_name LIKE '%transient_timeout_settings_errors%'";
-  $wpdb->query($sql);
+    // Fetch all options (cached by WordPress)
+    $all_options = wp_load_alloptions();
+
+    foreach ($all_options as $option_name => $value) {
+        if (strpos($option_name, 'transient_timeout_settings_errors') !== false) {
+            delete_option($option_name);
+        }
+    }
+
+    // Clear cache after deleting
+    wp_cache_flush();
 }
 register_activation_hook(__FILE__, 'all_trips_clear_transients');
 
