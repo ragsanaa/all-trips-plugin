@@ -194,6 +194,16 @@
     });
   }
 
+  // Show/hide date range inputs based on trip type selection
+  function toggleDateRangeFields() {
+    var selectedTripType = $("#trip_type").val();
+    if (selectedTripType === "one-time") {
+      $("#date-range-container").show();
+    } else {
+      $("#date-range-container").hide();
+    }
+  }
+
   // Initialize on document ready
   $(document).ready(function ($) {
     // Init color picker
@@ -201,6 +211,9 @@
 
     // Update preview initially
     updatePreview();
+
+    // Run on page load
+    toggleDateRangeFields();
 
     // Update preview when form fields change - using input event too for more immediate response
     $("#display_type, #button_type, #button_text").on(
@@ -210,6 +223,9 @@
         setTimeout(updatePreview, 0);
       }
     );
+
+    // Run when trip type changes
+    $("#trip_type").on("change", toggleDateRangeFields);
 
     // Init copy shortcode functionality
     initCopyShortcode();

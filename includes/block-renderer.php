@@ -194,6 +194,15 @@ function all_trips_block_render( $attributes ) {
 		data-button-color="<?php echo esc_attr( $button_color ); ?>"
 		<?php if ( ! empty( $selected_design_id ) ) : ?>
 		data-design="<?php echo esc_attr( $selected_design_id ); ?>"
+		<?php endif; ?>
+		<?php if ( ! empty( $attributes['dateStart'] ) || ( ! empty( $design ) && ! empty( $design['dateRangeStart'] ) ) ) : ?>
+		data-date-start="<?php echo esc_attr( ! empty( $attributes['dateStart'] ) ? $attributes['dateStart'] : $design['dateRangeStart'] ); ?>"
+		<?php endif; ?>
+		<?php if ( ! empty( $attributes['dateEnd'] ) || ( ! empty( $design ) && ! empty( $design['dateRangeEnd'] ) ) ) : ?>
+		data-date-end="<?php echo esc_attr( ! empty( $attributes['dateEnd'] ) ? $attributes['dateEnd'] : $design['dateRangeEnd'] ); ?>"
+		<?php endif; ?>
+		<?php if ( ! empty( $attributes['tripType'] ) || ( ! empty( $design ) && ! empty( $design['tripType'] ) ) ) : ?>
+		data-trip-type="<?php echo esc_attr( ! empty( $attributes['tripType'] ) ? $attributes['tripType'] : $design['tripType'] ); ?>"
 		<?php endif; ?>>
 
 		<!-- Loading indicator -->

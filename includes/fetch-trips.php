@@ -36,17 +36,45 @@ function fetch_wetravel_trips_handler() {
 	$env = rtrim( $env, '/' );
 
 	// Build API endpoint.
-	$api_url = "{$env}/api/v2/embeds/all_trips?slug={$slug}";
+	$api_url = "{$env}/api/v2/embeds/all_trips";
 
-	// Add query parameters based on trip type and date range.
-	if ( 'all' !== $trip_type ) {
-		$api_url .= "&type={$trip_type}";
+	// Add query parameters.
+	$query_params = array(
+		'slug' => $slug,
+	);
 
-		// Add date range for one-time trips.
-		if ( 'one-time' === $trip_type && ! empty( $date_start ) && ! empty( $date_end ) ) {
-			$api_url .= "&startDate={$date_start}&endDate={$date_end}";
+	// Format dates if they exist (ensure YYYY-MM-DD format).
+	if ( ! empty( $date_start ) ) {
+		// Parse and reformat the date to ensure correct format.
+		$date_obj = date_create( $date_start );
+		if ( $date_obj ) {
+				$date_start = date_format( $date_obj, 'Y-m-d' );
 		}
 	}
+
+	if ( ! empty( $date_end ) ) {
+			// Parse and reformat the date to ensure correct format.
+			$date_obj = date_create( $date_end );
+		if ( $date_obj ) {
+				$date_end = date_format( $date_obj, 'Y-m-d' );
+		}
+	}
+
+	// Set recurring/one-time parameters.
+	if ( 'recurring' === $trip_type ) {
+		$query_params['all_year'] = 'true';
+	} elseif ( 'one-time' === $trip_type ) {
+			$query_params['all_year'] = 'false';
+
+			// Add date range for one-time trips.
+		if ( ! empty( $date_start ) && ! empty( $date_end ) ) {
+				$query_params['from_date'] = $date_start;
+				$query_params['to_date']   = $date_end;
+		}
+	}
+
+	// Build the final URL with parameters.
+	$api_url = add_query_arg( $query_params, $api_url );
 
 	// Get trips data with caching.
 	$trips = get_wetravel_trips_data( $api_url, $env );
