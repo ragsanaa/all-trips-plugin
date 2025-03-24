@@ -1,11 +1,13 @@
 <?php
 /**
  * Fired when the plugin is uninstalled.
+ *
+ * @package WordPress
  */
 
-// If uninstall not called from WordPress, then exit
+// If uninstall not called from WordPress, then exit.
 if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
-    exit;
+	exit;
 }
 
-// @TODO: Define uninstall functionality here
+// @TODO: Define uninstall functionality here!
