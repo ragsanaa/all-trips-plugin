@@ -61,9 +61,7 @@ function fetch_wetravel_trips_handler() {
 	}
 
 	// Set recurring/one-time parameters.
-	if ( 'recurring' === $trip_type ) {
-		$query_params['all_year'] = 'true';
-	} elseif ( 'one-time' === $trip_type ) {
+	if ( 'one-time' === $trip_type ) {
 			$query_params['all_year'] = 'false';
 
 			// Add date range for one-time trips.
@@ -73,11 +71,20 @@ function fetch_wetravel_trips_handler() {
 		}
 	}
 
+	error_log(add_query_arg( $query_params, $api_url ));
+
 	// Build the final URL with parameters.
 	$api_url = add_query_arg( $query_params, $api_url );
 
 	// Get trips data with caching.
 	$trips = get_wetravel_trips_data( $api_url, $env );
+
+	if ( 'recurring' === $trip_type ) {
+		// Filter trips where 'all_year' is true.
+    $trips = array_filter( $trips, function( $trip ) {
+			return ! empty( $trip['all_year'] ) && $trip['all_year'] === true;
+		} );
+	}
 
 	if ( empty( $trips ) ) {
 		wp_send_json_error( 'No trips found or error fetching trips' );
