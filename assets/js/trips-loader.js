@@ -325,7 +325,7 @@
       // Price
       if (trip.price) {
         html +=
-          '<div class="trip-price">from <span>' +
+          '<div class="trip-price">from  <br><span>' +
           trip.price.currencySymbol +
           trip.price.amount +
           "</span></div>";
@@ -366,7 +366,7 @@
       // Price
       if (trip.price) {
         html +=
-          '<div class="trip-price">from <span>' +
+          '<div class="trip-price">from  <br><span>' +
           trip.price.currencySymbol +
           trip.price.amount +
           "</span></div>";

@@ -1,393 +1,387 @@
 /* General styles for All Trips plugin */
 :root {
-	--button-color: #33ae3f;
+  --button-color: #33ae3f;
 }
 
 .wp-block-all-trips-block {
-	margin-bottom: 30px;
-	font-family:
-		-apple-system,
-		BlinkMacSystemFont,
-		"Segoe UI",
-		Roboto,
-		Oxygen-Sans,
-		Ubuntu,
-		Cantarell,
-		"Helvetica Neue",
-		sans-serif;
+  margin-bottom: 30px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
 }
 
 a {
-	text-decoration: none;
+  text-decoration: none;
 }
 
 /* Trip item shared styles */
 .trip-item {
-	box-sizing: border-box;
-	border: 1px solid #ddd;
-	border-radius: 4px;
-	background-color: #fff;
-	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-	overflow: hidden;
-	transition: transform 0.2s ease, box-shadow 0.2s ease;
-	height: 100%;
+  box-sizing: border-box;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  height: 100%;
 }
 
 .trip-item:hover {
-	transform: translateY(-2px);
-	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .trip-item h3 {
-	margin-top: 0;
-	margin-bottom: 8px;
-	font-size: 18px;
-	color: #333;
-	line-height: 1.3;
+  margin-top: 0;
+  margin-bottom: 8px;
+  font-size: 18px;
+  color: #333;
+  line-height: 1.3;
 }
 
 .trip-content {
-	padding: 15px;
-	flex-grow: 1;
-	display: flex;
-	flex-direction: column;
-	justify-content: space-between;
+  padding: 15px;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .trip-description {
-	color: #666;
-	font-size: 14px;
-	margin-bottom: 8px;
-	flex-grow: 1;
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 8px;
+  flex-grow: 1;
 }
 
 .trip-date,
 .trip-duration {
-	font-weight: 500;
-	font-size: 14px;
-	color: #555;
-	margin-bottom: 8px;
+  font-weight: 500;
+  font-size: 14px;
+  color: #555;
+  margin-bottom: 8px;
 }
 
 .trip-price {
-	direction: rtl;
-	font-size: 16px;
-	color: #333;
-	margin-bottom: 10px;
-	white-space: nowrap; /* Keep "From" and price on same line */
+  direction: rtl;
+  font-size: 16px;
+  color: #333;
+  margin-bottom: 10px;
+  white-space: nowrap; /* Keep "From" and price on same line */
 }
 
 .trip-price span {
-	font-size: 20px;
-	font-weight: 600;
-	text-align: right;
+  font-size: 20px;
+  font-weight: 600;
+  text-align: right;
 }
 
 /* Button styling */
 .trip-item .trip-button {
-	background-color: var(--button-color);
-	color: #fff;
-	padding: 8px 16px;
-	border-radius: 4px;
-	text-decoration: none;
-	display: inline-block;
-	margin-top: 10px;
-	text-align: center;
-	width: auto;
-	box-sizing: border-box;
-	transition: background-color 0.3s ease;
-	font-weight: 500;
+  background-color: var(--button-color);
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 4px;
+  text-decoration: none;
+  display: inline-block;
+  margin-top: 10px;
+  text-align: center;
+  width: auto;
+  box-sizing: border-box;
+  transition: background-color 0.3s ease;
+  font-weight: 500;
 }
 
 .trip-item .trip-button:hover {
-	opacity: 0.9;
+  opacity: 0.9;
 }
 
 .trip-button-container {
-	margin-top: auto;
-	width: 100%;
+  margin-top: auto;
+  width: 100%;
 }
 
 /* Placeholder for missing images */
 .no-image-placeholder {
-	height: 180px;
-	background-color: #f0f0f0;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	color: #888;
-	border-radius: 4px;
-	font-size: 14px;
+  height: 180px;
+  background-color: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #888;
+  border-radius: 4px;
+  font-size: 14px;
 }
 
 /* Grid view styles */
 .all-trips-container.grid-view {
-	display: grid !important;
-	grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-	gap: 15px;
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 15px;
 }
 
 .all-trips-container.grid-view .trip-item {
-	display: flex;
-	flex-direction: column;
+  display: flex;
+  flex-direction: column;
 }
 
 .all-trips-container.grid-view img {
-	height: 160px;
-	object-fit: cover;
-	border-radius: 4px 4px 0 0;
-	width: 100%;
+  height: 160px;
+  object-fit: cover;
+  border-radius: 4px 4px 0 0;
+  width: 100%;
+}
+
+.all-trips-container.grid-view .all-trips-loading {
+  grid-column: 1 / -1; /* Span across all columns */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 30px;
 }
 
 /* Vertical view styles */
 .all-trips-container.vertical-view .trip-item {
-	margin-bottom: 15px;
-	display: grid;
-	grid-template-columns: 3fr 5fr 3fr;
-	gap: 20px;
-	align-items: start;
-	padding: 15px;
-	min-height: 230px;
+  margin-bottom: 15px;
+  display: grid;
+  grid-template-columns: 3fr 5fr 3fr;
+  gap: 20px;
+  align-items: start;
+  padding: 15px;
+  min-height: 230px;
 }
 
 .all-trips-container.vertical-view img {
-	height: 100%;
-	width: 100%;
-	object-fit: cover;
-	border-radius: 4px;
-	max-height: 200px;
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+  border-radius: 4px;
+  max-height: 200px;
 }
 
 .all-trips-container.vertical-view .trip-content {
-	padding: 0;
+  padding: 0;
 }
 
 .all-trips-container.vertical-view .trip-price-button {
-	display: flex;
-	flex-direction: column;
-	justify-content: flex-end; /* Changed to flex-end to push content to bottom */
-	height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end; /* Changed to flex-end to push content to bottom */
+  height: 100%;
 }
 
 .all-trips-container.vertical-view .trip-button {
-	font-size: 18px;
+  font-size: 18px;
 }
 
 .all-trips-container.vertical-view h3 {
-	font-size: 24px;
-	margin-top: 0;
-	margin-bottom: 10px;
+  font-size: 24px;
+  margin-top: 0;
+  margin-bottom: 10px;
 }
 
 .all-trips-container.vertical-view .trip-description {
-	font-size: 16px;
-	color: #666;
-	margin-bottom: 15px;
+  font-size: 16px;
+  color: #666;
+  margin-bottom: 15px;
 }
 
 .all-trips-container.vertical-view .trip-date,
 .all-trips-container.vertical-view .trip-duration {
-	font-size: 16px;
-	font-weight: 600;
-	color: #333;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
 }
 
 /* Carousel view styles */
 
 /* Style for swiper carousel similar to image */
 .all-trips-container.carousel-view .swiper {
-	padding: 0 60px; /* Increase from 40px to 60px to create more space */
-	position: relative;
+  padding: 0 60px; /* Increase from 40px to 60px to create more space */
+  position: relative;
 }
 
 /* Position arrows on the sides outside of the carousel */
 .all-trips-container.carousel-view .swiper-button-next,
 .all-trips-container.carousel-view .swiper-button-prev {
-	top: 50%;
-	transform: translateY(-50%);
-	width: 40px;
-	height: 40px;
-	background-color: var(--button-color);
-	border-radius: 50%;
-	color: #fff;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  background-color: var(--button-color);
+  border-radius: 50%;
+  color: #fff;
 }
 
 .all-trips-container.carousel-view .swiper-button-next {
-	right: 10px; /* Move 10px to the right from the edge */
+  right: 10px; /* Move 10px to the right from the edge */
 }
 
 .all-trips-container.carousel-view .swiper-button-prev {
-	left: 10px; /* Move 10px to the left from the edge */
+  left: 10px; /* Move 10px to the left from the edge */
 }
 
 /* Style the arrow icons */
 .all-trips-container.carousel-view .swiper-button-next::after,
 .all-trips-container.carousel-view .swiper-button-prev::after {
-	font-size: 18px;
-	font-weight: 600;
+  font-size: 18px;
+  font-weight: 600;
 }
 
 /* Style pagination dots */
 .all-trips-container.carousel-view .swiper-pagination {
-	position: relative;
-	margin-top: 20px;
+  position: relative;
+  margin-top: 20px;
 }
 
 .all-trips-container.carousel-view .swiper-slide {
-	visibility: hidden; /* Hide all slides by default */
-	height: auto;
+  visibility: hidden; /* Hide all slides by default */
+  height: auto;
 }
 
 .all-trips-container.carousel-view .swiper-slide-active,
 .all-trips-container.carousel-view .swiper-slide-visible {
-	visibility: visible; /* Only show active/visible slides */
+  visibility: visible; /* Only show active/visible slides */
 }
 
 .all-trips-container.carousel-view .swiper-pagination-bullet {
-	width: 12px;
-	height: 12px;
-	margin: 0 5px;
+  width: 12px;
+  height: 12px;
+  margin: 0 5px;
 }
 
 .all-trips-container.carousel-view .swiper-wrapper {
-	margin: 0 auto;
+  margin: 0 auto;
 }
 
 .all-trips-container.carousel-view .swiper-pagination-bullet-active {
-	background-color: var(--button-color);
+  background-color: var(--button-color);
 }
 
 /* Style for trip cards */
 .all-trips-container.carousel-view .trip-item {
-	border-radius: 12px;
-	overflow: hidden;
-	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-	transition: transform 0.3s ease;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
 }
 
 .all-trips-container.carousel-view .trip-item:hover {
-	transform: translateY(-5px);
+  transform: translateY(-5px);
 }
 
 /* Make sure images are consistent size */
 .all-trips-container.carousel-view .trip-item img {
-	width: 100%;
-	height: 200px;
-	object-fit: cover;
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
 }
-
 
 /* Pagination Styles */
 .all-trips-pagination {
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	margin: 20px 0;
-	flex-wrap: wrap;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 20px 0;
+  flex-wrap: wrap;
 }
 
 .all-trips-pagination .page-item {
-	margin: 0 3px;
+  margin: 0 3px;
 }
 
 .all-trips-pagination .page-link {
-	display: inline-block;
-	padding: 8px 12px;
-	color: #333;
-	border: 1px solid #ddd;
-	border-radius: 4px;
-	text-decoration: none;
-	cursor: pointer;
-	transition: all 0.3s ease;
+  display: inline-block;
+  padding: 8px 12px;
+  color: #333;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
 .all-trips-pagination .page-link:hover {
-	background-color: #f5f5f5;
+  background-color: #f5f5f5;
 }
 
 .all-trips-pagination .page-item.active .page-link {
-	background-color: var(--button-color);
-	color: #fff;
-	border-color: var(--button-color);
+  background-color: var(--button-color);
+  color: #fff;
+  border-color: var(--button-color);
 }
 
 .all-trips-pagination .page-item.disabled .page-link {
-	color: #999;
-	pointer-events: none;
-	cursor: default;
+  color: #999;
+  pointer-events: none;
+  cursor: default;
 }
 
 /* Visibility Classes for Pagination */
 .visible-item {
-	display: block;
+  display: block;
 }
 
 .hidden-item {
-	display: none;
+  display: none;
 }
 
 /* No trips message */
 .no-trips {
-	padding: 20px;
-	text-align: center;
-	background-color: #f8f8f8;
-	border-radius: 8px;
-	margin: 20px 0;
+  padding: 20px;
+  text-align: center;
+  background-color: #f8f8f8;
+  border-radius: 8px;
+  margin: 20px 0;
 }
 
 /* Handle responsive layout */
 @media screen and (max-width: 640px) {
+  .all-trips-container.vertical-view .trip-item {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
 
-	.all-trips-container.vertical-view .trip-item {
-		grid-template-columns: 1fr;
-		gap: 15px;
-	}
+  .all-trips-container.vertical-view .trip-price {
+    margin-bottom: 0;
+  }
 
-	.all-trips-container.vertical-view .trip-price {
-		margin-bottom: 0;
-	}
+  .trip-item h3 {
+    font-size: 16px;
+  }
 
-	.all-trips-container.grid-view {
-		grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-	}
-
-	.trip-item h3 {
-		font-size: 16px;
-	}
-
-	.all-trips-pagination .page-link {
-		padding: 6px 10px;
-		font-size: 14px;
-	}
+  .all-trips-pagination .page-link {
+    padding: 6px 10px;
+    font-size: 14px;
+  }
 }
 
 @media screen and (max-width: 480px) {
-
-	.all-trips-container.grid-view {
-		grid-template-columns: 1fr;
-	}
+  .all-trips-container.grid-view {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Add this to your CSS file */
 .all-trips-loading {
-	text-align: center;
-	padding: 30px;
+  text-align: center;
+  padding: 30px;
 }
 
 .loading-spinner {
-	display: inline-block;
-	width: 40px;
-	height: 40px;
-	border: 4px solid rgba(0, 0, 0, 0.1);
-	border-radius: 50%;
-	border-top-color: var(--button-color, #33ae3f);
-	animation: spin 1s ease-in-out infinite;
-	margin-bottom: 15px;
+  display: inline-block;
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  border-top-color: var(--button-color, #33ae3f);
+  animation: spin 1s ease-in-out infinite;
+  margin-bottom: 15px;
 }
 
 @keyframes spin {
-
-	to {
-		transform: rotate(360deg);
-	}
+  to {
+    transform: rotate(360deg);
+  }
 }
