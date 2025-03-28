@@ -71,8 +71,6 @@ function fetch_wetravel_trips_handler() {
 		}
 	}
 
-	error_log(add_query_arg( $query_params, $api_url ));
-
 	// Build the final URL with parameters.
 	$api_url = add_query_arg( $query_params, $api_url );
 
@@ -136,7 +134,7 @@ function get_wetravel_trips_data( $api_url, $env = '' ) {
 	$trips = $data['trips'];
 
 	// Enhance trips data with detailed information.
-	$trips = fetch_trip_details( $trips, $env );
+	$trips = fetch_trip_seo_config( $trips, $env );
 
 	// Cache for 1 minute (60 seconds).
 	set_transient( $cache_key, $trips, 60 );
@@ -151,7 +149,7 @@ function get_wetravel_trips_data( $api_url, $env = '' ) {
  * @param string $env The environment URL base.
  * @return array Enhanced trips data with details.
  */
-function fetch_trip_details( $trips, $env ) {
+function fetch_trip_seo_config( $trips, $env ) {
 	$enhanced_trips = array();
 
 	foreach ( $trips as $trip ) {
@@ -162,11 +160,11 @@ function fetch_trip_details( $trips, $env ) {
 		}
 
 		// Build detail endpoint URL.
-		$detail_url = "{$env}/api/v2/user/trips/{$trip['uuid']}/details";
+		$seo_config_url = "{$env}/api/v2/user/trips/{$trip['uuid']}/seo_config";
 
-		// Fetch trip details.
+		// Fetch trip seo_configs.
 		$response = wp_remote_get(
-			$detail_url,
+			$seo_config_url,
 			array(
 				'timeout' => 15,
 				'headers' => array(
@@ -181,41 +179,33 @@ function fetch_trip_details( $trips, $env ) {
 		}
 
 		$body        = wp_remote_retrieve_body( $response );
-		$detail_data = json_decode( $body, true );
+		$seo_config_data = json_decode( $body, true );
 
 		// Check if we have valid detailed data.
-		if ( ! isset( $detail_data['data'] ) || ! isset( $detail_data['data']['trip'] ) ) {
+		if ( ! isset( $seo_config_data['data'] ) ) {
 			$enhanced_trips[] = $trip;
 			continue;
 		}
 
-		// Extract trip details and paragraphs.
-		$trip_details = $detail_data['data']['trip'];
-		$paragraphs   = isset( $detail_data['data']['paragraphs'] ) ? $detail_data['data']['paragraphs'] : array();
+		// Extract trip seo_configs.
+		$trip_details = $seo_config_data['data'];
 
 		// Find specific paragraphs.
-		$full_description = '';
-		$duration         = $detail_data['data']['trip']['trip_length'] ?? '';
-
-		foreach ( $paragraphs as $paragraph ) {
-			if ( isset( $paragraph['title'] ) && 'About this trip' === $paragraph['title'] && isset( $paragraph['text'] ) ) {
-				$full_description = $paragraph['text'];
-			}
-		}
+		$full_description = isset( $seo_config_data['data']['description'] ) ? $seo_config_data['data']['description'] : array();
 
 		// Enhance trip data with detailed information.
 		$trip['full_description'] = $full_description;
-		$trip['custom_duration']  = $duration;
+		$trip['custom_duration']  = $trip['trip_length'] ?? '';
 
 		// If banner image is available in details, use it.
-		if ( ! empty( $trip_details['banner_img'] ) ) {
-			$trip['banner_image'] = $trip_details['banner_img'];
+		if ( ! empty( $trip_details['image'] ) ) {
+			$trip['banner_image'] = $trip_details['image'];
 		}
 
 		// If detailed price is available, use it.
 		if ( isset( $trip_details['price'] ) ) {
 			// Price might be in cents, convert to dollars for display.
-			$formatted_price = (float) $trip_details['price'] / 100;
+			$formatted_price = (float) $trip_details['price'];
 
 			// If trip already has price, update it with the detailed format.
 			if ( isset( $trip['price'] ) && is_array( $trip['price'] ) ) {
