@@ -19,6 +19,7 @@ $options = array(
 	'all_trips_button_type',
 	'all_trips_button_color',
 	'all_trips_items_per_page',
+	'all_trips_items_per_row',
 	'all_trips_load_more_text',
 	'all_trips_designs'
 );

@@ -27,6 +27,7 @@ function all_trips_shortcode( $atts ) {
 		'button_text'    => '',
 		'button_color'   => get_option( 'all_trips_button_color', '#33ae3f' ),
 		'items_per_page' => get_option( 'all_trips_items_per_page', 10 ),
+		'items_per_row'  => get_option( 'all_trips_items_per_row', 3 ),
 		'load_more_text' => get_option( 'all_trips_load_more_text', 'Load More' ),
 		'trip_type'      => 'all',
 		'date_start'     => '',
@@ -45,6 +46,7 @@ function all_trips_shortcode( $atts ) {
 		'buttonText'   => $atts['button_text'],
 		'buttonColor'  => $atts['button_color'],
 		'itemsPerPage' => intval( $atts['items_per_page'] ),
+		'itemsPerRow'  => intval( $atts['items_per_row'] ),
 		'loadMoreText' => $atts['load_more_text'],
 		'tripType'     => $atts['trip_type'],
 		'dateStart'    => $atts['date_start'],
@@ -257,6 +259,7 @@ function render_all_trips_fallback( $atts ) {
 			data-env="<?php echo esc_attr( $env ); ?>"
 			data-nonce="<?php echo esc_attr( $nonce ); ?>"
 			data-items-per-page="<?php echo esc_attr( $atts['itemsPerPage'] ); ?>"
+			data-items-per-row="<?php echo esc_attr( $atts['itemsPerRow'] ); ?>"
 			data-display-type="<?php echo esc_attr( $atts['displayType'] ); ?>"
 			data-button-type="<?php echo esc_attr( $atts['buttonType'] ); ?>"
 			data-button-text="<?php echo esc_attr( $atts['buttonText'] ); ?>"
@@ -314,14 +317,13 @@ function render_all_trips_fallback( $atts ) {
  * to handle cases where the shortcode is processed before the script is loaded
  */
 function all_trips_loader_ready() {
-	$inline_script = "
-    <script>
-    jQuery(document).ready(function($) {
-        // Notify that the trips loader is ready.
-        $(document).trigger('tripsLoaderReady');
-    });
-    </script>
-    ";
-	echo esc_js( $inline_script );
+	?>
+	<script>
+	jQuery(document).ready(function($) {
+			// Notify that the trips loader is ready.
+			$(document).trigger('tripsLoaderReady');
+	});
+	</script>
+	<?php
 }
 add_action( 'wp_footer', 'all_trips_loader_ready', 100 );

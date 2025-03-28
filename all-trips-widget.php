@@ -45,6 +45,11 @@ function all_trips_enqueue_scripts() {
 
 	// Enqueue main stylesheet.
 	wp_enqueue_style( 'all-trips-styles' );
+
+	wp_add_inline_style(
+		'all-trips-styles',
+		':root { --button-color: ' . get_option( 'all_trips_button_color', '#33ae3f' ) . '; --items-per-row: ' . get_option( 'all_trips_items_per_row', 3 ) . '; }'
+	);
 }
 add_action( 'wp_enqueue_scripts', 'all_trips_enqueue_scripts' );
 
@@ -68,6 +73,7 @@ function all_trips_enqueue_block_assets() {
 		'buttonType'   => get_option( 'all_trips_button_type', 'book_now' ),
 		'buttonColor'  => get_option( 'all_trips_button_color', '#33ae3f' ),
 		'itemsPerPage' => (int) get_option( 'all_trips_items_per_page', 10 ),
+		'itemsPerRow'  => (int) get_option( 'all_trips_items_per_row', 3 ),
 		'loadMoreText' => get_option( 'all_trips_load_more_text', 'Load More' ),
 		'designs'      => get_option( 'all_trips_designs', array() ),
 	);
@@ -130,6 +136,10 @@ function all_trips_register_block() {
 				'itemsPerPage'     => array(
 					'type'    => 'number',
 					'default' => 10,
+				),
+				'itemsPerRow'      => array(
+					'type'    => 'number',
+					'default' => 3,
 				),
 				'loadMoreText'     => array(
 					'type'    => 'string',

@@ -50,6 +50,10 @@
         type: "number",
         default: 10,
       },
+      itemsPerRow: {
+        type: "number",
+        default: 3,
+      },
       // Removed loadMoreText attribute as it's no longer needed
     },
 
@@ -63,6 +67,7 @@
         buttonText,
         buttonColor,
         itemsPerPage,
+        itemsPerRow,
       } = attributes;
 
       // Set default values from PHP settings on first load only
@@ -86,6 +91,8 @@
           updatedAttributes.buttonColor = settings.buttonColor;
         if (attributes.itemsPerPage === 10 && settings.itemsPerPage)
           updatedAttributes.itemsPerPage = parseInt(settings.itemsPerPage);
+        if (attributes.itemsPerRow === 3 && settings.itemsPerRow)
+          updatedAttributes.itemsPerRow = parseInt(settings.itemsPerRow);
 
         // Properly load designs
         if (settings.designs) {
@@ -341,7 +348,7 @@
                 createElement(
                   "p",
                   { style: { fontSize: "16px", fontWeight: "bold" } },
-                  "From $1,000"
+                  "FROM $1,000"
                 ),
                 attributes.displayType === "vertical" &&
                   createElement("span", { style: buttonStyle }, buttonText)
@@ -470,6 +477,14 @@
           createElement(
             PanelBody,
             { title: "Pagination Settings", initialOpen: true },
+            attributes.displayType === "grid" &&
+              createElement(RangeControl, {
+                label: "Items Per Row",
+                value: itemsPerRow,
+                onChange: (value) => setAttributes({ itemsPerRow: value }),
+                min: 1,
+                max: 10,
+              }),
             attributes.displayType !== "carousel" &&
               createElement(RangeControl, {
                 label: "Items Per Page",

@@ -28,6 +28,7 @@ function all_trips_block_render( $attributes ) {
 	$button_type    = $attributes['buttonType'] ?? get_option( 'all_trips_button_type', 'book_now' );
 	$button_color   = $attributes['buttonColor'] ?? get_option( 'all_trips_button_color', '#33ae3f' );
 	$items_per_page = intval( $attributes['itemsPerPage'] ?? get_option( 'all_trips_items_per_page', 10 ) );
+	$items_per_row  = intval( $attributes['itemsPerRow'] ?? get_option( 'all_trips_items_per_row', 3 ) );
 	$load_more_text = $attributes['loadMoreText'] ?? get_option( 'all_trips_load_more_text', 'Load More' );
 
 	// Override with design settings if a design is selected.
@@ -117,52 +118,7 @@ function all_trips_block_render( $attributes ) {
     /* Set dynamic CSS variables for this block instance */
     #trips-container-{$block_id} {
       --button-color: {$button_color};
-    }
-
-    /* Carousel styling for this specific instance */
-    #trips-container-{$block_id}.carousel-view .swiper {
-      padding: 0 40px;
-      position: relative;
-    }
-
-    #trips-container-{$block_id}.carousel-view .swiper-button-next,
-    #trips-container-{$block_id}.carousel-view .swiper-button-prev {
-      top: 50%;
-      transform: translateY(-50%);
-      width: 40px;
-      height: 40px;
-      background-color: var(--button-color, #6a3bff);
-      border-radius: 50%;
-      color: white;
-    }
-
-    #trips-container-{$block_id}.carousel-view .swiper-button-next {
-      right: 0;
-    }
-
-    #trips-container-{$block_id}.carousel-view .swiper-button-prev {
-      left: 0;
-    }
-
-    #trips-container-{$block_id}.carousel-view .swiper-button-next:after,
-    #trips-container-{$block_id}.carousel-view .swiper-button-prev:after {
-      font-size: 18px;
-      font-weight: bold;
-    }
-
-    #trips-container-{$block_id}.carousel-view .swiper-pagination {
-      position: relative;
-      margin-top: 20px;
-    }
-
-    #trips-container-{$block_id}.carousel-view .swiper-pagination-bullet {
-      width: 12px;
-      height: 12px;
-      margin: 0 5px;
-    }
-
-    #trips-container-{$block_id}.carousel-view .swiper-pagination-bullet-active {
-      background-color: var(--button-color, #6a3bff);
+			--items-per-row: {$items_per_row};
     }
   ";
 
@@ -171,10 +127,14 @@ function all_trips_block_render( $attributes ) {
 		$custom_css .= "\n/* Design-specific custom CSS */\n{$custom_css_design}";
 	}
 
-	// Add design-specific custom CSS if available.
-	if ( ! empty( $custom_css_design ) ) {
-		$custom_css .= "\n/* Design-specific custom CSS */\n{$custom_css_design}";
-	}
+	wp_register_style(
+		'all-trips-styles',
+		ALL_TRIPS_PLUGIN_URL . 'assets/css/all-trips.css',
+		array(),
+		filemtime( ALL_TRIPS_PLUGIN_DIR . 'assets/css/all-trips.css' )
+	);
+
+	wp_enqueue_style( 'all-trips-styles' );
 
 	// Output custom styles.
 	wp_add_inline_style( 'all-trips-styles', $custom_css );
@@ -188,6 +148,7 @@ function all_trips_block_render( $attributes ) {
 		data-env="<?php echo esc_attr( $env ); ?>"
 		data-nonce="<?php echo esc_attr( $nonce ); ?>"
 		data-items-per-page="<?php echo esc_attr( $items_per_page ); ?>"
+		data-items-per-row="<?php echo esc_attr( $items_per_row ); ?>"
 		data-display-type="<?php echo esc_attr( $display_type ); ?>"
 		data-button-type="<?php echo esc_attr( $button_type ); ?>"
 		data-button-text="<?php echo esc_attr( $button_text ); ?>"
