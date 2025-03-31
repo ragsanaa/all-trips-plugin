@@ -210,6 +210,16 @@
     // Add to the DOM
     container.html(tripsHtml);
 
+    // Add click handlers for carousel items
+    if (options.displayType === "carousel") {
+      container.find(".trip-item").on("click", function() {
+        var url = $(this).data("trip-url");
+        if (url) {
+          window.open(url, "_blank");
+        }
+      });
+    }
+
     // Trigger a custom event to notify that trips have been rendered
     // This will be captured by carousel.js and pagination.js
     container.trigger("tripsRendered");
@@ -217,9 +227,9 @@
 
   /**
    * Render a single trip item based on the original PHP implementation
+   * Get button URL for a trip based on options and trip data
    */
-  function renderTripItem(trip, options, visibilityClass = "") {
-    var html = "";
+  function getButtonUrl(trip, options) {
     var env = options.env;
     var buttonUrl = "";
 
@@ -233,148 +243,77 @@
       }
     }
 
-    if (options.displayType === "vertical") {
-      // Vertical layout (similar to PHP implementation)
+    return buttonUrl;
+  }
+
+  /**
+   * Render a single trip item based on the original PHP implementation
+   */
+  function renderTripItem(trip, options, visibilityClass = "") {
+    var html = "";
+    var buttonUrl = getButtonUrl(trip, options);
+
+    if (options.displayType === "vertical" || options.displayType === "grid") {
       html += '<div class="trip-item ' + visibilityClass + '">';
-
-      // Image
-      if (trip.default_image) {
-        html +=
-          '<img src="' + trip.default_image + '" alt="' + trip.title + '">';
-      } else {
-        html +=
-          '<div class="no-image-placeholder"><span>No Image Available</span></div>';
-      }
-
-      // Content
-      html += '<div class="trip-content">';
-      html += "<h3>" + trip.title + "</h3>";
-
-      // Description (trimmed)
-      if (trip.full_description) {
-        html +=
-          '<div class="trip-description">' +
-          trip.full_description.substring(0, 150).replace(/<[^>]*>/g, "") +
-          "...</div>";
-      }
-
-      // Date or duration
-      if (!trip.all_year) {
-        html += '<div class="trip-date">' + trip.start_end_dates + "</div>";
-      } else if (trip.custom_duration) {
-        html +=
-          '<div class="trip-duration">' + trip.custom_duration + " days</div>";
-      }
-
-      html += "</div>"; // Close trip-content
-
-      // Price and button section
-      html += '<div class="trip-price-button">';
-
-      // Price
-      if (trip.price) {
-        html +=
-          '<div class="trip-price">from <br><span>' +
-          trip.price.currencySymbol +
-          trip.price.amount +
-          "</span></div>";
-      }
-
-      // Button
-      html +=
-        '<a href="' +
-        buttonUrl +
-        `" class="trip-button" target="_blank" style="background-color: ${options.buttonColor};">` +
-        options.buttonText +
-        "</a>";
-
-      html += "</div>"; // Close trip-price-button
-      html += "</div>"; // Close trip-item
-    } else if (options.displayType === "grid") {
-      // Grid layout
-      html +=
-        '<a class="trip-item ' +
-        visibilityClass +
-        '" href="' +
-        env +
-        "/trips/" +
-        trip.uuid +
-        '" target="_blank" style="display: block;">';
-
-      // Image
-      if (trip.default_image) {
-        html +=
-          '<img src="' + trip.default_image + '" alt="' + trip.title + '">';
-      } else {
-        html +=
-          '<div class="no-image-placeholder"><span>No Image Available</span></div>';
-      }
-
-      // Content
-      html += '<div class="trip-content">';
-      html += "<h3>" + trip.title + "</h3>";
-
-      // Date or duration
-      if (!trip.all_year) {
-        html += '<div class="trip-date">' + trip.start_end_dates + "</div>";
-      } else if (trip.custom_duration) {
-        html +=
-          '<div class="trip-duration">' + trip.custom_duration + " days</div>";
-      }
-
-      // Price
-      if (trip.price) {
-        html +=
-          '<div class="trip-price">from  <br><span>' +
-          trip.price.currencySymbol +
-          trip.price.amount +
-          "</span></div>";
-      }
-
-      html += "</div>"; // Close trip-content
-      html += "</a>"; // Close trip-item
     } else if (options.displayType === "carousel") {
-      // Carousel layout
-      html +=
-        '<a class="trip-item" style="display: block;" href="' +
-        env +
-        "/trips/" +
-        trip.uuid +
-        '" target="_blank">';
-
-      // Image
-      if (trip.default_image) {
-        html +=
-          '<img src="' + trip.default_image + '" alt="' + trip.title + '">';
-      } else {
-        html +=
-          '<div class="no-image-placeholder"><span>No Image Available</span></div>';
-      }
-
-      // Content
-      html += '<div class="trip-content">';
-      html += "<h3>" + trip.title + "</h3>";
-
-      // Date or duration
-      if (!trip.all_year) {
-        html += '<div class="trip-date">' + trip.start_end_dates + "</div>";
-      } else if (trip.custom_duration) {
-        html +=
-          '<div class="trip-duration">' + trip.custom_duration + " days</div>";
-      }
-
-      // Price
-      if (trip.price) {
-        html +=
-          '<div class="trip-price">from  <br><span>' +
-          trip.price.currencySymbol +
-          trip.price.amount +
-          "</span></div>";
-      }
-
-      html += "</div>"; // Close trip-content
-      html += "</a>"; // Close trip-item
+      html += '<div class="trip-item" data-trip-url="' + buttonUrl + '" style="cursor: pointer;">';
     }
+
+    // Image
+    if (trip.default_image) {
+      html += '<img src="' + trip.default_image + '" alt="' + trip.title + '">';
+    } else {
+      html +=
+        '<div class="no-image-placeholder"><span>No Image Available</span></div>';
+    }
+
+    // Content
+    html += '<div class="trip-content">';
+    html += "<h3>" + trip.title + "</h3>";
+
+    // Description
+    if (trip.full_description) {
+      html +=
+        '<div class="trip-description">' + trip.full_description + "</div>";
+    }
+
+    // Date or duration
+    html += '<div class="trip-loc-duration">';
+    if (!trip.all_year) {
+      html +=
+        '<div class="trip-date trip-tag">' + trip.start_end_dates + "</div>";
+    } else if (trip.custom_duration) {
+      html +=
+        '<div class="trip-duration trip-tag">' +
+        trip.custom_duration +
+        " days</div>";
+    }
+    html += '<div class="trip-location trip-tag">' + trip.location + "</div>";
+    html += "</div>"; // Close trip-loc-duration
+    html += "</div>"; // Close trip-content
+
+    // Price and button section
+    html += '<div class="trip-price-button">';
+
+    // Price
+    if (trip.price) {
+      html +=
+        '<div class="trip-price"><p>From</p> <span>' +
+        trip.price.currencySymbol +
+        trip.price.amount +
+        "</span></div>";
+    }
+
+    // Button
+    html +=
+      '<a href="' +
+      buttonUrl +
+      `" class="trip-button" target="_blank">` +
+      options.buttonText +
+      "</a>";
+
+    html += "</div>"; // Close trip-price-button
+    html += "</div>"; // Close trip-item
 
     return html;
   }
