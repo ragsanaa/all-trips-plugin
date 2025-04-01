@@ -9,7 +9,7 @@
   // Global function to load trips (making it available to other scripts)
   window.loadTrips = function (container) {
     // Show loading state
-    container.find(".all-trips-loading").show();
+    container.find(".wetravel-trips-loading").show();
 
     // Get data attributes
     var slug = container.data("slug");
@@ -25,7 +25,9 @@
 
     // Validate required data
     if (!slug || !env) {
-      container.find(".all-trips-loading").html("Error: Missing configuration");
+      container
+        .find(".wetravel-trips-loading")
+        .html("Error: Missing configuration");
       return;
     }
 
@@ -33,8 +35,8 @@
     var nonce = container.data("nonce") || "";
 
     // Get the AJAX URL from the global object or use the default WordPress path
-    var ajaxUrl = window.allTripsData
-      ? window.allTripsData.ajaxurl
+    var ajaxUrl = window.wetravelTripsData
+      ? window.wetravelTripsData.ajaxurl
       : "/wp-admin/admin-ajax.php";
 
     // Check if we're in an editing environment
@@ -74,13 +76,13 @@
           });
         } else {
           container
-            .find(".all-trips-loading")
+            .find(".wetravel-trips-loading")
             .html("Error: " + (response.data || "No trips found"));
         }
       },
       error: function (xhr, status, error) {
         container
-          .find(".all-trips-loading")
+          .find(".wetravel-trips-loading")
           .html("Error loading trips: " + error);
       },
     });
@@ -88,7 +90,7 @@
 
   $(document).ready(function () {
     // Find all trip containers on the page
-    $(".all-trips-container").each(function () {
+    $(".wetravel-trips-container").each(function () {
       var container = $(this);
       loadTrips(container);
     });
@@ -99,7 +101,7 @@
    */
   function loadTrips(container) {
     // Show loading state
-    container.find(".all-trips-loading").show();
+    container.find(".wetravel-trips-loading").show();
 
     // Get data attributes
     var slug = container.data("slug");
@@ -115,7 +117,9 @@
 
     // Validate required data
     if (!slug || !env) {
-      container.find(".all-trips-loading").html("Error: Missing configuration");
+      container
+        .find(".wetravel-trips-loading")
+        .html("Error: Missing configuration");
       return;
     }
 
@@ -123,8 +127,8 @@
     var nonce = container.data("nonce") || "";
 
     // Get the AJAX URL from the global object or use the default WordPress path
-    var ajaxUrl = window.allTripsData
-      ? window.allTripsData.ajaxurl
+    var ajaxUrl = window.wetravelTripsData
+      ? window.wetravelTripsData.ajaxurl
       : "/wp-admin/admin-ajax.php";
 
     // Create AJAX request
@@ -153,13 +157,13 @@
           });
         } else {
           container
-            .find(".all-trips-loading")
+            .find(".wetravel-trips-loading")
             .html("Error: " + (response.data || "No trips found"));
         }
       },
       error: function (xhr, status, error) {
         container
-          .find(".all-trips-loading")
+          .find(".wetravel-trips-loading")
           .html("Error loading trips: " + error);
       },
     });
@@ -175,7 +179,7 @@
     var tripsHtml = "";
 
     // Hide loading message
-    container.find(".all-trips-loading").hide();
+    container.find(".wetravel-trips-loading").hide();
 
     // Check if trips exist
     if (!trips || !trips.length) {
@@ -212,13 +216,14 @@
 
     // Add click handlers for carousel items
     if (options.displayType === "carousel") {
-      container.find(".trip-item").on("click", function() {
+      container.find(".trip-item").on("click", function () {
         var url = $(this).data("trip-url");
         if (url) {
           window.open(url, "_blank");
         }
       });
     }
+    applyDescriptionFades();
 
     // Trigger a custom event to notify that trips have been rendered
     // This will be captured by carousel.js and pagination.js
@@ -256,12 +261,17 @@
     if (options.displayType === "vertical" || options.displayType === "grid") {
       html += '<div class="trip-item ' + visibilityClass + '">';
     } else if (options.displayType === "carousel") {
-      html += '<div class="trip-item" data-trip-url="' + buttonUrl + '" style="cursor: pointer;">';
+      html +=
+        '<div class="trip-item" data-trip-url="' +
+        buttonUrl +
+        '" style="cursor: pointer;">';
     }
 
     // Image
     if (trip.default_image) {
+      html += '<div class="trip-image">';
       html += '<img src="' + trip.default_image + '" alt="' + trip.title + '">';
+      html += "</div>";
     } else {
       html +=
         '<div class="no-image-placeholder"><span>No Image Available</span></div>';
@@ -269,12 +279,18 @@
 
     // Content
     html += '<div class="trip-content">';
+    html += '<div class="trip-title-desc">';
     html += "<h3>" + trip.title + "</h3>";
 
     // Description
     if (trip.full_description) {
       html +=
         '<div class="trip-description">' + trip.full_description + "</div>";
+    }
+    html += "</div>"; // Close trip-title-desc
+
+    if (options.displayType === "carousel") {
+      html += "<div class='trip-loc-price'>";
     }
 
     // Date or duration
@@ -290,7 +306,10 @@
     }
     html += '<div class="trip-location trip-tag">' + trip.location + "</div>";
     html += "</div>"; // Close trip-loc-duration
-    html += "</div>"; // Close trip-content
+
+    if (options.displayType !== "carousel") {
+      html += "</div>"; // Close trip-content
+    }
 
     // Price and button section
     html += '<div class="trip-price-button">';
@@ -305,16 +324,44 @@
     }
 
     // Button
-    html +=
-      '<a href="' +
-      buttonUrl +
-      `" class="trip-button" target="_blank">` +
-      options.buttonText +
-      "</a>";
+    if (options.displayType !== "carousel") {
+      html +=
+        '<a href="' +
+        buttonUrl +
+        `" class="trip-button" target="_blank">` +
+        options.buttonText +
+        "</a>";
+    }
 
     html += "</div>"; // Close trip-price-button
+    if (options.displayType === "carousel") {
+      html += "</div>"; // Close trip-loc-price
+      html += "</div>"; // Close trip-content
+    }
     html += "</div>"; // Close trip-item
 
     return html;
   }
+  /**
+   * Apply fade effects to descriptions that exceed 3 lines
+   */
+  function applyDescriptionFades() {
+    $(".trip-description").each(function () {
+      var $this = $(this);
+
+      // Calculate the line height and max height for 3 lines
+      var lineHeight = parseInt($this.css("line-height"));
+      var maxHeight = lineHeight * 3;
+
+      // Check if the actual scroll height exceeds what we want to show
+      if ($this[0].scrollHeight > maxHeight) {
+        $this.addClass("needs-fade");
+      }
+    });
+  }
+
+  // Call the function after trips are rendered
+  $(document).on("tripsRendered", function () {
+    applyDescriptionFades();
+  });
 })(jQuery);

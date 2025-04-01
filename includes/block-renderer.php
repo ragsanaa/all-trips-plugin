@@ -12,24 +12,25 @@
  *
  * @param array $attributes Give all settings and designs details.
  */
-function all_trips_block_render( $attributes ) {
+function wetravel_trips_block_render( $attributes ) {
 	// Generate a unique ID for this block instance.
 	$block_id = wp_unique_id( 'wetravel-' );
 
 	// Check if there's a selected design and apply its settings.
-	$designs            = get_option( 'all_trips_designs', array() );
+	$designs            = get_option( 'wetravel_trips_designs', array() );
 	$selected_design_id = isset( $attributes['selectedDesignID'] ) ? $attributes['selectedDesignID'] : '';
 
 	// Start with block attributes.
-	$src            = $attributes['src'] ?? get_option( 'all_trips_src', '' );
-	$slug           = $attributes['slug'] ?? get_option( 'all_trips_slug', '' );
-	$env            = $attributes['env'] ?? get_option( 'all_trips_env', 'https://pre.wetravel.to' );
-	$display_type   = $attributes['displayType'] ?? get_option( 'all_trips_display_type', 'vertical' );
-	$button_type    = $attributes['buttonType'] ?? get_option( 'all_trips_button_type', 'book_now' );
-	$button_color   = $attributes['buttonColor'] ?? get_option( 'all_trips_button_color', '#33ae3f' );
-	$items_per_page = intval( $attributes['itemsPerPage'] ?? get_option( 'all_trips_items_per_page', 10 ) );
-	$items_per_row  = intval( $attributes['itemsPerRow'] ?? get_option( 'all_trips_items_per_row', 3 ) );
-	$load_more_text = $attributes['loadMoreText'] ?? get_option( 'all_trips_load_more_text', 'Load More' );
+	$src            = $attributes['src'] ?? get_option( 'wetravel_trips_src', '' );
+	$slug           = $attributes['slug'] ?? get_option( 'wetravel_trips_slug', '' );
+	$env            = $attributes['env'] ?? get_option( 'wetravel_trips_env', 'https://pre.wetravel.to' );
+	$display_type   = $attributes['displayType'] ?? get_option( 'wetravel_trips_display_type', 'vertical' );
+	$button_type    = $attributes['buttonType'] ?? get_option( 'wetravel_trips_button_type', 'book_now' );
+	$button_color   = $attributes['buttonColor'] ?? get_option( 'wetravel_trips_button_color', '#33ae3f' );
+	$items_per_page = intval( $attributes['itemsPerPage'] ?? get_option( 'wetravel_trips_items_per_page', 10 ) );
+	$items_per_row  = intval( $attributes['itemsPerRow'] ?? get_option( 'wetravel_trips_items_per_row', 3 ) );
+	$items_per_slide = intval( $attributes['itemsPerSlide'] ?? get_option( 'wetravel_trips_items_per_slide', 3 ) );
+	$load_more_text = $attributes['loadMoreText'] ?? get_option( 'wetravel_trips_load_more_text', 'Load More' );
 
 	// Override with design settings if a design is selected.
 	if ( ! empty( $selected_design_id ) ) {
@@ -78,7 +79,7 @@ function all_trips_block_render( $attributes ) {
 	$env = rtrim( $env, '/' );
 
 	// Create a nonce for AJAX security.
-	$nonce = wp_create_nonce( 'all_trips_nonce' );
+	$nonce = wp_create_nonce( 'wetravel_trips_nonce' );
 
 	// Enqueue necessary assets based on display type.
 	if ( 'carousel' === $display_type ) {
@@ -96,19 +97,19 @@ function all_trips_block_render( $attributes ) {
 			true
 		);
 		wp_enqueue_script(
-			'all-trips-carousel',
+			'wetravel-trips-carousel',
 			plugins_url( 'assets/js/carousel.js', __DIR__ ),
 			array( 'jquery', 'swiper-js' ),
-			filemtime( ALL_TRIPS_PLUGIN_DIR . 'assets/js/carousel.js' ),
+			filemtime( WETRAVEL_TRIPS_PLUGIN_DIR . 'assets/js/carousel.js' ),
 			true
 		);
 	} else {
 		// Always enqueue pagination script for grid and vertical views.
 		wp_enqueue_script(
-			'all-trips-pagination',
+			'wetravel-trips-pagination',
 			plugins_url( 'assets/js/pagination.js', __DIR__ ),
 			array( 'jquery' ),
-			filemtime( ALL_TRIPS_PLUGIN_DIR . 'assets/js/pagination.js' ),
+			filemtime( WETRAVEL_TRIPS_PLUGIN_DIR . 'assets/js/pagination.js' ),
 			true
 		);
 	}
@@ -128,27 +129,28 @@ function all_trips_block_render( $attributes ) {
 	}
 
 	wp_register_style(
-		'all-trips-styles',
-		ALL_TRIPS_PLUGIN_URL . 'assets/css/all-trips.css',
+		'wetravel-trips-styles',
+		WETRAVEL_TRIPS_PLUGIN_URL . 'assets/css/wetravel-trips.css',
 		array(),
-		filemtime( ALL_TRIPS_PLUGIN_DIR . 'assets/css/all-trips.css' )
+		filemtime( WETRAVEL_TRIPS_PLUGIN_DIR . 'assets/css/wetravel-trips.css' )
 	);
 
-	wp_enqueue_style( 'all-trips-styles' );
+	wp_enqueue_style( 'wetravel-trips-styles' );
 
 	// Output custom styles.
-	wp_add_inline_style( 'all-trips-styles', $custom_css );
+	wp_add_inline_style( 'wetravel-trips-styles', $custom_css );
 
 	ob_start();
 	?>
-	<div class="wp-block-all-trips-block">
-	<div class="all-trips-container <?php echo esc_attr( $display_type ); ?>-view"
+	<div class="wp-block-wetravel-trips-block">
+	<div class="wetravel-trips-container <?php echo esc_attr( $display_type ); ?>-view"
 		id="trips-container-<?php echo esc_attr( $block_id ); ?>"
 		data-slug="<?php echo esc_attr( $slug ); ?>"
 		data-env="<?php echo esc_attr( $env ); ?>"
 		data-nonce="<?php echo esc_attr( $nonce ); ?>"
 		data-items-per-page="<?php echo esc_attr( $items_per_page ); ?>"
 		data-items-per-row="<?php echo esc_attr( $items_per_row ); ?>"
+		data-items-per-slide="<?php echo esc_attr( $items_per_slide ); ?>"
 		data-display-type="<?php echo esc_attr( $display_type ); ?>"
 		data-button-type="<?php echo esc_attr( $button_type ); ?>"
 		data-button-text="<?php echo esc_attr( $button_text ); ?>"
@@ -167,18 +169,18 @@ function all_trips_block_render( $attributes ) {
 		<?php endif; ?>>
 
 		<!-- Loading indicator -->
-		<div class="all-trips-loading">
+		<div class="wetravel-trips-loading">
 			<div class="loading-spinner"></div>
 			<p>Loading trips...</p>
 		</div>
 
 		<!-- This is where trips will be rendered -->
-		<div class="all-trips-list"></div>
+		<div class="wetravel-trips-list"></div>
 		</div>
 
 		<?php if ( 'carousel' !== $display_type ) : ?>
 		<!-- Numbered pagination container - will be populated by JavaScript -->
-		<div id="pagination-<?php echo esc_attr( $block_id ); ?>" class="all-trips-pagination"></div>
+		<div id="pagination-<?php echo esc_attr( $block_id ); ?>" class="wetravel-trips-pagination"></div>
 		<?php endif; ?>
 	</div>
 	<?php
@@ -187,25 +189,25 @@ function all_trips_block_render( $attributes ) {
 
 /**
  * Make sure this is outside the function (in the main plugin file or a setup function).
- * Add this in the enqueue_all_trips_scripts function.
+ * Add this in the enqueue_wetravel_trips_scripts function.
  */
-function enqueue_all_trips_scripts() {
+function enqueue_wetravel_trips_scripts() {
 	wp_enqueue_script(
-		'all-trips-loader',
+		'wetravel-trips-loader',
 		plugins_url( 'assets/js/trips-loader.js', __DIR__ ),
 		array( 'jquery' ),
-		filemtime( ALL_TRIPS_PLUGIN_DIR . 'assets/js/trips-loader.js' ),
+		filemtime( WETRAVEL_TRIPS_PLUGIN_DIR . 'assets/js/trips-loader.js' ),
 		true
 	);
 
 	// Localize the script to provide the AJAX URL.
 	wp_localize_script(
-		'all-trips-loader',
-		'allTripsData',
+		'wetravel-trips-loader',
+		'wetravelTripsData',
 		array(
 			'ajaxurl' => admin_url( 'admin-ajax.php' ),
-			'nonce'   => wp_create_nonce( 'all_trips_nonce' ),
+			'nonce'   => wp_create_nonce( 'wetravel_trips_nonce' ),
 		)
 	);
 }
-add_action( 'wp_enqueue_scripts', 'enqueue_all_trips_scripts' );
+add_action( 'wp_enqueue_scripts', 'enqueue_wetravel_trips_scripts' );

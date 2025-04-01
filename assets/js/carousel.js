@@ -2,11 +2,11 @@
   // Also listen for dynamically loaded trips
   $(document).on(
     "tripsRendered",
-    ".all-trips-container.carousel-view",
+    ".wetravel-trips-container.carousel-view",
     function () {
       // Initialize this specific carousel
       const container = this;
-      const itemsPerPage = parseInt($(this).data("items-per-page")) || 10;
+      const itemsPerSlide = parseInt($(this).data("items-per-slide")) || 3;
       const buttonColor = $(this).data("button-color") || "#33ae3f";
       const swiperElement = container.querySelector(".swiper");
 
@@ -48,7 +48,7 @@
           960: { slidesPerView: 3, spaceBetween: 20 },
           // when window width is >= 1024px
 
-          1024: { slidesPerView: itemsPerPage, spaceBetween: 20 },
+          1024: { slidesPerView: itemsPerSlide, spaceBetween: 20 },
         },
         on: {
           init: function () {

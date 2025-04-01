@@ -14,7 +14,7 @@ add_action( 'wp_ajax_nopriv_fetch_wetravel_trips', 'fetch_wetravel_trips_handler
  */
 function fetch_wetravel_trips_handler() {
 	// Validate nonce for security.
-	if ( ! isset( $_GET['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['nonce'] ) ), 'all_trips_nonce' ) ) {
+	if ( ! isset( $_GET['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['nonce'] ) ), 'wetravel_trips_nonce' ) ) {
 		wp_send_json_error( 'Invalid security token' );
 		return;
 	}
@@ -205,7 +205,7 @@ function fetch_trip_seo_config( $trips, $env ) {
 		// If detailed price is available, use it.
 		if ( isset( $trip_details['price'] ) ) {
 			// Price might be in cents, convert to dollars for display.
-			$formatted_price = (float) $trip_details['price'];
+			$formatted_price = (int) $trip_details['price'];
 
 			// If trip already has price, update it with the detailed format.
 			if ( isset( $trip['price'] ) && is_array( $trip['price'] ) ) {
@@ -214,7 +214,7 @@ function fetch_trip_seo_config( $trips, $env ) {
 			} else {
 				// Create a price object if it doesn't exist.
 				$trip['price'] = array(
-					'amount'         => number_format( $formatted_price, 2 ),
+					'amount'         => $formatted_price,
 					'raw_amount'     => $formatted_price,
 					'currencySymbol' => isset( $trip_details['currency'] ) ? get_currency_symbol( $trip_details['currency'] ) : '$',
 				);

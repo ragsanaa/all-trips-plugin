@@ -1,4 +1,4 @@
-=== WeTravel All Trips Widget ===
+=== WeTravel Trips Widget ===
 Contributors: developer60006
 Donate link: https://wetravel.com
 Tags: travel, widget, trips, booking, wetravel
@@ -13,11 +13,11 @@ Display your WeTravel trips beautifully on your WordPress site with a customizab
 
 == Description ==
 
-The WeTravel All Trips Widget allows travel operators, tour companies, and trip organizers to seamlessly showcase their WeTravel trips directly on their WordPress website.
+The WeTravel Trips Widget allows travel operators, tour companies, and trip organizers to seamlessly showcase their WeTravel trips directly on their WordPress website.
 
 **Key Features:**
 
-* **Display All Trips** - Automatically fetch and display all your active trips from your WeTravel account
+* **Display Trips** - Automatically fetch and display all your active trips from your WeTravel account
 * **Customizable Layout** - Choose between grid, list, or carousel display options
 * **Filtering Options** - Let visitors filter trips by date, price, destination, or category
 * **Responsive Design** - Looks great on all devices from mobile phones to desktop computers
@@ -32,7 +32,7 @@ Perfect for travel agencies, tour operators, adventure companies, retreat organi
 
 == Installation ==
 
-1. Upload the plugin files to the `/wp-content/plugins/wetravel-all-trips-widget` directory, or install the plugin through the WordPress plugins screen directly.
+1. Upload the plugin files to the `/wp-content/plugins/wetravel-wetravel-trips-widget` directory, or install the plugin through the WordPress plugins screen directly.
 2. Activate the plugin through the 'Plugins' screen in WordPress
 3. Go to Settings > WeTravel Widget to configure the plugin
 4. Enter your WeTravel API key (found in your WeTravel account settings)
@@ -60,7 +60,7 @@ Yes, you can use the shortcode with parameters to filter trips. For example:
 
 = Is the widget mobile-friendly? =
 
-Absolutely! The WeTravel All Trips Widget is fully responsive and will look great on all devices.
+Absolutely! The WeTravel Trips Widget is fully responsive and will look great on all devices.
 
 = Does this plugin slow down my website? =
 
@@ -87,7 +87,7 @@ The plugin is designed to be lightweight. It caches trip data to minimize API ca
 == Upgrade Notice ==
 
 = 1.0 =
-Initial release of the WeTravel All Trips Widget. Showcase your WeTravel trips beautifully on your WordPress site.
+Initial release of the WeTravel Trips Widget. Showcase your WeTravel trips beautifully on your WordPress site.
 
 == Custom Shortcode Parameters ==
 

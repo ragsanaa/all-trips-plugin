@@ -4,7 +4,7 @@
     initializeAllPagination();
 
     // Listen for dynamic trip rendering
-    $(document).on("tripsRendered", ".all-trips-container", function () {
+    $(document).on("tripsRendered", ".wetravel-trips-container", function () {
       // Skip carousel layout
       const container = $(this);
       if (container.data("display-type") === "carousel") {
@@ -17,7 +17,7 @@
   });
 
   function initializeAllPagination() {
-    $(".all-trips-container").each(function () {
+    $(".wetravel-trips-container").each(function () {
       initializePaginationForContainer($(this));
     });
   }
@@ -34,8 +34,8 @@
     }
 
     // Get all trip items
-    const allTrips = container.find(".trip-item");
-    const totalItems = allTrips.length;
+    const wetravelTrips = container.find(".trip-item");
+    const totalItems = wetravelTrips.length;
 
     // If we don't have enough items for pagination, bail early
     if (totalItems <= itemsPerPage) {
@@ -191,10 +191,10 @@
       const endIndex = startIndex + itemsPerPage;
 
       // Hide all items first
-      allTrips.hide();
+      wetravelTrips.hide();
 
       // Show only items for current page
-      allTrips.slice(startIndex, endIndex).show();
+      wetravelTrips.slice(startIndex, endIndex).show();
 
       // Scroll to top of container if needed
       if (page !== currentPage) {

@@ -5,8 +5,8 @@
     components;
   const { InspectorControls } = editor;
 
-  registerBlockType("all-trips/block", {
-    title: "All Trips Block",
+  registerBlockType("wetravel-trips/block", {
+    title: "WeTravel Trips Block",
     icon: "location-alt",
     category: "widgets",
     attributes: {
@@ -54,6 +54,10 @@
         type: "number",
         default: 3,
       },
+      itemsPerSlide: {
+        type: "number",
+        default: 3,
+      },
       // Removed loadMoreText attribute as it's no longer needed
     },
 
@@ -68,12 +72,13 @@
         buttonColor,
         itemsPerPage,
         itemsPerRow,
+        itemsPerSlide,
       } = attributes;
 
       // Set default values from PHP settings on first load only
       React.useEffect(() => {
         // Ensure settings exist
-        const settings = window.allTripsSettings || {};
+        const settings = window.wetravelTripsSettings || {};
 
         const updatedAttributes = {};
 
@@ -93,6 +98,8 @@
           updatedAttributes.itemsPerPage = parseInt(settings.itemsPerPage);
         if (attributes.itemsPerRow === 3 && settings.itemsPerRow)
           updatedAttributes.itemsPerRow = parseInt(settings.itemsPerRow);
+        if (attributes.itemsPerSlide === 3 && settings.itemsPerSlide)
+          updatedAttributes.itemsPerSlide = parseInt(settings.itemsPerSlide);
 
         // Properly load designs
         if (settings.designs) {
@@ -167,7 +174,7 @@
         // Create sample pagination elements
         return createElement(
           "div",
-          { style: paginationStyle, className: "all-trips-pagination" },
+          { style: paginationStyle, className: "wetravel-trips-pagination" },
           createElement(
             "div",
             { style: pageItemStyle, className: "page-item" },
@@ -253,6 +260,7 @@
       };
 
       // Generate preview based on display type
+      // Generate preview based on display type
       const renderPreview = () => {
         // Get current design details
         const currentDesign =
@@ -260,124 +268,492 @@
             ? designs[selectedDesignID]
             : { name: "Default" };
 
-        // Preview styles
+        // Preview container styles
         const containerStyle = {
           border: "1px dashed #ccc",
           padding: "20px",
           backgroundColor: "#f8f8f8",
         };
 
-        const tripStyle = {
-          border: "1px solid #ddd",
-          padding: "15px",
-          marginBottom: "10px",
-          borderRadius: "4px",
-          backgroundColor: "white",
-          ...(displayType === "vertical" && {
-            display: "grid",
-            gap: "15px",
-            gridTemplateColumns: "3fr 4fr 2fr",
-          }),
+        // Apply CSS variables for button color
+        const containerWithCSSVars = {
+          ...containerStyle,
+          "--button-color": buttonColor,
         };
 
+        // Create common button styles based on current button color
         const buttonStyle = {
           backgroundColor: buttonColor,
           color: "white",
           padding: "8px 16px",
-          borderRadius: "4px",
+          borderRadius: "6px",
           display: "inline-block",
           cursor: "pointer",
           fontSize: "16px",
+          border: `1px solid ${buttonColor}`,
+          textDecoration: "none",
+          fontWeight: 500,
+          textAlign: "center",
         };
 
-        const pStyle = {
-          color: "#888",
-          fontSize: "16px",
-          margin: "0",
-        };
-
-        const spanStyle = {
-          fontSize: "16px",
-          fontWeight: "bold",
-          color: "#333",
+        // Button style for grid and carousel views
+        const outlineButtonStyle = {
+          ...buttonStyle,
+          backgroundColor: "transparent",
+          color: buttonColor,
         };
 
         // Create trip items
         const tripItems = [];
         for (let i = 0; i < 3; i++) {
-          tripItems.push(
-            createElement(
-              "div",
-              { style: tripStyle, key: i },
+          // Common trip elements
+          const tripTitle = `Sample Trip ${i + 1}`;
+          const tripDescription =
+            "Experience the journey of a lifetime with our specially curated adventure package that combines exploration, relaxation, and cultural immersion.";
+          const tripDuration = "7 days";
+          const tripLocation = "Bali, Indonesia";
+          const tripPrice = "$1,299";
+
+          // Image placeholder styles
+          const imagePlaceholderStyle = {
+            backgroundColor: "#eee",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "#888",
+            borderRadius: "4px",
+          };
+
+          // Create trip item based on display type
+          if (displayType === "vertical") {
+            // Vertical trip item
+            tripItems.push(
               createElement(
                 "div",
                 {
+                  className: "trip-item",
                   style: {
-                    backgroundColor: "#eee",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "#888",
-                    ...(displayType !== "vertical" && {
-                      height: "150px",
-                      marginBottom: "10px",
-                    }),
+                    display: "grid",
+                    gridTemplateColumns: "2fr 6fr 1.2fr",
+                    gap: "16px",
+                    border: "1px solid #cbd5e1",
+                    padding: "16px",
+                    borderRadius: "6px",
+                    backgroundColor: "#fff",
+                    boxShadow: "0px 4px 4px 0px rgba(174, 174, 174, 0.25)",
+                    marginBottom: "16px",
                   },
-                },
-                "Trip Image"
-              ),
-              createElement(
-                "div",
-                {},
-                createElement("h3", {}, `Sample Trip ${i + 1}`),
-                createElement(
-                  "p",
-                  { style: pStyle },
-                  "About your trip description goes here."
-                ),
-                createElement("span", { style: spanStyle }, "Duration")
-              ),
-              createElement(
-                "div",
-                {
-                  style: {
-                    direction: "rtl",
-                    alignContent: "end",
-                  },
+                  key: i,
                 },
                 createElement(
-                  "p",
-                  { style: { fontSize: "16px", fontWeight: "bold" } },
-                  "FROM $1,000"
+                  "div",
+                  {
+                    className: "trip-image",
+                    style: {
+                      ...imagePlaceholderStyle,
+                      minHeight: "200px",
+                    },
+                  },
+                  "Trip Image"
                 ),
-                attributes.displayType === "vertical" &&
-                  createElement("span", { style: buttonStyle }, buttonText)
+                createElement(
+                  "div",
+                  {
+                    className: "trip-content",
+                    style: {
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "space-between",
+                    },
+                  },
+                  createElement(
+                    "h3",
+                    { style: { marginTop: 0, marginBottom: "8px" } },
+                    tripTitle
+                  ),
+                  createElement(
+                    "div",
+                    {
+                      className: "trip-description",
+                      style: {
+                        color: "#475569",
+                        maxHeight: "100px",
+                        overflow: "hidden",
+                      },
+                    },
+                    tripDescription
+                  ),
+                  createElement(
+                    "div",
+                    {
+                      className: "trip-loc-duration",
+                      style: {
+                        display: "flex",
+                        gap: "8px",
+                        marginTop: "12px",
+                      },
+                    },
+                    createElement(
+                      "div",
+                      {
+                        className: "trip-tag",
+                        style: {
+                          borderRadius: "16px",
+                          border: "1px solid #cbd5e1",
+                          padding: "4px 8px",
+                        },
+                      },
+                      tripDuration
+                    ),
+                    createElement(
+                      "div",
+                      {
+                        className: "trip-tag",
+                        style: {
+                          borderRadius: "16px",
+                          border: "1px solid #cbd5e1",
+                          padding: "4px 8px",
+                        },
+                      },
+                      tripLocation
+                    )
+                  )
+                ),
+                createElement(
+                  "div",
+                  {
+                    className: "trip-price-button",
+                    style: {
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "space-between",
+                      height: "100%",
+                    },
+                  },
+                  createElement(
+                    "div",
+                    { className: "trip-price", style: { textAlign: "right" } },
+                    createElement(
+                      "p",
+                      { style: { margin: 0, color: "#64748b" } },
+                      "From"
+                    ),
+                    createElement(
+                      "span",
+                      { style: { fontSize: "20px", fontWeight: 600 } },
+                      tripPrice
+                    )
+                  ),
+                  createElement(
+                    "a",
+                    {
+                      className: "trip-button",
+                      style: buttonStyle,
+                      href: "#",
+                    },
+                    buttonText
+                  )
+                )
               )
-            )
-          );
+            );
+          } else if (displayType === "grid") {
+            // Grid trip item
+            tripItems.push(
+              createElement(
+                "div",
+                {
+                  className: "trip-item",
+                  style: {
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "16px",
+                    border: "1px solid #cbd5e1",
+                    padding: "16px",
+                    borderRadius: "6px",
+                    backgroundColor: "#fff",
+                    boxShadow: "0px 4px 4px 0px rgba(174, 174, 174, 0.25)",
+                  },
+                  key: i,
+                },
+                createElement(
+                  "div",
+                  {
+                    className: "trip-image",
+                    style: {
+                      ...imagePlaceholderStyle,
+                      height: "180px",
+                    },
+                  },
+                  "Trip Image"
+                ),
+                createElement(
+                  "div",
+                  {
+                    className: "trip-content",
+                    style: {
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "16px",
+                      flexGrow: 1,
+                    },
+                  },
+                  createElement(
+                    "div",
+                    { className: "trip-title-desc" },
+                    createElement(
+                      "h3",
+                      { style: { marginTop: 0, marginBottom: "8px" } },
+                      tripTitle
+                    ),
+                    createElement(
+                      "div",
+                      {
+                        className: "trip-description",
+                        style: {
+                          color: "#475569",
+                          maxHeight: "100px",
+                          overflow: "hidden",
+                        },
+                      },
+                      tripDescription
+                    )
+                  ),
+                  createElement(
+                    "div",
+                    {
+                      className: "trip-loc-duration",
+                      style: {
+                        display: "flex",
+                        gap: "8px",
+                        flexWrap: "wrap",
+                      },
+                    },
+                    createElement(
+                      "div",
+                      {
+                        className: "trip-tag",
+                        style: {
+                          borderRadius: "16px",
+                          border: "1px solid #cbd5e1",
+                          padding: "4px 8px",
+                        },
+                      },
+                      tripDuration
+                    ),
+                    createElement(
+                      "div",
+                      {
+                        className: "trip-tag",
+                        style: {
+                          borderRadius: "16px",
+                          border: "1px solid #cbd5e1",
+                          padding: "4px 8px",
+                        },
+                      },
+                      tripLocation
+                    )
+                  ),
+                  createElement(
+                    "div",
+                    {
+                      className: "trip-price-button",
+                      style: {
+                        display: "flex",
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                        alignItems: "flex-end",
+                        marginTop: "auto",
+                      },
+                    },
+                    createElement(
+                      "div",
+                      { className: "trip-price" },
+                      createElement(
+                        "p",
+                        { style: { margin: 0, color: "#64748b" } },
+                        "From"
+                      ),
+                      createElement(
+                        "span",
+                        { style: { fontSize: "20px", fontWeight: 600 } },
+                        tripPrice
+                      )
+                    ),
+                    createElement(
+                      "a",
+                      {
+                        className: "trip-button",
+                        style: outlineButtonStyle,
+                        href: "#",
+                      },
+                      buttonText
+                    )
+                  )
+                )
+              )
+            );
+          } else if (displayType === "carousel") {
+            // Carousel trip item
+            tripItems.push(
+              createElement(
+                "div",
+                {
+                  className: "trip-item",
+                  style: {
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "16px",
+                    border: "1px solid #cbd5e1",
+                    padding: "16px",
+                    borderRadius: "6px",
+                    backgroundColor: "#fff",
+                    boxShadow: "0px 4px 4px 0px rgba(174, 174, 174, 0.25)",
+                    width: "280px",
+                    flexShrink: 0,
+                  },
+                  key: i,
+                },
+                createElement(
+                  "div",
+                  {
+                    className: "trip-image",
+                    style: {
+                      ...imagePlaceholderStyle,
+                      height: "180px",
+                    },
+                  },
+                  "Trip Image"
+                ),
+                createElement(
+                  "div",
+                  {
+                    className: "trip-content",
+                    style: {
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "16px",
+                      flexGrow: 1,
+                    },
+                  },
+                  createElement(
+                    "div",
+                    { className: "trip-title-desc" },
+                    createElement(
+                      "h3",
+                      { style: { marginTop: 0, marginBottom: "8px" } },
+                      tripTitle
+                    ),
+                    createElement(
+                      "div",
+                      {
+                        className: "trip-description",
+                        style: {
+                          color: "#475569",
+                          maxHeight: "100px",
+                          overflow: "hidden",
+                        },
+                      },
+                      tripDescription
+                    )
+                  ),
+                  createElement(
+                    "div",
+                    { className: "trip-loc-price", style: { display: "flex", justifyContent: "space-between", alignItems: "center" } },
+                    createElement(
+                      "div",
+                      {
+                        className: "trip-loc-duration",
+                        style: {
+                          display: "flex",
+                          gap: "8px",
+                          flexWrap: "wrap",
+                        },
+                      },
+                      createElement(
+                        "div",
+                        {
+                          className: "trip-tag",
+                          style: {
+                            borderRadius: "16px",
+                            border: "1px solid #cbd5e1",
+                            padding: "4px 8px",
+                          },
+                        },
+                        tripDuration
+                      ),
+                      createElement(
+                        "div",
+                        {
+                          className: "trip-tag",
+                          style: {
+                            borderRadius: "16px",
+                            border: "1px solid #cbd5e1",
+                            padding: "4px 8px",
+                          },
+                        },
+                        tripLocation
+                      )
+                    ),
+                    createElement(
+                      "div",
+                      {
+                        className: "trip-price-button",
+                        style: {
+                          marginTop: "12px",
+                          direction: "rtl",
+                        },
+                      },
+                      createElement(
+                        "div",
+                        { className: "trip-price" },
+                        createElement(
+                          "p",
+                          { style: { margin: 0, color: "#64748b" } },
+                          "From"
+                        ),
+                        createElement(
+                          "span",
+                          { style: { fontSize: "20px", fontWeight: 600 } },
+                          tripPrice
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            );
+          }
         }
 
         // Render based on display type
         if (displayType === "grid") {
-          const gridStyle = {
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
-            gap: "15px",
-          };
+          // Calculate grid columns based on itemsPerRow
+          const gridColumns = `repeat(${itemsPerRow}, 1fr)`;
 
           return createElement(
             Fragment,
             {},
             createElement(
               "div",
-              { style: containerStyle },
+              { style: containerWithCSSVars },
               createElement(
                 "h2",
                 {},
-                `Design: ${currentDesign.name || "Default"} (Grid View)`
+                `Widget: ${currentDesign.name || "Default"} (Grid View)`
               ),
-              createElement("div", { style: gridStyle }, ...tripItems),
-              // Replace load more button with pagination
+              createElement(
+                "div",
+                {
+                  className: "wetravel-trips-container grid-view",
+                  style: {
+                    display: "grid",
+                    gridTemplateColumns: gridColumns,
+                    gap: "15px",
+                    margin: "0px 20px",
+                  },
+                },
+                ...tripItems
+              ),
               displayType !== "carousel" && renderPagination()
             )
           );
@@ -387,28 +763,124 @@
             {},
             createElement(
               "div",
-              { style: containerStyle },
+              { style: containerWithCSSVars },
               createElement(
                 "h2",
                 {},
-                `Design: ${currentDesign.name || "Default"} (Carousel View)`
+                `Widget: ${currentDesign.name || "Default"} (Carousel View)`
               ),
               createElement(
                 "div",
                 {
-                  style: {
-                    display: "flex",
-                    overflowX: "auto",
-                    gap: "15px",
-                    padding: "10px 0",
-                  },
+                  className: "wetravel-trips-container carousel-view",
+                  style: { margin: "0px 20px" },
                 },
-                ...tripItems
-              ),
-              createElement(
-                "div",
-                { style: { textAlign: "center", margin: "10px 0" } },
-                "• • •"
+                createElement(
+                  "div",
+                  {
+                    className: "swiper",
+                    style: {
+                      padding: "0 60px",
+                      position: "relative",
+                      overflow: "visible",
+                    },
+                  },
+                  createElement(
+                    "div",
+                    {
+                      className: "swiper-wrapper",
+                      style: {
+                        display: "flex",
+                        overflowX: "auto",
+                        gap: "15px",
+                        padding: "10px 0",
+                      },
+                    },
+                    ...tripItems
+                  ),
+                  createElement(
+                    "div",
+                    {
+                      className: "swiper-button-next",
+                      style: {
+                        position: "absolute",
+                        top: "50%",
+                        right: "10px",
+                        transform: "translateY(-50%)",
+                        width: "40px",
+                        height: "40px",
+                        backgroundColor: buttonColor,
+                        borderRadius: "50%",
+                        color: "#fff",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      },
+                    },
+                    "›"
+                  ),
+                  createElement(
+                    "div",
+                    {
+                      className: "swiper-button-prev",
+                      style: {
+                        position: "absolute",
+                        top: "50%",
+                        left: "10px",
+                        transform: "translateY(-50%)",
+                        width: "40px",
+                        height: "40px",
+                        backgroundColor: buttonColor,
+                        borderRadius: "50%",
+                        color: "#fff",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      },
+                    },
+                    "‹"
+                  )
+                ),
+                createElement(
+                  "div",
+                  {
+                    className: "swiper-pagination",
+                    style: {
+                      textAlign: "center",
+                      margin: "20px 0",
+                      display: "flex",
+                      justifyContent: "center",
+                      gap: "5px",
+                    },
+                  },
+                  createElement("span", {
+                    style: {
+                      width: "12px",
+                      height: "12px",
+                      backgroundColor: buttonColor,
+                      borderRadius: "50%",
+                      display: "inline-block",
+                    },
+                  }),
+                  createElement("span", {
+                    style: {
+                      width: "12px",
+                      height: "12px",
+                      backgroundColor: "#ddd",
+                      borderRadius: "50%",
+                      display: "inline-block",
+                    },
+                  }),
+                  createElement("span", {
+                    style: {
+                      width: "12px",
+                      height: "12px",
+                      backgroundColor: "#ddd",
+                      borderRadius: "50%",
+                      display: "inline-block",
+                    },
+                  })
+                )
               )
             )
           );
@@ -419,20 +891,25 @@
             {},
             createElement(
               "div",
-              { style: containerStyle },
+              { style: containerWithCSSVars },
               createElement(
                 "h2",
                 {},
-                `Design: ${currentDesign.name || "Default"} (Vertical View)`
+                `Widget: ${currentDesign.name || "Default"} (Vertical View)`
               ),
-              createElement("div", {}, ...tripItems),
-              // Replace load more button with pagination
+              createElement(
+                "div",
+                {
+                  className: "wetravel-trips-container vertical-view",
+                  style: { margin: "0px 20px" },
+                },
+                ...tripItems
+              ),
               displayType !== "carousel" && renderPagination()
             )
           );
         }
       };
-
       // Create options for design dropdown
       const designOptions = [{ label: "Choose a design...", value: "" }];
 
@@ -465,13 +942,13 @@
           {},
           createElement(
             PanelBody,
-            { title: "Design Library", initialOpen: true },
+            { title: "Widget Library", initialOpen: true },
             createElement(SelectControl, {
-              label: "Select Design",
+              label: "Select Widget",
               value: selectedDesignID,
               options: designOptions,
               onChange: (value) => setAttributes({ selectedDesignID: value }),
-              help: "Select a design from your Design Library",
+              help: "Select a design from your Widget Library",
             })
           ),
           createElement(
@@ -483,7 +960,7 @@
                 value: itemsPerRow,
                 onChange: (value) => setAttributes({ itemsPerRow: value }),
                 min: 1,
-                max: 10,
+                max: 4,
               }),
             attributes.displayType !== "carousel" &&
               createElement(RangeControl, {
@@ -496,10 +973,10 @@
             attributes.displayType === "carousel" &&
               createElement(RangeControl, {
                 label: "Items Per Slide",
-                value: itemsPerPage,
-                onChange: (value) => setAttributes({ itemsPerPage: value }),
+                value: itemsPerSlide,
+                onChange: (value) => setAttributes({ itemsPerSlide: value }),
                 min: 1,
-                max: 5,
+                max: 4,
               })
           )
         )

@@ -1,6 +1,6 @@
-/* General styles for All Trips plugin */
+/* General styles for WeTravel Trips plugin */
 
-.wp-block-all-trips-block {
+.wp-block-wetravel-trips-block {
   margin-bottom: 30px;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
@@ -43,6 +43,7 @@ a {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  gap: 16px;
 }
 
 .trip-description {
@@ -51,13 +52,25 @@ a {
   font-family: Inter;
   font-weight: 400;
   font-size: 16px;
-  text-overflow: ellipsis;
   overflow: hidden;
   line-height: 2;
-  display: -webkit-box;
-  -webkit-line-clamp: 3; /* number of lines to show */
-  line-clamp: 3;
-  -webkit-box-orient: vertical;
+  position: relative;
+}
+
+/* Add a new class for the fade effect that we'll apply conditionally */
+.trip-description.needs-fade:after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 30px; /* Height of fade effect */
+  width: 100%;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0),
+    rgba(255, 255, 255, 1)
+  ); /* Transparent to white fade */
+  pointer-events: none; /* Makes sure the fade doesn't interfere with clicks */
 }
 
 .trip-loc-duration {
@@ -71,6 +84,12 @@ a {
   line-height: 100%;
   letter-spacing: 0%;
   vertical-align: middle;
+  flex-wrap: wrap;
+}
+
+.trip-loc-price {
+  display: flex;
+  justify-content: space-between;
 }
 
 .trip-tag {
@@ -86,12 +105,15 @@ a {
 
 .trip-price p {
   margin: 0;
+  color: #64748b;
+  line-height: 1;
 }
 
 .trip-price span {
   font-size: 20px;
   font-weight: 600;
   text-align: right;
+  line-height: 1;
 }
 
 /* Button styling */
@@ -112,6 +134,17 @@ a {
 
 .trip-item .trip-button:hover {
   opacity: 0.9;
+}
+
+.trip-image {
+  min-width: 200px;
+}
+
+.trip-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  min-height: 200px;
 }
 
 .trip-button-container {
@@ -135,30 +168,28 @@ a {
   font-size: 14px;
 }
 
-.all-trips-container {
+.wetravel-trips-container {
   margin: 0px 20px;
 }
 
 /* Grid view styles */
-.all-trips-container.grid-view {
+.wetravel-trips-container.grid-view {
   display: grid !important;
   grid-template-columns: repeat(var(--items-per-row), 1fr);
   gap: 15px;
 }
 
-.all-trips-container.grid-view .trip-item {
+.wetravel-trips-container.grid-view .trip-item {
   display: flex;
   flex-direction: column;
   gap: 24px;
 }
 
-.all-trips-container.grid-view img {
-  height: 160px;
-  object-fit: cover;
-  width: 100%;
+.wetravel-trips-container.grid-view .trip-item img {
+  max-height: 200px;
 }
 
-.all-trips-container.grid-view .all-trips-loading {
+.wetravel-trips-container.grid-view .wetravel-trips-loading {
   grid-column: 1 / -1; /* Span across all columns */
   display: flex;
   flex-direction: column;
@@ -168,15 +199,14 @@ a {
   padding: 30px;
 }
 
-.all-trips-container.grid-view .trip-button,
-.all-trips-container.carousel-view .trip-button {
+.wetravel-trips-container.grid-view .trip-button,
+.wetravel-trips-container.carousel-view .trip-button {
   width: 100%;
   background-color: unset;
   color: var(--button-color);
 }
 
-.all-trips-container.grid-view .trip-price-button,
-.all-trips-container.carousel-view .trip-price-button {
+.wetravel-trips-container.grid-view .trip-price-button {
   direction: ltr;
   display: flex;
   flex-direction: row;
@@ -186,30 +216,22 @@ a {
 }
 
 /* Vertical view styles */
-.all-trips-container.vertical-view .trip-item {
+.wetravel-trips-container.vertical-view .trip-item {
   margin-bottom: 16px;
   display: grid;
-  grid-template-columns: 2fr 4fr 1fr;
+  grid-template-columns: 2fr 6fr 1.2fr;
   align-items: start;
-  max-height: 200px;
   box-sizing: content-box;
 }
 
-.all-trips-container.vertical-view img {
-  height: 100%;
-  width: 100%;
-  object-fit: cover;
-  min-height: 200px;
-}
-
-.all-trips-container.vertical-view .trip-price-button {
+.wetravel-trips-container.vertical-view .trip-price-button {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   height: 100%;
 }
 
-.all-trips-container.vertical-view h3 {
+.wetravel-trips-container.vertical-view h3 {
   font-size: 24px;
   margin-top: 0;
   margin-bottom: 10px;
@@ -218,15 +240,15 @@ a {
 /* Carousel view styles */
 
 /* Style for swiper carousel similar to image */
-.all-trips-container.carousel-view .swiper {
+.wetravel-trips-container.carousel-view .swiper {
   padding: 0 60px; /* Increase from 40px to 60px to create more space */
   position: relative;
   overflow: visible;
 }
 
 /* Position arrows on the sides outside of the carousel */
-.all-trips-container.carousel-view .swiper-button-next,
-.all-trips-container.carousel-view .swiper-button-prev {
+.wetravel-trips-container.carousel-view .swiper-button-next,
+.wetravel-trips-container.carousel-view .swiper-button-prev {
   top: 50%;
   transform: translateY(-50%);
   width: 40px;
@@ -236,53 +258,53 @@ a {
   color: #fff;
 }
 
-.all-trips-container.carousel-view .swiper-button-next {
+.wetravel-trips-container.carousel-view .swiper-button-next {
   right: 10px; /* Move 10px to the right from the edge */
 }
 
-.all-trips-container.carousel-view .swiper-button-prev {
+.wetravel-trips-container.carousel-view .swiper-button-prev {
   left: 10px; /* Move 10px to the left from the edge */
 }
 
 /* Style the arrow icons */
-.all-trips-container.carousel-view .swiper-button-next::after,
-.all-trips-container.carousel-view .swiper-button-prev::after {
+.wetravel-trips-container.carousel-view .swiper-button-next::after,
+.wetravel-trips-container.carousel-view .swiper-button-prev::after {
   font-size: 18px;
   font-weight: 600;
 }
 
 /* Style pagination dots */
-.all-trips-container.carousel-view .swiper-pagination {
+.wetravel-trips-container.carousel-view .swiper-pagination {
   position: relative;
   margin-top: 20px;
 }
 
-.all-trips-container.carousel-view .swiper-slide {
+.wetravel-trips-container.carousel-view .swiper-slide {
   visibility: hidden; /* Hide all slides by default */
   height: auto;
 }
 
-.all-trips-container.carousel-view .swiper-slide-active,
-.all-trips-container.carousel-view .swiper-slide-visible {
+.wetravel-trips-container.carousel-view .swiper-slide-active,
+.wetravel-trips-container.carousel-view .swiper-slide-visible {
   visibility: visible; /* Only show active/visible slides */
 }
 
-.all-trips-container.carousel-view .swiper-pagination-bullet {
+.wetravel-trips-container.carousel-view .swiper-pagination-bullet {
   width: 12px;
   height: 12px;
   margin: 0 5px;
 }
 
-.all-trips-container.carousel-view .swiper-wrapper {
+.wetravel-trips-container.carousel-view .swiper-wrapper {
   margin: 0 auto;
 }
 
-.all-trips-container.carousel-view .swiper-pagination-bullet-active {
+.wetravel-trips-container.carousel-view .swiper-pagination-bullet-active {
   background-color: var(--button-color);
 }
 
 /* Style for trip cards */
-.all-trips-container.carousel-view .trip-item {
+.wetravel-trips-container.carousel-view .trip-item {
   overflow: hidden;
   transition: transform 0.6s ease;
   display: flex;
@@ -290,20 +312,13 @@ a {
   gap: 24px;
 }
 
-.all-trips-container.carousel-view .trip-item:hover {
+.wetravel-trips-container.carousel-view .trip-item:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
-/* Make sure images are consistent size */
-.all-trips-container.carousel-view .trip-item img {
-  width: 100%;
-  height: 200px;
-  object-fit: cover;
-}
-
 /* Pagination Styles */
-.all-trips-pagination {
+.wetravel-trips-pagination {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -311,11 +326,11 @@ a {
   flex-wrap: wrap;
 }
 
-.all-trips-pagination .page-item {
+.wetravel-trips-pagination .page-item {
   margin: 0 3px;
 }
 
-.all-trips-pagination .page-link {
+.wetravel-trips-pagination .page-link {
   display: inline-block;
   padding: 8px 12px;
   color: #333;
@@ -326,17 +341,17 @@ a {
   transition: all 0.3s ease;
 }
 
-.all-trips-pagination .page-link:hover {
+.wetravel-trips-pagination .page-link:hover {
   background-color: #f5f5f5;
 }
 
-.all-trips-pagination .page-item.active .page-link {
+.wetravel-trips-pagination .page-item.active .page-link {
   background-color: var(--button-color);
   color: #fff;
   border-color: var(--button-color);
 }
 
-.all-trips-pagination .page-item.disabled .page-link {
+.wetravel-trips-pagination .page-item.disabled .page-link {
   color: #999;
   pointer-events: none;
   cursor: default;
@@ -361,29 +376,48 @@ a {
 }
 
 /* Handle responsive layout */
+
+@media screen and (max-width: 960px) {
+  .wetravel-trips-container.grid-view {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media screen and (max-width: 640px) {
-  .all-trips-container.vertical-view .trip-item {
+  .wetravel-trips-container.vertical-view .trip-item {
     grid-template-columns: 1fr;
   }
 
-  .all-trips-container.vertical-view .trip-price {
+  .wetravel-trips-container.vertical-view .trip-price {
     margin-bottom: 0;
   }
 
-  .all-trips-pagination .page-link {
+  .wetravel-trips-pagination .page-link {
     padding: 6px 10px;
     font-size: 14px;
+  }
+
+  .wetravel-trips-container.grid-view {
+    grid-template-columns: 1fr;
+  }
+
+  .trip-image {
+    min-width: 100px;
+    height: auto;
+  }
+
+  .trip-item img {
+    max-height: 100px;
   }
 }
 
 @media screen and (max-width: 480px) {
-  .all-trips-container.grid-view {
-    grid-template-columns: 1fr;
+  .trip-item img {
   }
 }
 
 /* Add this to your CSS file */
-.all-trips-loading {
+.wetravel-trips-loading {
   text-align: center;
   padding: 30px;
 }

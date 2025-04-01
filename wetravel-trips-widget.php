@@ -1,13 +1,13 @@
 <?php
 /**
- * Plugin Name: WeTravel All Trips Widget
+ * Plugin Name: WeTravel Trips Widget
  * Plugin URI:  https://wetravel.com
  * Description: A plugin to embed WeTravel trips dynamically.
  * Version:     1.0
  * Author:      WeTravel
  * Author URI:  https://wetravel.com
  * License:     GPL2
- * Text Domain: all-trips-widget
+ * Text Domain: wetravel-trips-widget
  *
  * @package WordPress
  */
@@ -18,84 +18,85 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define plugin path.
-define( 'ALL_TRIPS_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
-define( 'ALL_TRIPS_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
+define( 'WETRAVEL_TRIPS_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
+define( 'WETRAVEL_TRIPS_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
 // Include admin settings page.
-require_once ALL_TRIPS_PLUGIN_DIR . 'admin/settings-page.php';
+require_once WETRAVEL_TRIPS_PLUGIN_DIR . 'admin/settings-page.php';
 
-// In all-trips-plugin.php, add this line to include the fetch-trips.php file.
+// In wetravel-trips-widget.php, add this line to include the fetch-trips.php file.
 // Add this after the other require_once statements near the top of the file.
 
 // Include fetch trips functionality.
-require_once ALL_TRIPS_PLUGIN_DIR . 'includes/fetch-trips.php';
+require_once WETRAVEL_TRIPS_PLUGIN_DIR . 'includes/fetch-trips.php';
 
 // Include functions.
-require_once ALL_TRIPS_PLUGIN_DIR . 'includes/functions.php';
+require_once WETRAVEL_TRIPS_PLUGIN_DIR . 'includes/functions.php';
 
 /** Enqueue styles and scripts for frontend. */
-function all_trips_enqueue_scripts() {
+function wetravel_trips_enqueue_scripts() {
 	// Register main stylesheet.
 	wp_register_style(
-		'all-trips-styles',
-		ALL_TRIPS_PLUGIN_URL . 'assets/css/all-trips.css',
+		'wetravel-trips-styles',
+		WETRAVEL_TRIPS_PLUGIN_URL . 'assets/css/wetravel-trips.css',
 		array(),
-		filemtime( ALL_TRIPS_PLUGIN_DIR . 'assets/css/all-trips.css' )
+		filemtime( WETRAVEL_TRIPS_PLUGIN_DIR . 'assets/css/wetravel-trips.css' )
 	);
 
 	// Enqueue main stylesheet.
-	wp_enqueue_style( 'all-trips-styles' );
+	wp_enqueue_style( 'wetravel-trips-styles' );
 
 	wp_add_inline_style(
-		'all-trips-styles',
-		':root { --button-color: ' . get_option( 'all_trips_button_color', '#33ae3f' ) . '; --items-per-row: ' . get_option( 'all_trips_items_per_row', 3 ) . '; }'
+		'wetravel-trips-styles',
+		':root { --button-color: ' . get_option( 'wetravel_trips_button_color', '#33ae3f' ) . '; --items-per-row: ' . get_option( 'wetravel_trips_items_per_row', 3 ) . '; }'
 	);
 }
-add_action( 'wp_enqueue_scripts', 'all_trips_enqueue_scripts' );
+add_action( 'wp_enqueue_scripts', 'wetravel_trips_enqueue_scripts' );
 
 /**  Enqueue scripts for block. */
-function all_trips_enqueue_block_assets() {
+function wetravel_trips_enqueue_block_assets() {
 	// Enqueue block editor script.
 	wp_enqueue_script(
-		'all-trips-block',
-		ALL_TRIPS_PLUGIN_URL . 'blocks/index.js',
+		'wetravel-trips-block',
+		WETRAVEL_TRIPS_PLUGIN_URL . 'blocks/index.js',
 		array( 'wp-blocks', 'wp-element', 'wp-editor', 'wp-components' ),
-		filemtime( ALL_TRIPS_PLUGIN_DIR . 'blocks/index.js' ),
+		filemtime( WETRAVEL_TRIPS_PLUGIN_DIR . 'blocks/index.js' ),
 		true
 	);
 
 	// Prepare settings.
-	$all_trips_settings = array(
-		'src'          => get_option( 'all_trips_src', '' ),
-		'slug'         => get_option( 'all_trips_slug', '' ),
-		'env'          => get_option( 'all_trips_env', 'https://pre.wetravel.to' ),
-		'displayType'  => get_option( 'all_trips_display_type', 'vertical' ),
-		'buttonType'   => get_option( 'all_trips_button_type', 'book_now' ),
-		'buttonColor'  => get_option( 'all_trips_button_color', '#33ae3f' ),
-		'itemsPerPage' => (int) get_option( 'all_trips_items_per_page', 10 ),
-		'itemsPerRow'  => (int) get_option( 'all_trips_items_per_row', 3 ),
-		'loadMoreText' => get_option( 'all_trips_load_more_text', 'Load More' ),
-		'designs'      => get_option( 'all_trips_designs', array() ),
+	$wetravel_trips_settings = array(
+		'src'          => get_option( 'wetravel_trips_src', '' ),
+		'slug'         => get_option( 'wetravel_trips_slug', '' ),
+		'env'          => get_option( 'wetravel_trips_env', 'https://pre.wetravel.to' ),
+		'displayType'  => get_option( 'wetravel_trips_display_type', 'vertical' ),
+		'buttonType'   => get_option( 'wetravel_trips_button_type', 'book_now' ),
+		'buttonColor'  => get_option( 'wetravel_trips_button_color', '#33ae3f' ),
+		'itemsPerPage' => (int) get_option( 'wetravel_trips_items_per_page', 10 ),
+		'itemsPerRow'  => (int) get_option( 'wetravel_trips_items_per_row', 3 ),
+		'itemsPerSlide' => (int) get_option( 'wetravel_trips_items_per_slide', 3 ),
+		'loadMoreText' => get_option( 'wetravel_trips_load_more_text', 'Load More' ),
+		'designs'      => get_option( 'wetravel_trips_designs', array() ),
 	);
 
 	// Localize the script with settings.
-	wp_localize_script( 'all-trips-block', 'allTripsSettings', $all_trips_settings );
+	wp_localize_script( 'wetravel-trips-block', 'wetravelTripsSettings', $wetravel_trips_settings );
 }
-add_action( 'enqueue_block_editor_assets', 'all_trips_enqueue_block_assets' );
+add_action( 'enqueue_block_editor_assets', 'wetravel_trips_enqueue_block_assets' );
 
 /**  Register block. */
-function all_trips_register_block() {
+function wetravel_trips_register_block() {
 	// Skip block registration if Gutenberg is not available.
 	if ( ! function_exists( 'register_block_type' ) ) {
 		return;
 	}
 
-	// In all-trips-plugin.php, update the register_block_type attributes.
+	// In wetravel-trips-widget.php, update the register_block_type attributes.
 	register_block_type(
-		'all-trips/block',
+		'wetravel-trips/block',
 		array(
-			'editor_script'   => 'all-trips-block',
-			'render_callback' => 'all_trips_block_render',
+			'editor_script'   => 'wetravel-trips-block',
+			'render_callback' => 'wetravel_trips_block_render',
 			'attributes'      => array(
 				'designs'          => array(
 					'type'    => 'array',
@@ -141,6 +142,10 @@ function all_trips_register_block() {
 					'type'    => 'number',
 					'default' => 3,
 				),
+				'itemsPerSlide'    => array(
+					'type'    => 'number',
+					'default' => 3,
+				),
 				'loadMoreText'     => array(
 					'type'    => 'string',
 					'default' => 'Load More',
@@ -149,28 +154,28 @@ function all_trips_register_block() {
 		)
 	);
 }
-add_action( 'init', 'all_trips_register_block' );
+add_action( 'init', 'wetravel_trips_register_block' );
 
 // Include the block render function.
-require_once ALL_TRIPS_PLUGIN_DIR . 'includes/block-renderer.php';
+require_once WETRAVEL_TRIPS_PLUGIN_DIR . 'includes/block-renderer.php';
 
 // Include shortcode functionality.
-require_once ALL_TRIPS_PLUGIN_DIR . 'includes/shortcode.php';
+require_once WETRAVEL_TRIPS_PLUGIN_DIR . 'includes/shortcode.php';
 
 // Include admin design library page.
-require_once ALL_TRIPS_PLUGIN_DIR . 'admin/design-library-page.php';
+require_once WETRAVEL_TRIPS_PLUGIN_DIR . 'admin/design-library-page.php';
 
 // Include admin create design page.
-require_once ALL_TRIPS_PLUGIN_DIR . 'admin/create-design-page.php';
+require_once WETRAVEL_TRIPS_PLUGIN_DIR . 'admin/create-design-page.php';
 
 /**  Register shortcode. */
-function all_trips_register_shortcode() {
-	add_shortcode( 'all_trips', 'all_trips_shortcode' );
+function wetravel_trips_register_shortcode() {
+	add_shortcode( 'wetravel_trips', 'wetravel_trips_shortcode' );
 }
-add_action( 'init', 'all_trips_register_shortcode' );
+add_action( 'init', 'wetravel_trips_register_shortcode' );
 
 /**  Add this function to clear transient timeouts. */
-function all_trips_clear_transients() {
+function wetravel_trips_clear_transients() {
 	global $wpdb;
 
 	// Fetch all options (cached by WordPress).
@@ -185,17 +190,17 @@ function all_trips_clear_transients() {
 	// Clear cache after deleting.
 	wp_cache_flush();
 }
-register_activation_hook( __FILE__, 'all_trips_clear_transients' );
+register_activation_hook( __FILE__, 'wetravel_trips_clear_transients' );
 
 /** Plugin activation hook. */
-function all_trips_activation() {
+function wetravel_trips_activation() {
 	// Create necessary directories if they don't exist.
 	$dirs = array(
-		ALL_TRIPS_PLUGIN_DIR . 'assets',
-		ALL_TRIPS_PLUGIN_DIR . 'assets/css',
-		ALL_TRIPS_PLUGIN_DIR . 'assets/js',
-		ALL_TRIPS_PLUGIN_DIR . 'includes',
-		ALL_TRIPS_PLUGIN_DIR . 'blocks',
+		WETRAVEL_TRIPS_PLUGIN_DIR . 'assets',
+		WETRAVEL_TRIPS_PLUGIN_DIR . 'assets/css',
+		WETRAVEL_TRIPS_PLUGIN_DIR . 'assets/js',
+		WETRAVEL_TRIPS_PLUGIN_DIR . 'includes',
+		WETRAVEL_TRIPS_PLUGIN_DIR . 'blocks',
 	);
 
 	foreach ( $dirs as $dir ) {
@@ -206,7 +211,7 @@ function all_trips_activation() {
 
 	// Create empty files if they don't exist.
 	$files = array(
-		'assets/css/all-trips.css'    => '',
+		'assets/css/wetravel-trips.css'    => '',
 		'assets/js/pagination.js'     => '',
 		'assets/js/carousel.js'       => '',
 		'blocks/editor.css'           => '',
@@ -233,11 +238,11 @@ if (!defined(\'ABSPATH\')) {
 	WP_Filesystem();
 
 	foreach ( $files as $file => $content ) {
-		$filepath = ALL_TRIPS_PLUGIN_DIR . $file;
+		$filepath = WETRAVEL_TRIPS_PLUGIN_DIR . $file;
 
 		if ( ! file_exists( $filepath ) ) {
 			$wp_filesystem->put_contents( $filepath, $content, FS_CHMOD_FILE );
 		}
 	}
 }
-register_activation_hook( __FILE__, 'all_trips_activation' );
+register_activation_hook( __FILE__, 'wetravel_trips_activation' );

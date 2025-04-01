@@ -1,6 +1,6 @@
 <?php
 /**
- * Shortcode functionality for All Trips Plugin
+ * Shortcode functionality for WeTravel Trips Plugin
  *
  * @package WordPress
  */
@@ -11,31 +11,32 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Add shortcode support for All Trips
+ * Add shortcode support for WeTravel Trips
  *
  * @param array $atts Shortcode attributes.
  * @return string Rendered HTML
  */
-function all_trips_shortcode( $atts ) {
+function wetravel_trips_shortcode( $atts ) {
 	// Define default attributes.
 	$default_atts = array(
 		'design'         => '',  // Design ID or keyword.
-		'slug'           => get_option( 'all_trips_slug', '' ),
-		'env'            => get_option( 'all_trips_env', 'https://pre.wetravel.to' ),
-		'display_type'   => get_option( 'all_trips_display_type', 'vertical' ),
-		'button_type'    => get_option( 'all_trips_button_type', 'book_now' ),
+		'slug'           => get_option( 'wetravel_trips_slug', '' ),
+		'env'            => get_option( 'wetravel_trips_env', 'https://pre.wetravel.to' ),
+		'display_type'   => get_option( 'wetravel_trips_display_type', 'vertical' ),
+		'button_type'    => get_option( 'wetravel_trips_button_type', 'book_now' ),
 		'button_text'    => '',
-		'button_color'   => get_option( 'all_trips_button_color', '#33ae3f' ),
-		'items_per_page' => get_option( 'all_trips_items_per_page', 10 ),
-		'items_per_row'  => get_option( 'all_trips_items_per_row', 3 ),
-		'load_more_text' => get_option( 'all_trips_load_more_text', 'Load More' ),
+		'button_color'   => get_option( 'wetravel_trips_button_color', '#33ae3f' ),
+		'items_per_page' => get_option( 'wetravel_trips_items_per_page', 10 ),
+		'items_per_row'  => get_option( 'wetravel_trips_items_per_row', 3 ),
+		'items_per_slide' => get_option( 'wetravel_trips_items_per_slide', 3 ),
+		'load_more_text' => get_option( 'wetravel_trips_load_more_text', 'Load More' ),
 		'trip_type'      => 'all',
 		'date_start'     => '',
 		'date_end'       => '',
 	);
 
 	// Parse incoming attributes into an array and merge it with defaults.
-	$atts = shortcode_atts( $default_atts, $atts, 'all_trips' );
+	$atts = shortcode_atts( $default_atts, $atts, 'wetravel_trips' );
 
 	// Convert to block attributes format.
 	$block_atts = array(
@@ -47,6 +48,7 @@ function all_trips_shortcode( $atts ) {
 		'buttonColor'  => $atts['button_color'],
 		'itemsPerPage' => intval( $atts['items_per_page'] ),
 		'itemsPerRow'  => intval( $atts['items_per_row'] ),
+		'itemsPerSlide' => intval( $atts['items_per_slide'] ),
 		'loadMoreText' => $atts['load_more_text'],
 		'tripType'     => $atts['trip_type'],
 		'dateStart'    => $atts['date_start'],
@@ -58,7 +60,7 @@ function all_trips_shortcode( $atts ) {
 		$block_atts['selectedDesignID'] = $atts['design'];
 
 		// Get all designs.
-		$designs   = get_option( 'all_trips_designs', array() );
+		$designs   = get_option( 'wetravel_trips_designs', array() );
 		$design_id = $atts['design'];
 		$design    = null;
 
@@ -106,14 +108,14 @@ function all_trips_shortcode( $atts ) {
 	}
 
 	// Use the existing block render function to maintain consistency.
-	if ( function_exists( 'all_trips_block_render' ) ) {
-		return all_trips_block_render( $block_atts );
+	if ( function_exists( 'wetravel_trips_block_render' ) ) {
+		return wetravel_trips_block_render( $block_atts );
 	} else {
 		// Fallback if block render function doesn't exist.
-		return render_all_trips_fallback( $block_atts );
+		return render_wetravel_trips_fallback( $block_atts );
 	}
 }
-add_shortcode( 'all_trips', 'all_trips_shortcode' );
+add_shortcode( 'wetravel_trips', 'wetravel_trips_shortcode' );
 
 /**
  * Fallback render function in case block render function doesn't exist
@@ -121,12 +123,12 @@ add_shortcode( 'all_trips', 'all_trips_shortcode' );
  * @param array $atts Trip display attributes.
  * @return string Rendered HTML
  */
-function render_all_trips_fallback( $atts ) {
+function render_wetravel_trips_fallback( $atts ) {
 	// Generate a unique ID for this shortcode instance.
 	$block_id = wp_unique_id( 'wetravel-' );
 
 	// Create a nonce for AJAX security.
-	$nonce = wp_create_nonce( 'all_trips_nonce' );
+	$nonce = wp_create_nonce( 'wetravel_trips_nonce' );
 
 	// Clean up the environment URL if needed.
 	$env = rtrim( $atts['env'], '/' );
@@ -138,7 +140,7 @@ function render_all_trips_fallback( $atts ) {
 
 	// Ensure trips-loader.js is enqueued.
 	wp_enqueue_script(
-		'all-trips-loader',
+		'wetravel-trips-loader',
 		plugins_url( 'assets/js/trips-loader.js', __DIR__ ),
 		array( 'jquery' ),
 		filemtime( plugin_dir_path( __DIR__ ) . 'assets/js/trips-loader.js' ),
@@ -161,7 +163,7 @@ function render_all_trips_fallback( $atts ) {
 			true
 		);
 		wp_enqueue_script(
-			'all-trips-carousel',
+			'wetravel-trips-carousel',
 			plugins_url( 'assets/js/carousel.js', __DIR__ ),
 			array( 'jquery', 'swiper-js' ),
 			filemtime( plugin_dir_path( __DIR__ ) . 'assets/js/carousel.js' ),
@@ -170,7 +172,7 @@ function render_all_trips_fallback( $atts ) {
 	} else {
 		// Always enqueue pagination script for grid and vertical views.
 		wp_enqueue_script(
-			'all-trips-pagination',
+			'wetravel-trips-pagination',
 			plugins_url( 'assets/js/pagination.js', __DIR__ ),
 			array( 'jquery' ),
 			filemtime( plugin_dir_path( __DIR__ ) . 'assets/js/pagination.js' ),
@@ -180,8 +182,8 @@ function render_all_trips_fallback( $atts ) {
 
 	// Localize the script to provide the AJAX URL.
 	wp_localize_script(
-		'all-trips-loader',
-		'allTripsData',
+		'wetravel-trips-loader',
+		'wetravelTripsData',
 		array(
 			'ajaxurl' => admin_url( 'admin-ajax.php' ),
 			'nonce'   => $nonce,
@@ -243,8 +245,8 @@ function render_all_trips_fallback( $atts ) {
     ";
 
 	// Enqueue or add inline styles.
-	if ( wp_style_is( 'all-trips-styles', 'registered' ) ) {
-		wp_add_inline_style( 'all-trips-styles', $custom_css );
+	if ( wp_style_is( 'wetravel-trips-styles', 'registered' ) ) {
+		wp_add_inline_style( 'wetravel-trips-styles', $custom_css );
 	} else {
 		echo '<style>' . esc_attr( $custom_css ) . '</style>';
 	}
@@ -252,14 +254,15 @@ function render_all_trips_fallback( $atts ) {
 	// Build the output HTML.
 	ob_start();
 	?>
-	<div class="wp-block-all-trips-block">
-		<div class="all-trips-container <?php echo esc_attr( $atts['displayType'] ); ?>-view"
+	<div class="wp-block-wetravel-trips-block">
+		<div class="wetravel-trips-container <?php echo esc_attr( $atts['displayType'] ); ?>-view"
 			id="trips-container-<?php echo esc_attr( $block_id ); ?>"
 			data-slug="<?php echo esc_attr( $atts['slug'] ); ?>"
 			data-env="<?php echo esc_attr( $env ); ?>"
 			data-nonce="<?php echo esc_attr( $nonce ); ?>"
 			data-items-per-page="<?php echo esc_attr( $atts['itemsPerPage'] ); ?>"
 			data-items-per-row="<?php echo esc_attr( $atts['itemsPerRow'] ); ?>"
+			data-items-per-slide="<?php echo esc_attr( $atts['itemsPerSlide'] ); ?>"
 			data-display-type="<?php echo esc_attr( $atts['displayType'] ); ?>"
 			data-button-type="<?php echo esc_attr( $atts['buttonType'] ); ?>"
 			data-button-text="<?php echo esc_attr( $atts['buttonText'] ); ?>"
@@ -276,7 +279,7 @@ function render_all_trips_fallback( $atts ) {
 			<?php endif; ?>>
 
 			<!-- Loading indicator -->
-			<div class="all-trips-loading">
+			<div class="wetravel-trips-loading">
 				<div class="loading-spinner"></div>
 				<p>Loading trips...</p>
 			</div>
@@ -284,7 +287,7 @@ function render_all_trips_fallback( $atts ) {
 
 		<?php if ( 'carousel' !== $atts['displayType'] ) : ?>
 			<!-- Numbered pagination container - will be populated by JavaScript -->
-			<div id="pagination-<?php echo esc_attr( $block_id ); ?>" class="all-trips-pagination"></div>
+			<div id="pagination-<?php echo esc_attr( $block_id ); ?>" class="wetravel-trips-pagination"></div>
 		<?php endif; ?>
 	</div>
 	<?php
@@ -316,7 +319,7 @@ function render_all_trips_fallback( $atts ) {
  * Add an event to notify when the trips loader script is ready
  * to handle cases where the shortcode is processed before the script is loaded
  */
-function all_trips_loader_ready() {
+function wetravel_trips_loader_ready() {
 	?>
 	<script>
 	jQuery(document).ready(function($) {
@@ -326,4 +329,4 @@ function all_trips_loader_ready() {
 	</script>
 	<?php
 }
-add_action( 'wp_footer', 'all_trips_loader_ready', 100 );
+add_action( 'wp_footer', 'wetravel_trips_loader_ready', 100 );
