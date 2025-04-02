@@ -14,6 +14,7 @@
     // Get data attributes
     var slug = container.data("slug");
     var env = container.data("env");
+    var wetravelUserID = container.data("wetravel-user-id");
     var displayType = container.data("display-type");
     var buttonType = container.data("button-type");
     var buttonText = container.data("button-text");
@@ -68,6 +69,7 @@
         if (response.success && response.data) {
           renderTrips(container, response.data, {
             env: env,
+            wetravelUserID: wetravelUserID,
             displayType: displayType,
             buttonType: buttonType,
             buttonText: buttonText,
@@ -106,6 +108,7 @@
     // Get data attributes
     var slug = container.data("slug");
     var env = container.data("env");
+    var wetravelUserID = container.data("wetravel-user-id");
     var displayType = container.data("display-type");
     var buttonType = container.data("button-type");
     var buttonText = container.data("button-text");
@@ -149,6 +152,7 @@
         if (response.success && response.data) {
           renderTrips(container, response.data, {
             env: env,
+            wetravelUserID: wetravelUserID,
             displayType: displayType,
             buttonType: buttonType,
             buttonText: buttonText,

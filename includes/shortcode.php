@@ -22,6 +22,7 @@ function wetravel_trips_shortcode( $atts ) {
 		'widget'         => '',  // Widget ID or keyword.
 		'slug'           => get_option( 'wetravel_trips_slug', '' ),
 		'env'            => get_option( 'wetravel_trips_env', 'https://pre.wetravel.to' ),
+		'wetravel_user_id' => get_option( 'wetravel_user_id', '' ),
 		'display_type'   => get_option( 'wetravel_trips_display_type', 'vertical' ),
 		'button_type'    => get_option( 'wetravel_trips_button_type', 'book_now' ),
 		'button_text'    => '',
@@ -42,6 +43,7 @@ function wetravel_trips_shortcode( $atts ) {
 	$block_atts = array(
 		'slug'         => $atts['slug'],
 		'env'          => $atts['env'],
+		'wetravelUserID' => $atts['wetravel_user_id'],
 		'displayType'  => $atts['display_type'],
 		'buttonType'   => $atts['button_type'],
 		'buttonText'   => $atts['button_text'],
@@ -259,6 +261,7 @@ function render_wetravel_trips_fallback( $atts ) {
 			id="trips-container-<?php echo esc_attr( $block_id ); ?>"
 			data-slug="<?php echo esc_attr( $atts['slug'] ); ?>"
 			data-env="<?php echo esc_attr( $env ); ?>"
+			data-wetravel-user-id="<?php echo esc_attr( $atts['wetravelUserID'] ); ?>"
 			data-nonce="<?php echo esc_attr( $nonce ); ?>"
 			data-items-per-page="<?php echo esc_attr( $atts['itemsPerPage'] ); ?>"
 			data-items-per-row="<?php echo esc_attr( $atts['itemsPerRow'] ); ?>"

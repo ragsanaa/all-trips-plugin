@@ -69,6 +69,7 @@ function wetravel_trips_enqueue_block_assets() {
 		'src'          => get_option( 'wetravel_trips_src', '' ),
 		'slug'         => get_option( 'wetravel_trips_slug', '' ),
 		'env'          => get_option( 'wetravel_trips_env', 'https://pre.wetravel.to' ),
+		'wetravelUserID' => get_option( 'wetravel_user_id', '' ),
 		'displayType'  => get_option( 'wetravel_trips_display_type', 'vertical' ),
 		'buttonType'   => get_option( 'wetravel_trips_button_type', 'book_now' ),
 		'buttonColor'  => get_option( 'wetravel_trips_button_color', '#33ae3f' ),
@@ -117,6 +118,10 @@ function wetravel_trips_register_block() {
 				'env'              => array(
 					'type'    => 'string',
 					'default' => 'https://pre.wetravel.to',
+				),
+				'wetravelUserID'   => array(
+					'type'    => 'string',
+					'default' => '',
 				),
 				'displayType'      => array(
 					'type'    => 'string',

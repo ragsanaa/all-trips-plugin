@@ -83,6 +83,7 @@ function wetravel_trips_settings_page() {
 						<div class="wetravel-trips-extracted-info">
 							<p><strong>Slug:</strong> <?php echo esc_html( get_option( 'wetravel_trips_slug', '' ) ); ?></p>
 							<p><strong>Environment:</strong> <?php echo esc_html( get_option( 'wetravel_trips_env', '' ) ); ?></p>
+							<p><strong>WeTravel User ID:</strong> <?php echo esc_html( get_option( 'wetravel_user_id', '' ) ); ?></p>
 						</div>
 						<?php
 						// Create a reset link with a proper nonce.

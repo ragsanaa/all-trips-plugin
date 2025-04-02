@@ -30,6 +30,10 @@
         type: "string",
         default: "https://pre.wetravel.to",
       },
+      wetravelUserID: {
+        type: "string",
+        default: "",
+      },
       displayType: {
         type: "string",
         default: "vertical",
@@ -88,6 +92,8 @@
           updatedAttributes.slug = settings.slug;
         if (attributes.env === "https://pre.wetravel.to" && settings.env)
           updatedAttributes.env = settings.env;
+        if (attributes.wetravelUserID === "" && settings.wetravelUserID)
+          updatedAttributes.wetravelUserID = settings.wetravelUserID;
         if (attributes.displayType === "vertical" && settings.displayType)
           updatedAttributes.displayType = settings.displayType;
         if (attributes.buttonType === "book_now" && settings.buttonType)

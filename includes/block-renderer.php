@@ -24,6 +24,7 @@ function wetravel_trips_block_render( $attributes ) {
 	$src            = $attributes['src'] ?? get_option( 'wetravel_trips_src', '' );
 	$slug           = $attributes['slug'] ?? get_option( 'wetravel_trips_slug', '' );
 	$env            = $attributes['env'] ?? get_option( 'wetravel_trips_env', 'https://pre.wetravel.to' );
+	$wetravel_user_id = $attributes['wetravelUserID'] ?? get_option( 'wetravel_user_id', '' );
 	$display_type   = $attributes['displayType'] ?? get_option( 'wetravel_trips_display_type', 'vertical' );
 	$button_type    = $attributes['buttonType'] ?? get_option( 'wetravel_trips_button_type', 'book_now' );
 	$button_color   = $attributes['buttonColor'] ?? get_option( 'wetravel_trips_button_color', '#33ae3f' );
@@ -147,6 +148,7 @@ function wetravel_trips_block_render( $attributes ) {
 		id="trips-container-<?php echo esc_attr( $block_id ); ?>"
 		data-slug="<?php echo esc_attr( $slug ); ?>"
 		data-env="<?php echo esc_attr( $env ); ?>"
+		data-wetravel-user-id="<?php echo esc_attr( $wetravel_user_id ); ?>"
 		data-nonce="<?php echo esc_attr( $nonce ); ?>"
 		data-items-per-page="<?php echo esc_attr( $items_per_page ); ?>"
 		data-items-per-row="<?php echo esc_attr( $items_per_row ); ?>"
