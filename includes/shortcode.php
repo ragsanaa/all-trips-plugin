@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 function wetravel_trips_shortcode( $atts ) {
 	// Define default attributes.
 	$default_atts = array(
-		'design'         => '',  // Design ID or keyword.
+		'widget'         => '',  // Widget ID or keyword.
 		'slug'           => get_option( 'wetravel_trips_slug', '' ),
 		'env'            => get_option( 'wetravel_trips_env', 'https://pre.wetravel.to' ),
 		'display_type'   => get_option( 'wetravel_trips_display_type', 'vertical' ),
@@ -56,12 +56,12 @@ function wetravel_trips_shortcode( $atts ) {
 	);
 
 	// Check if using a design configuration.
-	if ( ! empty( $atts['design'] ) ) {
-		$block_atts['selectedDesignID'] = $atts['design'];
+	if ( ! empty( $atts['widget']  ) ) {
+		$block_atts['selectedDesignID'] = $atts['widget'] ;
 
 		// Get all designs.
 		$designs   = get_option( 'wetravel_trips_designs', array() );
-		$design_id = $atts['design'];
+		$design_id = $atts['widget'] ;
 		$design    = null;
 
 		// First try to find design by keyword.

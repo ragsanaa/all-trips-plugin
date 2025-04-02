@@ -658,7 +658,14 @@
                   ),
                   createElement(
                     "div",
-                    { className: "trip-loc-price", style: { display: "flex", justifyContent: "space-between", alignItems: "center" } },
+                    {
+                      className: "trip-loc-price",
+                      style: {
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      },
+                    },
                     createElement(
                       "div",
                       {
@@ -911,7 +918,7 @@
         }
       };
       // Create options for design dropdown
-      const designOptions = [{ label: "Choose a design...", value: "" }];
+      const designOptions = [{ label: "Choose a widget...", value: "" }];
 
       // Add designs from either array or object format
       if (Array.isArray(designs)) {
@@ -948,7 +955,7 @@
               value: selectedDesignID,
               options: designOptions,
               onChange: (value) => setAttributes({ selectedDesignID: value }),
-              help: "Select a design from your Widget Library",
+              help: "Select a widget from your Widget Library",
             })
           ),
           createElement(

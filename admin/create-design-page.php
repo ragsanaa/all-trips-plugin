@@ -39,7 +39,7 @@ function wetravel_trips_create_design_page() {
 
 			if ( isset( $designs[ $design_id ] ) ) {
 				$design    = $designs[ $design_id ];
-				$shortcode = '[wetravel_trips design="' . ( ! empty( $design['keyword'] ) ? $design['keyword'] : $design_id ) . '"]';
+				$shortcode = '[wetravel_trips widget="' . ( ! empty( $design['keyword'] ) ? $design['keyword'] : $design_id ) . '"]';
 			}
 		}
 	}
@@ -114,7 +114,7 @@ function wetravel_trips_create_design_page() {
 			$success_message = $editing ? 'Widget updated successfully.' : 'Widget created successfully.';
 
 			// Generate shortcode for user.
-			$shortcode = '[wetravel_trips design="' . ( $keyword ? $keyword : $design_id ) . '"]';
+			$shortcode = '[wetravel_trips widget="' . ( $keyword ? $keyword : $design_id ) . '"]';
 
 			$redirect_url = add_query_arg(
 				array(
@@ -144,7 +144,7 @@ function wetravel_trips_create_design_page() {
 			<div class="notice notice-success is-dismissible">
 				<p><?php echo esc_html( $success_message ); ?></p>
 				<?php if ( isset( $shortcode ) ) : ?>
-					<p>Use this shortcode to display your design: <code><?php echo esc_html( $shortcode ); ?></code></p>
+					<p>Use this shortcode to display your widget: <code><?php echo esc_html( $shortcode ); ?></code></p>
 				<?php endif; ?>
 			</div>
 		<?php endif; ?>
@@ -244,9 +244,9 @@ function wetravel_trips_create_design_page() {
 						<h4>Generated Shortcode</h4>
 						<div class="shortcode-preview">
 							<?php if ( $editing ) : ?>
-								<code>[wetravel_trips design="<?php echo ! empty( $design['keyword'] ) ? esc_attr( $design['keyword'] ) : esc_attr( $design_id ); ?>"]</code>
+								<code>[wetravel_trips widget="<?php echo ! empty( $design['keyword'] ) ? esc_attr( $design['keyword'] ) : esc_attr( $design_id ); ?>"]</code>
 								<button class="button button-small wetravel-trips-copy-shortcode"
-										data-shortcode='[wetravel_trips design="<?php echo ! empty( $design['keyword'] ) ? esc_attr( $design['keyword'] ) : esc_attr( $design_id ); ?>"]'>Copy</button>
+										data-shortcode='[wetravel_trips widget="<?php echo ! empty( $design['keyword'] ) ? esc_attr( $design['keyword'] ) : esc_attr( $design_id ); ?>"]'>Copy</button>
 							<?php else : ?>
 								<p>Shortcode will be generated after saving.</p>
 							<?php endif; ?>
