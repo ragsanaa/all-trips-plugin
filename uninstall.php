@@ -15,6 +15,7 @@ $options = array(
 	'wetravel_trips_src',
 	'wetravel_trips_slug',
 	'wetravel_trips_env',
+	'wetravel_trips_user_id',
 	'wetravel_trips_display_type',
 	'wetravel_trips_button_type',
 	'wetravel_trips_button_color',

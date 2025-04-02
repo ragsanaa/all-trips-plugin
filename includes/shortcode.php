@@ -22,7 +22,7 @@ function wetravel_trips_shortcode( $atts ) {
 		'widget'         => '',  // Widget ID or keyword.
 		'slug'           => get_option( 'wetravel_trips_slug', '' ),
 		'env'            => get_option( 'wetravel_trips_env', 'https://pre.wetravel.to' ),
-		'wetravel_user_id' => get_option( 'wetravel_user_id', '' ),
+		'wetravel_trips_user_id' => get_option( 'wetravel_trips_user_id', '' ),
 		'display_type'   => get_option( 'wetravel_trips_display_type', 'vertical' ),
 		'button_type'    => get_option( 'wetravel_trips_button_type', 'book_now' ),
 		'button_text'    => '',
@@ -43,7 +43,7 @@ function wetravel_trips_shortcode( $atts ) {
 	$block_atts = array(
 		'slug'         => $atts['slug'],
 		'env'          => $atts['env'],
-		'wetravelUserID' => $atts['wetravel_user_id'],
+		'wetravelUserID' => $atts['wetravel_trips_user_id'],
 		'displayType'  => $atts['display_type'],
 		'buttonType'   => $atts['button_type'],
 		'buttonText'   => $atts['button_text'],

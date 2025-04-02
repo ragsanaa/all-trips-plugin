@@ -66,18 +66,18 @@ function wetravel_trips_enqueue_block_assets() {
 
 	// Prepare settings.
 	$wetravel_trips_settings = array(
-		'src'          => get_option( 'wetravel_trips_src', '' ),
-		'slug'         => get_option( 'wetravel_trips_slug', '' ),
-		'env'          => get_option( 'wetravel_trips_env', 'https://pre.wetravel.to' ),
-		'wetravelUserID' => get_option( 'wetravel_user_id', '' ),
-		'displayType'  => get_option( 'wetravel_trips_display_type', 'vertical' ),
-		'buttonType'   => get_option( 'wetravel_trips_button_type', 'book_now' ),
-		'buttonColor'  => get_option( 'wetravel_trips_button_color', '#33ae3f' ),
-		'itemsPerPage' => (int) get_option( 'wetravel_trips_items_per_page', 10 ),
-		'itemsPerRow'  => (int) get_option( 'wetravel_trips_items_per_row', 3 ),
-		'itemsPerSlide' => (int) get_option( 'wetravel_trips_items_per_slide', 3 ),
-		'loadMoreText' => get_option( 'wetravel_trips_load_more_text', 'Load More' ),
-		'designs'      => get_option( 'wetravel_trips_designs', array() ),
+		'src'          	 => get_option( 'wetravel_trips_src', '' ),
+		'slug'         	 => get_option( 'wetravel_trips_slug', '' ),
+		'env'          	 => get_option( 'wetravel_trips_env', 'https://pre.wetravel.to' ),
+		'wetravelUserID' => get_option( 'wetravel_trips_user_id', '' ),
+		'displayType'    => get_option( 'wetravel_trips_display_type', 'vertical' ),
+		'buttonType'     => get_option( 'wetravel_trips_button_type', 'book_now' ),
+		'buttonColor'    => get_option( 'wetravel_trips_button_color', '#33ae3f' ),
+		'itemsPerPage'   => (int) get_option( 'wetravel_trips_items_per_page', 10 ),
+		'itemsPerRow'    => (int) get_option( 'wetravel_trips_items_per_row', 3 ),
+		'itemsPerSlide'  => (int) get_option( 'wetravel_trips_items_per_slide', 3 ),
+		'loadMoreText'   => get_option( 'wetravel_trips_load_more_text', 'Load More' ),
+		'designs'        => get_option( 'wetravel_trips_designs', array() ),
 	);
 
 	// Localize the script with settings.

@@ -92,7 +92,7 @@
           updatedAttributes.slug = settings.slug;
         if (attributes.env === "https://pre.wetravel.to" && settings.env)
           updatedAttributes.env = settings.env;
-        if (attributes.wetravelUserID === "" && settings.wetravelUserID)
+        if (!attributes.wetravelUserID && settings.wetravelUserID)
           updatedAttributes.wetravelUserID = settings.wetravelUserID;
         if (attributes.displayType === "vertical" && settings.displayType)
           updatedAttributes.displayType = settings.displayType;
