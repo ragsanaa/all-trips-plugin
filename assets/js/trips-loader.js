@@ -72,6 +72,35 @@
       },
       success: function (response) {
         if (response.success && response.data) {
+          // Render the trips data
+          const trips = response.data;
+          let tripsHtml = "";
+
+          if (trips.length === 0) {
+            tripsHtml = '<div class="no-trips">No trips found</div>';
+          } else {
+            trips.forEach((trip, index) => {
+              const isVisible =
+                index < itemsPerPage ? "visible-item" : "hidden-item";
+              tripsHtml += renderTripItem(
+                trip,
+                {
+                  env,
+                  wetravelUserID,
+                  displayType,
+                  buttonType,
+                  buttonText,
+                  buttonColor,
+                  itemsPerPage,
+                },
+                isVisible
+              );
+            });
+          }
+
+          // Update container content
+          container.html(tripsHtml);
+
           // Hide spinner on success
           $loadingSpinner.fadeOut();
 
@@ -173,5 +202,133 @@
         $this.addClass("needs-fade");
       }
     });
+  }
+
+  // Function to render a single trip item
+  function renderTripItem(trip, options, visibilityClass = "") {
+    let html = "";
+    const buttonUrl = getButtonUrl(trip, options);
+
+    if (options.displayType === "vertical" || options.displayType === "grid") {
+      html += `<div class="trip-item ${visibilityClass}">`;
+    } else if (options.displayType === "carousel") {
+      html += `<div class="trip-item wtrvl-checkout_button"
+        data-env="${escapeHtml(options.env)}"
+        data-version="v0.3"
+        data-uid="${escapeHtml(options.wetravelUserID)}"
+        data-uuid="${escapeHtml(trip.uuid)}"
+        href="${escapeHtml(buttonUrl)}"
+        style="cursor: pointer;">`;
+    }
+
+    // Image
+    if (trip.default_image) {
+      html += `<div class="trip-image">
+        <img src="${escapeHtml(trip.default_image)}" alt="${escapeHtml(
+        trip.title
+      )}">
+      </div>`;
+    } else {
+      html +=
+        '<div class="no-image-placeholder"><span>No Image Available</span></div>';
+    }
+
+    // Content
+    html += '<div class="trip-content">';
+    html += '<div class="trip-title-desc">';
+    html += `<h3>${escapeHtml(trip.title)}</h3>`;
+
+    // Description
+    if (trip.full_description) {
+      html += `<div class="trip-description">${trip.full_description}</div>`;
+    }
+    html += "</div>"; // Close trip-title-desc
+
+    if (options.displayType === "carousel") {
+      html += "<div class='trip-loc-price'>";
+    }
+
+    // Date or duration
+    html += '<div class="trip-loc-duration">';
+    if (!trip.all_year) {
+      html += `<div class="trip-date trip-tag">${escapeHtml(
+        trip.start_end_dates
+      )}</div>`;
+    } else if (trip.custom_duration) {
+      html += `<div class="trip-duration trip-tag">${escapeHtml(
+        trip.custom_duration
+      )} days</div>`;
+    }
+    html += `<div class="trip-location trip-tag">${escapeHtml(
+      trip.location
+    )}</div>`;
+    html += "</div>"; // Close trip-loc-duration
+
+    if (options.displayType !== "carousel") {
+      html += "</div>"; // Close trip-content
+    }
+
+    // Price and button section
+    html += '<div class="trip-price-button">';
+
+    // Price
+    if (trip.price) {
+      html += `<div class="trip-price">
+        <p>From</p>
+        <span>${escapeHtml(trip.price.currencySymbol)}${escapeHtml(
+        trip.price.amount
+      )}</span>
+      </div>`;
+    }
+
+    // Button
+    if (options.displayType !== "carousel") {
+      if (options.buttonType === "book_now") {
+        html += `<button class="wtrvl-checkout_button trip-button"
+          data-env="${escapeHtml(options.env)}"
+          data-version="v0.3"
+          data-uid="${escapeHtml(options.wetravelUserID)}"
+          data-uuid="${escapeHtml(trip.uuid)}"
+          href="${escapeHtml(buttonUrl)}">
+          ${escapeHtml(options.buttonText)}
+        </button>`;
+      } else {
+        html += `<a href="${escapeHtml(
+          buttonUrl
+        )}" class="trip-button" target="_blank">
+          ${escapeHtml(options.buttonText)}
+        </a>`;
+      }
+    }
+
+    html += "</div>"; // Close trip-price-button
+    if (options.displayType === "carousel") {
+      html += "</div>"; // Close trip-loc-price
+      html += "</div>"; // Close trip-content
+    }
+    html += "</div>"; // Close trip-item
+
+    return html;
+  }
+
+  // Helper function to get button URL
+  function getButtonUrl(trip, options) {
+    if (options.buttonType === "book_now") {
+      return `${options.env}/checkout_embed?uuid=${trip.uuid}`;
+    } else {
+      return trip.href || `${options.env}/trips/${trip.uuid}`;
+    }
+  }
+
+  // Helper function to escape HTML
+  function escapeHtml(unsafe) {
+    if (unsafe == null) return "";
+    return unsafe
+      .toString()
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
   }
 })(jQuery);
