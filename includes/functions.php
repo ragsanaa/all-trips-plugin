@@ -142,3 +142,36 @@ function fix_trips_loading_in_editor() {
 	<?php
 }
 add_action( 'wp_footer', 'fix_trips_loading_in_editor' );
+
+/**
+ * Get the appropriate CDN URL based on environment
+ *
+ * @param string $env The environment URL (e.g., 'https://pre.wetravel.to')
+ * @return string The corresponding CDN URL
+ */
+function wetravel_trips_get_cdn_url($env) {
+	// Remove protocol and trailing slashes
+	$clean_env = rtrim(preg_replace('#^https?://#', '', $env), '/');
+	error_log( 'wetravel_trips_get_cdn_url: ' . $clean_env ); // Debugging line
+	// Map environments to their CDN domains
+	switch ($clean_env) {
+		case 'wetravel.com':
+		case 'www.wetravel.com':
+			return 'https://cdn.wetravel.com';
+
+		case 'demo.wetravel.to':
+			return 'https://demo.cdn.wetravel.com';
+
+		case 'pre.wetravel.to':
+			return 'https://pre.cdn.wetravel.to';
+
+		default:
+			// For custom domains, follow the pattern from the embed script
+			$domain_parts = explode('.', $clean_env);
+			if (count($domain_parts) >= 2) {
+				return 'https://cdn.' . implode('.', array_slice($domain_parts, -2));
+			}
+			// Fallback to pre environment
+			return 'https://pre.cdn.wetravel.to';
+	}
+}

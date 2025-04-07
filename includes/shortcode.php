@@ -193,129 +193,57 @@ function render_wetravel_trips_fallback( $atts ) {
 	);
 
 	// Add dynamic CSS for this instance.
-	$custom_css = "
-        /* Set dynamic CSS variables for this block instance */
-        #trips-container-{$block_id} {
-            --button-color: {$atts['buttonColor']};
-        }
+	$dynamic_css = "
+		#trips-container-{$block_id} {
+			--button-color: {$atts['button_color']};
+			--items-per-row: {$atts['items_per_row']};
+		}
+	";
 
-        /* Carousel styling for this specific instance */
-        #trips-container-{$block_id}.carousel-view .swiper {
-            padding: 0 40px;
-            position: relative;
-        }
-
-        #trips-container-{$block_id}.carousel-view .swiper-button-next,
-        #trips-container-{$block_id}.carousel-view .swiper-button-prev {
-            top: 50%;
-            transform: translateY(-50%);
-            width: 40px;
-            height: 40px;
-            background-color: var(--button-color, #6a3bff);
-            border-radius: 50%;
-            color: white;
-        }
-
-        #trips-container-{$block_id}.carousel-view .swiper-button-next {
-            right: 0;
-        }
-
-        #trips-container-{$block_id}.carousel-view .swiper-button-prev {
-            left: 0;
-        }
-
-        #trips-container-{$block_id}.carousel-view .swiper-button-next:after,
-        #trips-container-{$block_id}.carousel-view .swiper-button-prev:after {
-            font-size: 18px;
-            font-weight: bold;
-        }
-
-        #trips-container-{$block_id}.carousel-view .swiper-pagination {
-            position: relative;
-            margin-top: 20px;
-        }
-
-        #trips-container-{$block_id}.carousel-view .swiper-pagination-bullet {
-            width: 12px;
-            height: 12px;
-            margin: 0 5px;
-        }
-
-        #trips-container-{$block_id}.carousel-view .swiper-pagination-bullet-active {
-            background-color: var(--button-color, #6a3bff);
-        }
-    ";
-
-	// Enqueue or add inline styles.
-	if ( wp_style_is( 'wetravel-trips-styles', 'registered' ) ) {
-		wp_add_inline_style( 'wetravel-trips-styles', $custom_css );
-	} else {
-		echo '<style>' . esc_attr( $custom_css ) . '</style>';
-	}
-
-	// Build the output HTML.
+	// Output container with loading spinner
 	ob_start();
 	?>
-	<div class="wp-block-wetravel-trips-block">
-		<div class="wetravel-trips-container <?php echo esc_attr( $atts['displayType'] ); ?>-view"
-			id="trips-container-<?php echo esc_attr( $block_id ); ?>"
-			data-slug="<?php echo esc_attr( $atts['slug'] ); ?>"
-			data-env="<?php echo esc_attr( $env ); ?>"
-			data-wetravel-user-id="<?php echo esc_attr( $atts['wetravelUserID'] ); ?>"
-			data-nonce="<?php echo esc_attr( $nonce ); ?>"
-			data-items-per-page="<?php echo esc_attr( $atts['itemsPerPage'] ); ?>"
-			data-items-per-row="<?php echo esc_attr( $atts['itemsPerRow'] ); ?>"
-			data-items-per-slide="<?php echo esc_attr( $atts['itemsPerSlide'] ); ?>"
-			data-display-type="<?php echo esc_attr( $atts['displayType'] ); ?>"
-			data-button-type="<?php echo esc_attr( $atts['buttonType'] ); ?>"
-			data-button-text="<?php echo esc_attr( $atts['buttonText'] ); ?>"
-			data-button-color="<?php echo esc_attr( $atts['buttonColor'] ); ?>"
-			data-trip-type="<?php echo esc_attr( $atts['tripType'] ); ?>"
-			<?php if ( ! empty( $atts['dateStart'] ) ) : ?>
-			data-date-start="<?php echo esc_attr( $atts['dateStart'] ); ?>"
-			<?php endif; ?>
-			<?php if ( ! empty( $atts['dateEnd'] ) ) : ?>
-			data-date-end="<?php echo esc_attr( $atts['dateEnd'] ); ?>"
-			<?php endif; ?>
-			<?php if ( ! empty( $atts['selectedDesignID'] ) ) : ?>
-			data-design="<?php echo esc_attr( $atts['selectedDesignID'] ); ?>"
-			<?php endif; ?>>
-
-			<!-- Loading indicator -->
-			<div class="wetravel-trips-loading">
-				<div class="loading-spinner"></div>
-				<p>Loading trips...</p>
-			</div>
+	<style><?php echo wp_strip_all_tags( $dynamic_css ); ?></style>
+	<div id="trips-container-<?php echo esc_attr( $block_id ); ?>"
+		class="wetravel-trips-container <?php echo esc_attr( $atts['display_type'] ); ?>-view"
+		data-nonce="<?php echo esc_attr( $nonce ); ?>"
+		data-slug="<?php echo esc_attr( $atts['slug'] ); ?>"
+		data-env="<?php echo esc_attr( $env ); ?>"
+		data-wetravel-user-id="<?php echo esc_attr( $atts['wetravel_trips_user_id'] ); ?>"
+		data-display-type="<?php echo esc_attr( $atts['display_type'] ); ?>"
+		data-button-type="<?php echo esc_attr( $atts['button_type'] ); ?>"
+		data-button-text="<?php echo esc_attr( $atts['button_text'] ); ?>"
+		data-button-color="<?php echo esc_attr( $atts['button_color'] ); ?>"
+		data-items-per-page="<?php echo esc_attr( $atts['items_per_page'] ); ?>"
+		data-items-per-row="<?php echo esc_attr( $atts['items_per_row'] ); ?>"
+		data-items-per-slide="<?php echo esc_attr( $atts['items_per_slide'] ); ?>"
+		data-trip-type="<?php echo esc_attr( $atts['trip_type'] ); ?>"
+		data-date-start="<?php echo esc_attr( $atts['date_start'] ); ?>"
+		data-date-end="<?php echo esc_attr( $atts['date_end'] ); ?>">
+		<div id="loading-<?php echo esc_attr( $block_id ); ?>" class="wetravel-trips-loading">
+			<div class="loading-spinner"></div>
+			<p>Loading trips...</p>
 		</div>
-
-		<?php if ( 'carousel' !== $atts['displayType'] ) : ?>
-			<!-- Numbered pagination container - will be populated by JavaScript -->
-			<div id="pagination-<?php echo esc_attr( $block_id ); ?>" class="wetravel-trips-pagination"></div>
-		<?php endif; ?>
 	</div>
+
+	<?php if ( $atts['button_type'] === 'book_now' ) : ?>
+	<script src="<?php echo esc_url(wetravel_trips_get_cdn_url($env) . '/widgets/embed_checkout.js'); ?>"></script>
+	<?php endif; ?>
+
 	<?php
+	$output = ob_get_clean();
 
-	// Add inline script to ensure the container structure matches what trips-loader.js expects.
+	// Add inline script for initialization
 	$inline_script = "
-    <script>
-    jQuery(document).ready(function($) {
-        // Make sure the container is properly initialized.
-        $('#trips-container-{$block_id}').each(function() {
-            var container = $(this);
-            if (typeof window.loadTrips === 'function') {
-                window.loadTrips(container);
-            } else {
-                // If loadTrips isn't available yet, wait for it.
-                $(document).on('tripsLoaderReady', function() {
-                    window.loadTrips(container);
-                });
-            }
-        });
-    });
-    </script>
-    ";
+	<script>
+	jQuery(document).ready(function($) {
+			// Notify that the trips loader is ready.
+			$(document).trigger('tripsLoaderReady');
+	});
+	</script>
+	";
 
-	return ob_get_clean() . $inline_script;
+	return $output . $inline_script;
 }
 
 /**

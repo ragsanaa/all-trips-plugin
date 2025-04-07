@@ -281,7 +281,7 @@ function wetravel_trips_block_render( $attributes ) {
 		<?php endif; ?>
 	</div>
 	<?php if ( $button_type === 'book_now' ) : ?>
-	<script src="https://demo.cdn.wetravel.com/widgets/embed_checkout.js"></script>
+	<script src="<?php echo esc_url(wetravel_trips_get_cdn_url($env) . '/widgets/embed_checkout.js'); ?>"></script>
 	<?php endif; ?>
 	<?php
 
