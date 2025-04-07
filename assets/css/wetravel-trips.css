@@ -4,6 +4,8 @@
   margin-bottom: 30px;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+  position: relative;
+  min-height: 200px;
 }
 
 a {
@@ -129,7 +131,8 @@ a {
   width: auto;
   transition: background-color 0.3s ease;
   font-weight: 500;
-  font-size: 16px;
+  font-size: 18px;
+  cursor: pointer;
 }
 
 .trip-item .trip-button:hover {
@@ -138,6 +141,8 @@ a {
 
 .trip-image {
   min-width: 200px;
+  align-self: normal;
+  max-height: 200px;
 }
 
 .trip-item img {
@@ -210,7 +215,7 @@ a {
   direction: ltr;
   display: flex;
   flex-direction: row;
-  gap: 16px;
+  gap: 30px;
   justify-content: space-between;
   align-items: end;
 }
@@ -219,9 +224,18 @@ a {
 .wetravel-trips-container.vertical-view .trip-item {
   margin-bottom: 16px;
   display: grid;
-  grid-template-columns: 2fr 6fr 1.2fr;
+  grid-template-columns: 3fr 6fr 2fr;
   align-items: start;
   box-sizing: content-box;
+}
+
+.wetravel-trips-container.vertical-view .trip-button {
+  min-width: 100px;
+  align-self: flex-start;
+}
+
+.wetravel-trips-container.vertical-view .trip-price span {
+  font-size: 24px;
 }
 
 .wetravel-trips-container.vertical-view .trip-price-button {
@@ -306,15 +320,24 @@ a {
 /* Style for trip cards */
 .wetravel-trips-container.carousel-view .trip-item {
   overflow: hidden;
-  transition: transform 0.6s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   display: flex;
   flex-direction: column;
   gap: 24px;
+  cursor: pointer;
 }
 
 .wetravel-trips-container.carousel-view .trip-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.wetravel-trips-container.carousel-view .trip-item * {
+  pointer-events: none;
+}
+
+.wetravel-trips-container.carousel-view .trip-item {
+  pointer-events: auto;
 }
 
 /* Pagination Styles */
@@ -418,23 +441,34 @@ a {
 
 /* Add this to your CSS file */
 .wetravel-trips-loading {
-  text-align: center;
-  padding: 30px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
 }
 
 .loading-spinner {
-  display: inline-block;
-  width: 40px;
-  height: 40px;
-  border: 4px solid rgba(0, 0, 0, 0.1);
+  width: 50px;
+  height: 50px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #33ae3f;
   border-radius: 50%;
-  border-top-color: var(--button-color, #33ae3f);
-  animation: spin 1s ease-in-out infinite;
-  margin-bottom: 15px;
+  animation: spin 1s linear infinite;
+  margin-bottom: 10px;
 }
 
 @keyframes spin {
-  to {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
     transform: rotate(360deg);
   }
 }

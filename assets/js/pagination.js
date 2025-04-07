@@ -196,6 +196,9 @@
       // Show only items for current page
       wetravelTrips.slice(startIndex, endIndex).show();
 
+      // Apply fade effect to newly visible items
+      applyDescriptionFades(wetravelTrips.slice(startIndex, endIndex));
+
       // Scroll to top of container if needed
       if (page !== currentPage) {
         $("html, body").animate(
@@ -253,4 +256,26 @@
     // Initial display of items
     displayItems(1);
   }
+
+  // Function to apply fade effects to descriptions
+  function applyDescriptionFades() {
+    $(".trip-description").each(function () {
+      var $this = $(this);
+
+      // Calculate the line height and max height for 3 lines
+      var lineHeight = parseInt($this.css("line-height"));
+      var maxHeight = lineHeight * 3;
+
+      // First, remove any existing class to reset the state
+      $this.removeClass("needs-fade");
+
+      // Check if the actual scroll height exceeds what we want to show
+      if ($this[0].scrollHeight > maxHeight) {
+        $this.addClass("needs-fade");
+      }
+    });
+  }
+
+  // Make the function globally available
+  window.applyDescriptionFades = applyDescriptionFades;
 })(jQuery);

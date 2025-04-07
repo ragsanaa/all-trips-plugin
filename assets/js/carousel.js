@@ -11,6 +11,13 @@
       const swiperElement = container.querySelector(".swiper");
 
       if (!swiperElement) {
+        console.error("Swiper element not found in container:", container);
+        return;
+      }
+
+      // Check if Swiper is loaded
+      if (typeof Swiper === "undefined") {
+        console.error("Swiper library not loaded!");
         return;
       }
 
@@ -47,7 +54,6 @@
           // when window width is >= 960px
           960: { slidesPerView: 3, spaceBetween: 20 },
           // when window width is >= 1024px
-
           1024: { slidesPerView: itemsPerSlide, spaceBetween: 20 },
         },
         on: {
@@ -71,12 +77,31 @@
           },
         },
       });
+
       function applyPaginationStyles(element, color) {
         const activeBullet = element.querySelector(
           ".swiper-pagination-bullet-active"
         );
-        activeBullet.style.backgroundColor = color;
+        if (activeBullet) {
+          activeBullet.style.backgroundColor = color;
+        }
       }
+
+      // Manually trigger a resize event to ensure Swiper updates properly
+      setTimeout(function () {
+        window.dispatchEvent(new Event("resize"));
+      }, 500);
     }
   );
+
+  // Add a document ready handler to trigger tripsRendered event for carousels
+  $(document).ready(function () {
+    // For pre-existing carousels, trigger the event manually
+    $(".wetravel-trips-container.carousel-view").each(function () {
+      // Check if the container has any trips
+      if ($(this).find(".swiper-slide").length > 0) {
+        $(this).trigger("tripsRendered");
+      }
+    });
+  });
 })(jQuery);
