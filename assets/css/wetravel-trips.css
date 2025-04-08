@@ -442,11 +442,6 @@ a {
   }
 }
 
-@media screen and (max-width: 480px) {
-  .trip-item img {
-  }
-}
-
 /* Add this to your CSS file */
 .wetravel-trips-loading {
   position: absolute;
