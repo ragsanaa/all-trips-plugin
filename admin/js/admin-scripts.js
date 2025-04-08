@@ -195,7 +195,7 @@
   }
 
   // Initialize on document ready
-  $(document).ready(function () {
+  $(document).ready(function ($) {
     // Init color picker
     initColorPicker();
 
@@ -225,6 +225,54 @@
 
       // Force update preview immediately after changing button type
       updatePreview();
+    });
+
+    // Create a nonce field in the form
+    var nonceField = $("<input>").attr({
+      type: "hidden",
+      name: "all_trips_nonce",
+      value: '<?php echo wp_create_nonce("all_trips_nonce"); ?>',
+    });
+    $("form").append(nonceField);
+
+    // Keyword uniqueness checker
+    var checkKeywordTimeout;
+    $("#design_keyword").on("keyup blur", function () {
+      var keyword = $(this).val();
+      clearTimeout(checkKeywordTimeout);
+
+      // Clear any existing validation messages
+      $("#keyword-validation-message").remove();
+
+      // Only check if keyword has content
+      if (keyword.length > 0) {
+        // Add a small delay to prevent too many requests
+        checkKeywordTimeout = setTimeout(function () {
+          $.ajax({
+            url: ajaxurl,
+            type: "POST",
+            data: {
+              action: "check_keyword_unique",
+              keyword: keyword,
+              design_id: "<?php echo esc_js($design_id); ?>",
+              nonce: '<?php echo wp_create_nonce("all_trips_nonce"); ?>',
+            },
+            success: function (response) {
+              if (!response.unique) {
+                // Display validation message
+                $(
+                  '<p id="keyword-validation-message" class="validation-error" style="color:red;">This keyword is already in use. Please choose a unique keyword.</p>'
+                ).insertAfter("#design_keyword");
+              } else {
+                // Show success message
+                $(
+                  '<p id="keyword-validation-message" class="validation-success" style="color:green;">Keyword is available!</p>'
+                ).insertAfter("#design_keyword");
+              }
+            },
+          });
+        }, 500);
+      }
     });
   });
 })(jQuery);

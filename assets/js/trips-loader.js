@@ -6,6 +6,86 @@
 (function ($) {
   "use strict";
 
+  // Global function to load trips (making it available to other scripts)
+  window.loadTrips = function (container) {
+    // Show loading state
+    container.find(".all-trips-loading").show();
+
+    // Get data attributes
+    var slug = container.data("slug");
+    var env = container.data("env");
+    var displayType = container.data("display-type");
+    var buttonType = container.data("button-type");
+    var buttonText = container.data("button-text");
+    var buttonColor = container.data("button-color");
+    var tripType = container.data("trip-type") || "all";
+    var dateStart = container.data("date-start") || "";
+    var dateEnd = container.data("date-end") || "";
+    var itemsPerPage = container.data("items-per-page") || 10;
+
+    // Validate required data
+    if (!slug || !env) {
+      container.find(".all-trips-loading").html("Error: Missing configuration");
+      return;
+    }
+
+    // Create a nonce for security
+    var nonce = container.data("nonce") || "";
+
+    // Get the AJAX URL from the global object or use the default WordPress path
+    var ajaxUrl = window.allTripsData
+      ? window.allTripsData.ajaxurl
+      : "/wp-admin/admin-ajax.php";
+
+    // Check if we're in an editing environment
+    var isEditMode =
+      (window.parent && window.parent !== window) ||
+      (window.frames && window.frames.length > 0) ||
+      document.body.classList.contains("editor-body") ||
+      document.body.classList.contains("wp-admin") ||
+      document.body.classList.contains("edit-php") ||
+      (window.location.href &&
+        window.location.href.indexOf("action=edit") > -1);
+
+    // Create AJAX request
+    $.ajax({
+      url: ajaxUrl,
+      type: "GET",
+      dataType: "json",
+      data: {
+        action: "fetch_wetravel_trips",
+        nonce: nonce,
+        slug: slug,
+        env: env,
+        trip_type: tripType,
+        date_start: dateStart,
+        date_end: dateEnd,
+        no_cache: isEditMode ? new Date().getTime() : null, // Add timestamp to prevent caching in edit mode
+      },
+      success: function (response) {
+        if (response.success && response.data) {
+          renderTrips(container, response.data, {
+            env: env,
+            displayType: displayType,
+            buttonType: buttonType,
+            buttonText: buttonText,
+            buttonColor: buttonColor,
+            itemsPerPage: itemsPerPage,
+          });
+        } else {
+          container
+            .find(".all-trips-loading")
+            .html("Error: " + (response.data || "No trips found"));
+        }
+      },
+      error: function (xhr, status, error) {
+        container
+          .find(".all-trips-loading")
+          .html("Error loading trips: " + error);
+      },
+    });
+  };
+
   $(document).ready(function () {
     // Find all trip containers on the page
     $(".all-trips-container").each(function () {
@@ -204,7 +284,7 @@
       html +=
         '<a href="' +
         buttonUrl +
-        '" class="trip-button" target="_blank">' +
+        `" class="trip-button" target="_blank" style="background-color: ${options.buttonColor};">` +
         options.buttonText +
         "</a>";
 

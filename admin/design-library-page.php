@@ -57,6 +57,8 @@ function all_trips_design_library_page() {
                                 <h3><?php echo esc_html($design['name']); ?></h3>
                                 <div class="all-trips-design-meta">
                                     <span>Created: <?php echo date_i18n(get_option('date_format'), $design['created']); ?></span>
+                                    <br>
+                                    <span>Updated: <?php echo date_i18n(get_option('date_format'), $design['modified']); ?></span>
                                 </div>
                                 <div class="all-trips-design-actions">
                                     <a href="?page=all-trips-create-design&edit=<?php echo esc_attr($design_id); ?>" class="button button-small">Edit</a>
@@ -70,60 +72,5 @@ function all_trips_design_library_page() {
             <?php endif; ?>
         </div>
     </div>
-
-    <style>
-        .all-trips-design-library-container {
-            margin-top: 20px;
-        }
-        .all-trips-library-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        .all-trips-no-designs {
-            background: #f9f9f9;
-            border: 1px solid #ddd;
-            padding: 20px;
-            border-radius: 4px;
-            text-align: center;
-        }
-        .all-trips-designs-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 20px;
-        }
-        .all-trips-design-card {
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            overflow: hidden;
-            background: #fff;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        .all-trips-design-preview {
-            height: 150px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
-        }
-        .all-trips-design-info {
-            padding: 15px;
-        }
-        .all-trips-design-info h3 {
-            margin: 0 0 10px 0;
-        }
-        .all-trips-design-meta {
-            color: #757575;
-            font-size: 12px;
-            margin-bottom: 15px;
-        }
-        .all-trips-design-actions {
-            display: flex;
-            gap: 5px;
-        }
-    </style>
     <?php
 }

@@ -11,7 +11,6 @@ add_action('wp_ajax_nopriv_fetch_wetravel_trips', 'fetch_wetravel_trips_handler'
  * AJAX handler for fetching trips from WeTravel API
  */
 function fetch_wetravel_trips_handler() {
-    error_log('Fetching trips...');
     // Validate nonce for security
     if (!isset($_GET['nonce']) || !wp_verify_nonce($_GET['nonce'], 'all_trips_nonce')) {
         wp_send_json_error('Invalid security token');

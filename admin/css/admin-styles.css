@@ -1,0 +1,170 @@
+/* Create Design Page styles */
+
+.all-trips-create-design-container {
+  margin-top: 20px;
+}
+.all-trips-design-form-and-preview {
+  display: flex;
+  gap: 30px;
+}
+.all-trips-design-form {
+  flex: 1;
+  max-width: 500px;
+}
+.all-trips-design-preview-container {
+  flex: 1;
+  background: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 20px;
+}
+.all-trips-form-field {
+  margin-bottom: 20px;
+}
+.all-trips-form-field label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 600;
+}
+.all-trips-form-field input[type="text"],
+.all-trips-form-field select,
+.all-trips-form-field input[type="date"] {
+  width: 100%;
+}
+.date-range-inputs {
+  display: flex;
+  gap: 10px;
+}
+.date-range-inputs > div {
+  flex: 1;
+}
+.all-trips-form-actions {
+  margin-top: 30px;
+}
+.all-trips-preview {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 15px;
+  min-height: 300px;
+  margin-bottom: 20px;
+}
+.preview-display-type {
+  text-align: center;
+  padding: 40px 0;
+  color: #757575;
+}
+.all-trips-shortcode-generator {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 15px;
+}
+.shortcode-preview {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f1f1f1;
+  padding: 10px;
+  border-radius: 3px;
+}
+
+/* Design Library Page Styles */
+
+.all-trips-design-library-container {
+  margin-top: 20px;
+}
+.all-trips-library-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.all-trips-no-designs {
+  background: #f9f9f9;
+  border: 1px solid #ddd;
+  padding: 20px;
+  border-radius: 4px;
+  text-align: center;
+}
+.all-trips-designs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+}
+.all-trips-design-card {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+.all-trips-design-preview {
+  height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+.all-trips-design-info {
+  padding: 15px;
+}
+.all-trips-design-info h3 {
+  margin: 0 0 10px 0;
+}
+.all-trips-design-meta {
+  color: #757575;
+  font-size: 12px;
+  margin-bottom: 15px;
+}
+.all-trips-design-actions {
+  display: flex;
+  gap: 5px;
+}
+
+/* Settings Page Styles */
+
+.all-trips-settings-container {
+  margin-top: 20px;
+}
+.all-trips-embed-form {
+  display: flex;
+  align-items: flex-start;
+  max-width: 900px;
+}
+.all-trips-embed-input-container {
+  flex: 1;
+  margin-right: 15px;
+}
+.all-trips-embed-button-container {
+  padding-top: 4px;
+}
+.all-trips-embed-info {
+  background: #f9f9f9;
+  border: 1px solid #ddd;
+  padding: 15px 20px;
+  border-radius: 4px;
+  max-width: 900px;
+}
+.all-trips-embed-status {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+}
+.all-trips-embed-status .dashicons {
+  color: #46b450;
+  font-size: 24px;
+  margin-right: 8px;
+}
+.all-trips-extracted-info {
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  padding: 10px 15px;
+  margin-bottom: 15px;
+  border-radius: 3px;
+}
+.all-trips-extracted-info p {
+  margin: 5px 0;
+}

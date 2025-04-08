@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: All Trips Plugin
+ * Plugin Name: WeTravel All Trips Widgets
  * Plugin URI:  https://wetravel.com
  * Description: A plugin to embed WeTravel trips dynamically.
  * Version:     1.0
@@ -73,13 +73,6 @@ function all_trips_enqueue_block_assets() {
     // Localize the script with settings
     wp_localize_script('all-trips-block', 'allTripsSettings', $all_trips_settings);
 
-    // Register editor styles
-    wp_enqueue_style(
-        'all-trips-editor-style',
-        ALL_TRIPS_PLUGIN_URL . 'blocks/editor.css',
-        array(),
-        filemtime(ALL_TRIPS_PLUGIN_DIR . 'blocks/editor.css')
-    );
 }
 add_action('enqueue_block_editor_assets', 'all_trips_enqueue_block_assets');
 
@@ -199,11 +192,7 @@ function all_trips_activation() {
 if (!defined(\'ABSPATH\')) {
     exit;
 }
-
-// Include the render function
-require_once ALL_TRIPS_PLUGIN_DIR . \'includes/render-functions.php\';
 ',
-        'includes/render-functions.php' => '',
         'includes/shortcode.php' => '<?php
 // Shortcode file
 if (!defined(\'ABSPATH\')) {

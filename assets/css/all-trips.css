@@ -184,13 +184,10 @@ a {
 }
 
 /* Carousel view styles */
-/* .all-trips-container.carousel-view .swiper {
-  padding: 10px 5px 40px;
-} */
 
 /* Style for swiper carousel similar to image */
 .all-trips-container.carousel-view .swiper {
-  padding: 5px 40px; /* Add padding for the arrows */
+  padding: 0 60px; /* Increase from 40px to 60px to create more space */
   position: relative;
 }
 
@@ -207,11 +204,11 @@ a {
 }
 
 .all-trips-container.carousel-view .swiper-button-next {
-  right: 0;
+  right: 10px; /* Move 10px to the right from the edge */
 }
 
 .all-trips-container.carousel-view .swiper-button-prev {
-  left: 0;
+  left: 10px; /* Move 10px to the left from the edge */
 }
 
 /* Style the arrow icons */
@@ -227,10 +224,23 @@ a {
   margin-top: 20px;
 }
 
+.all-trips-container.carousel-view .swiper-slide {
+  visibility: hidden; /* Hide all slides by default */
+}
+
+.all-trips-container.carousel-view .swiper-slide-active,
+.all-trips-container.carousel-view .swiper-slide-visible {
+  visibility: visible; /* Only show active/visible slides */
+}
+
 .all-trips-container.carousel-view .swiper-pagination-bullet {
   width: 12px;
   height: 12px;
   margin: 0 5px;
+}
+
+.all-trips-container.carousel-view .swiper-wrapper {
+  margin: 0 auto;
 }
 
 .all-trips-container.carousel-view .swiper-pagination-bullet-active {
@@ -309,13 +319,6 @@ a {
   display: none;
 }
 
-/* Ensure vertical view items use grid display when visible */
-.all-trips-container.vertical-view .trip-item.visible-item {
-  display: grid;
-  grid-template-columns: 3fr 5fr 3fr;
-  gap: 20px;
-}
-
 /* No trips message */
 .no-trips {
   padding: 20px;
@@ -326,16 +329,10 @@ a {
 }
 
 /* Handle responsive layout */
-@media screen and (max-width: 768px) {
+@media screen and (max-width: 640px) {
   .all-trips-container.vertical-view .trip-item {
     grid-template-columns: 1fr;
     gap: 15px;
-  }
-
-  .all-trips-container.vertical-view .trip-price-button {
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
   }
 
   .all-trips-container.vertical-view .trip-price {
