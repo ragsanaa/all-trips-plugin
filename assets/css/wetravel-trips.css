@@ -188,6 +188,12 @@ a {
   display: flex;
   flex-direction: column;
   gap: 24px;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.wetravel-trips-container.grid-view .trip-item:hover {
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
 .wetravel-trips-container.grid-view .trip-item img {
@@ -332,11 +338,13 @@ a {
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
-.wetravel-trips-container.carousel-view .trip-item * {
+.wetravel-trips-container.carousel-view .trip-item *,
+.wetravel-trips-container.grid-view .trip-item * {
   pointer-events: none;
 }
 
-.wetravel-trips-container.carousel-view .trip-item {
+.wetravel-trips-container.carousel-view .trip-item,
+.wetravel-trips-container.grid-view .trip-item {
   pointer-events: auto;
 }
 

@@ -152,7 +152,7 @@ add_action( 'wp_footer', 'fix_trips_loading_in_editor' );
 function wetravel_trips_get_cdn_url($env) {
 	// Remove protocol and trailing slashes
 	$clean_env = rtrim(preg_replace('#^https?://#', '', $env), '/');
-	error_log( 'wetravel_trips_get_cdn_url: ' . $clean_env ); // Debugging line
+
 	// Map environments to their CDN domains
 	switch ($clean_env) {
 		case 'wetravel.com':

@@ -234,15 +234,10 @@ function fetch_trip_seo_config( $trips, $env ) {
  * @return string Currency symbol
  */
 function get_currency_symbol( $currency ) {
-	$symbols = array(
-		'USD' => '$',
-		'EUR' => '€',
-		'GBP' => '£',
-		'JPY' => '¥',
-		'CAD' => 'C$',
-		'AUD' => 'A$',
-		'PEN' => 'S/.',
-	);
+	// Reference: https://github.com/bengourley/currency-symbol-map/blob/master/map.js.
+	// use currencies json file to get the symbols.
+	$currencies_json = file_get_contents( __DIR__ . '/../assets/constant/currencies.json' );
+	$currencies = json_decode( $currencies_json, true );
 
-	return isset( $symbols[ $currency ] ) ? $symbols[ $currency ] : '$';
+	return isset( $currencies[ $currency ] ) ? $currencies[ $currency ] : $currency;
 }

@@ -392,8 +392,17 @@ function render_trip_item($trip, $options, $visibilityClass = "") {
 	$html = "";
 	$buttonUrl = get_button_url($trip, $options);
 
-	if ($options['displayType'] === "vertical" || $options['displayType'] === "grid") {
+	if ($options['displayType'] === "vertical") {
 		$html .= '<div class="trip-item ' . $visibilityClass . '">';
+	} else if ($options['displayType'] === "grid") {
+		$html .= '<div class="trip-item wtrvl-checkout_button ' . $visibilityClass . '" ' .
+				'data-env="' . esc_attr($options['env']) . '" ' .
+				'data-version="v0.3" ' .
+				'data-uid="' . esc_attr($options['wetravelUserID']) . '" ' .
+				'data-uuid="' . esc_attr($trip['uuid']) . '" ' .
+				'href="' . esc_url($buttonUrl) . '" ' .
+				'style="cursor: pointer;"' .
+				'>';
 	} else if ($options['displayType'] === "carousel") {
 		$html .= '<div class="trip-item wtrvl-checkout_button" ' .
 				'data-env="' . esc_attr($options['env']) . '" ' .
