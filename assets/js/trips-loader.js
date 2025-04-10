@@ -12,15 +12,6 @@
     // Get data attributes
     var slug = container.data("slug");
     var env = container.data("env");
-    var wetravelUserID = container.data("wetravel-user-id");
-    var displayType = container.data("display-type");
-    var buttonType = container.data("button-type");
-    var buttonText = container.data("button-text");
-    var buttonColor = container.data("button-color");
-    var tripType = container.data("trip-type") || "all";
-    var dateStart = container.data("date-start") || "";
-    var dateEnd = container.data("date-end") || "";
-    var itemsPerPage = container.data("items-per-page") || 10;
 
     // Find the block ID from the container ID
     var blockId = container.attr("id").replace("trips-container-", "");

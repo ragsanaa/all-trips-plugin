@@ -234,6 +234,7 @@ function wetravel_trips_block_render( $attributes ) {
 							<?php foreach ( $trips as $trip ) : ?>
 								<div class="swiper-slide">
 									<?php
+									// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- HTML output is escaped inside render_trip_item().
 									echo render_trip_item(
 										$trip,
 										array(
@@ -259,6 +260,7 @@ function wetravel_trips_block_render( $attributes ) {
 					$counter = 0;
 					foreach ( $trips as $trip ) :
 						$visibility_class = $counter < $items_per_page ? 'visible-item' : 'hidden-item';
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- HTML output is escaped inside render_trip_item().
 						echo render_trip_item(
 							$trip,
 							array(
@@ -338,7 +340,7 @@ function wetravel_trips_block_render( $attributes ) {
 			// Add a fallback timeout to hide spinner after 15 seconds in case of errors
 			setTimeout(function() {
 				$('.wetravel-trips-loading').fadeOut();
-			}, 100);
+			}, 15000);
 		});
 	";
 
