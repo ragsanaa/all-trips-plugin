@@ -118,27 +118,27 @@ function wetravel_trips_settings_page() {
 
 /** Set menu and submenu */
 function wetravel_trips_add_admin_menu() {
-	// Change the main menu page to point to the design library
+	// Change the main menu page to point to the design library.
 	add_menu_page(
-			'WeTravel Trips Plugin',
-			'WeTravel Trips',
-			'manage_options',
-			'wetravel-trips-design-library', // Change to design library slug
-			'wetravel_trips_design_library_page', // Use design library callback
-			'dashicons-location-alt'
+		'WeTravel Trips Plugin',
+		'WeTravel Trips',
+		'manage_options',
+		'wetravel-trips-design-library', // Change to design library slug.
+		'wetravel_trips_design_library_page', // Use design library callback.
+		'dashicons-location-alt'
 	);
 
-	// Add Widget Library as first submenu (will be duplicated as main)
+	// Add Widget Library as first submenu (will be duplicated as main).
 	add_submenu_page(
-			'wetravel-trips-design-library',
-			'Widget Library',
-			'Widget Library',
-			'manage_options',
-			'wetravel-trips-design-library', // Same as parent to make it the default page
-			'wetravel_trips_design_library_page'
+		'wetravel-trips-design-library',
+		'Widget Library',
+		'Widget Library',
+		'manage_options',
+		'wetravel-trips-design-library', // Same as parent to make it the default page.
+		'wetravel_trips_design_library_page'
 	);
 
-	// Add Create Widget submenu
+	// Add Create Widget submenu.
 	add_submenu_page(
 		'wetravel-trips-design-library',
 		'Create Widget',
@@ -148,17 +148,17 @@ function wetravel_trips_add_admin_menu() {
 		'wetravel_trips_create_design_page'
 	);
 
-	// Add Settings as submenu
+	// Add Settings as submenu.
 	add_submenu_page(
-			'wetravel-trips-design-library',
-			'Settings',
-			'Settings',
-			'manage_options',
-			'wetravel-trips-settings',
-			'wetravel_trips_settings_page'
+		'wetravel-trips-design-library',
+		'Settings',
+		'Settings',
+		'manage_options',
+		'wetravel-trips-settings',
+		'wetravel_trips_settings_page'
 	);
 }
-add_action('admin_menu', 'wetravel_trips_add_admin_menu');
+add_action( 'admin_menu', 'wetravel_trips_add_admin_menu' );
 
 /**
  * Enqueue admin scripts and styles.

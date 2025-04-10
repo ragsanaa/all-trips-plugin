@@ -92,6 +92,7 @@ a {
 .trip-loc-price {
   display: flex;
   justify-content: space-between;
+  gap: 8px;
 }
 
 .trip-tag {
@@ -401,7 +402,7 @@ a {
 .no-trips {
   padding: 20px;
   text-align: center;
-  background-color: #f8f8f8;
+  background-color: #fff;
   border-radius: 8px;
   margin: 20px 0;
 }

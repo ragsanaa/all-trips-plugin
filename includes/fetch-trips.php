@@ -65,9 +65,12 @@ function fetch_wetravel_trips_handler() {
 			$query_params['all_year'] = 'false';
 
 			// Add date range for one-time trips.
-		if ( ! empty( $date_start ) && ! empty( $date_end ) ) {
+		if ( ! empty( $date_start ) ) {
 				$query_params['from_date'] = $date_start;
-				$query_params['to_date']   = $date_end;
+		}
+
+		if ( ! empty( $date_end ) ) {
+			$query_params['to_date']   = $date_end;
 		}
 	}
 
@@ -79,14 +82,12 @@ function fetch_wetravel_trips_handler() {
 
 	if ( 'recurring' === $trip_type ) {
 		// Filter trips where 'all_year' is true.
-    $trips = array_filter( $trips, function( $trip ) {
-			return ! empty( $trip['all_year'] ) && $trip['all_year'] === true;
-		} );
-	}
-
-	if ( empty( $trips ) ) {
-		wp_send_json_error( 'No trips found or error fetching trips' );
-		return;
+		$trips = array_filter(
+			$trips,
+			function ( $trip ) {
+				return ! empty( $trip['all_year'] ) && true === $trip['all_year'];
+			}
+		);
 	}
 
 	wp_send_json_success( $trips );
@@ -178,7 +179,7 @@ function fetch_trip_seo_config( $trips, $env ) {
 			continue;
 		}
 
-		$body        = wp_remote_retrieve_body( $response );
+		$body            = wp_remote_retrieve_body( $response );
 		$seo_config_data = json_decode( $body, true );
 
 		// Check if we have valid detailed data.
@@ -236,8 +237,9 @@ function fetch_trip_seo_config( $trips, $env ) {
 function get_currency_symbol( $currency ) {
 	// Reference: https://github.com/bengourley/currency-symbol-map/blob/master/map.js.
 	// use currencies json file to get the symbols.
-	$currencies_json = file_get_contents( __DIR__ . '/../assets/constant/currencies.json' );
-	$currencies = json_decode( $currencies_json, true );
+	$currencies_file = __DIR__ . '/../assets/constant/currencies.json';
+	$currencies_json = file_exists( $currencies_file ) ? file_get_contents( $currencies_file ) : '{}';
+	$currencies      = json_decode( $currencies_json, true );
 
 	return isset( $currencies[ $currency ] ) ? $currencies[ $currency ] : $currency;
 }

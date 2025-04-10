@@ -66,9 +66,9 @@ function wetravel_trips_enqueue_block_assets() {
 
 	// Prepare settings.
 	$wetravel_trips_settings = array(
-		'src'          	 => get_option( 'wetravel_trips_src', '' ),
-		'slug'         	 => get_option( 'wetravel_trips_slug', '' ),
-		'env'          	 => get_option( 'wetravel_trips_env', 'https://pre.wetravel.to' ),
+		'src'            => get_option( 'wetravel_trips_src', '' ),
+		'slug'           => get_option( 'wetravel_trips_slug', '' ),
+		'env'            => get_option( 'wetravel_trips_env', 'https://pre.wetravel.to' ),
 		'wetravelUserID' => get_option( 'wetravel_trips_user_id', '' ),
 		'displayType'    => get_option( 'wetravel_trips_display_type', 'vertical' ),
 		'buttonType'     => get_option( 'wetravel_trips_button_type', 'book_now' ),
@@ -216,17 +216,17 @@ function wetravel_trips_activation() {
 
 	// Create empty files if they don't exist.
 	$files = array(
-		'assets/css/wetravel-trips.css'    => '',
-		'assets/js/pagination.js'     => '',
-		'assets/js/carousel.js'       => '',
-		'blocks/editor.css'           => '',
-		'includes/block-renderer.php' => '<?php
+		'assets/css/wetravel-trips.css' => '',
+		'assets/js/pagination.js'       => '',
+		'assets/js/carousel.js'         => '',
+		'blocks/editor.css'             => '',
+		'includes/block-renderer.php'   => '<?php
 // Block renderer file.
 if (!defined(\'ABSPATH\')) {
     exit;
 }
 ',
-		'includes/shortcode.php'      => '<?php
+		'includes/shortcode.php'        => '<?php
 // Shortcode file.
 if (!defined(\'ABSPATH\')) {
     exit;

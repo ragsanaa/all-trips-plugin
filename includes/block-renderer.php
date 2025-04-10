@@ -21,17 +21,17 @@ function wetravel_trips_block_render( $attributes ) {
 	$selected_design_id = isset( $attributes['selectedDesignID'] ) ? $attributes['selectedDesignID'] : '';
 
 	// Start with block attributes.
-	$src            				= $attributes['src'] ?? get_option( 'wetravel_trips_src', '' );
-	$slug           				= $attributes['slug'] ?? get_option( 'wetravel_trips_slug', '' );
-	$env           					= $attributes['env'] ?? get_option( 'wetravel_trips_env', 'https://pre.wetravel.to' );
+	$src                    = $attributes['src'] ?? get_option( 'wetravel_trips_src', '' );
+	$slug                   = $attributes['slug'] ?? get_option( 'wetravel_trips_slug', '' );
+	$env                    = $attributes['env'] ?? get_option( 'wetravel_trips_env', 'https://pre.wetravel.to' );
 	$wetravel_trips_user_id = $attributes['wetravelUserID'] ?? get_option( 'wetravel_trips_user_id', '' );
-	$display_type   				= $attributes['displayType'] ?? get_option( 'wetravel_trips_display_type', 'vertical' );
-	$button_type    				= $attributes['buttonType'] ?? get_option( 'wetravel_trips_button_type', 'book_now' );
-	$button_color   				= $attributes['buttonColor'] ?? get_option( 'wetravel_trips_button_color', '#33ae3f' );
-	$items_per_page 				= intval( $attributes['itemsPerPage'] ?? get_option( 'wetravel_trips_items_per_page', 10 ) );
-	$items_per_row  				= intval( $attributes['itemsPerRow'] ?? get_option( 'wetravel_trips_items_per_row', 3 ) );
-	$items_per_slide 				= intval( $attributes['itemsPerSlide'] ?? get_option( 'wetravel_trips_items_per_slide', 3 ) );
-	$load_more_text 				= $attributes['loadMoreText'] ?? get_option( 'wetravel_trips_load_more_text', 'Load More' );
+	$display_type           = $attributes['displayType'] ?? get_option( 'wetravel_trips_display_type', 'vertical' );
+	$button_type            = $attributes['buttonType'] ?? get_option( 'wetravel_trips_button_type', 'book_now' );
+	$button_color           = $attributes['buttonColor'] ?? get_option( 'wetravel_trips_button_color', '#33ae3f' );
+	$items_per_page         = intval( $attributes['itemsPerPage'] ?? get_option( 'wetravel_trips_items_per_page', 10 ) );
+	$items_per_row          = intval( $attributes['itemsPerRow'] ?? get_option( 'wetravel_trips_items_per_row', 3 ) );
+	$items_per_slide        = intval( $attributes['itemsPerSlide'] ?? get_option( 'wetravel_trips_items_per_slide', 3 ) );
+	$load_more_text         = $attributes['loadMoreText'] ?? get_option( 'wetravel_trips_load_more_text', 'Load More' );
 
 	// Override with design settings if a design is selected.
 	if ( ! empty( $selected_design_id ) ) {
@@ -82,52 +82,58 @@ function wetravel_trips_block_render( $attributes ) {
 	// Create a nonce for AJAX security.
 	$nonce = wp_create_nonce( 'wetravel_trips_nonce' );
 
-	// Get trip_type, date_start and date_end from attributes or design
-	$trip_type = ! empty( $attributes['tripType'] ) ? $attributes['tripType'] : ( ! empty( $design['tripType'] ) ? $design['tripType'] : 'all' );
+	// Get trip_type, date_start and date_end from attributes or design.
+	$trip_type  = ! empty( $attributes['tripType'] ) ? $attributes['tripType'] : ( ! empty( $design['tripType'] ) ? $design['tripType'] : 'all' );
 	$date_start = ! empty( $attributes['dateStart'] ) ? $attributes['dateStart'] : ( ! empty( $design['dateRangeStart'] ) ? $design['dateRangeStart'] : '' );
-	$date_end = ! empty( $attributes['dateEnd'] ) ? $attributes['dateEnd'] : ( ! empty( $design['dateRangeEnd'] ) ? $design['dateRangeEnd'] : '' );
+	$date_end   = ! empty( $attributes['dateEnd'] ) ? $attributes['dateEnd'] : ( ! empty( $design['dateRangeEnd'] ) ? $design['dateRangeEnd'] : '' );
 
-	// Fetch trips data directly
-	$api_url = "{$env}/api/v2/embeds/all_trips";
-	$query_params = array('slug' => $slug);
+	// Fetch trips data directly.
+	$api_url      = "{$env}/api/v2/embeds/all_trips";
+	$query_params = array( 'slug' => $slug );
 
-	// Format dates if they exist
-	if (!empty($date_start)) {
-		$date_obj = date_create($date_start);
-		if ($date_obj) {
-			$date_start = date_format($date_obj, 'Y-m-d');
+	// Format dates if they exist.
+	if ( ! empty( $date_start ) ) {
+		$date_obj = date_create( $date_start );
+		if ( $date_obj ) {
+			$date_start = date_format( $date_obj, 'Y-m-d' );
 		}
 	}
 
-	if (!empty($date_end)) {
-		$date_obj = date_create($date_end);
-		if ($date_obj) {
-			$date_end = date_format($date_obj, 'Y-m-d');
+	if ( ! empty( $date_end ) ) {
+		$date_obj = date_create( $date_end );
+		if ( $date_obj ) {
+			$date_end = date_format( $date_obj, 'Y-m-d' );
 		}
 	}
 
-	// Set recurring/one-time parameters
-	if ('one-time' === $trip_type) {
+	// Set recurring/one-time parameters.
+	if ( 'one-time' === $trip_type ) {
 		$query_params['all_year'] = 'false';
 
-		// Add date range for one-time trips
-		if (!empty($date_start) && !empty($date_end)) {
+		// Add date range for one-time trips.
+		if ( ! empty( $date_start ) ) {
 			$query_params['from_date'] = $date_start;
+		}
+
+		if ( ! empty( $date_end ) ) {
 			$query_params['to_date'] = $date_end;
 		}
 	}
 
-	// Build the final URL with parameters
-	$api_url = add_query_arg($query_params, $api_url);
+	// Build the final URL with parameters.
+	$api_url = add_query_arg( $query_params, $api_url );
 
-	// Get trips data with caching
-	$trips = get_wetravel_trips_data($api_url, $env);
+	// Get trips data with caching.
+	$trips = get_wetravel_trips_data( $api_url, $env );
 
-	if ('recurring' === $trip_type) {
-		// Filter trips where 'all_year' is true
-		$trips = array_filter($trips, function($trip) {
-			return !empty($trip['all_year']) && $trip['all_year'] === true;
-		});
+	if ( 'recurring' === $trip_type ) {
+		// Filter trips where 'all_year' is true.
+		$trips = array_filter(
+			$trips,
+			function ( $trip ) {
+				return ! empty( $trip['all_year'] ) && true === $trip['all_year'];
+			}
+		);
 	}
 
 	// Enqueue necessary assets based on display type.
@@ -222,20 +228,25 @@ function wetravel_trips_block_render( $attributes ) {
 				<div class="no-trips">No trips found</div>
 			<?php else : ?>
 
-				<?php if ( $display_type === 'carousel' ) : ?>
+				<?php if ( 'carousel' === $display_type ) : ?>
 					<div class="swiper">
 						<div class="swiper-wrapper">
 							<?php foreach ( $trips as $trip ) : ?>
 								<div class="swiper-slide">
-									<?php echo render_trip_item( $trip, [
-										'env' => $env,
-										'wetravelUserID' => $wetravel_trips_user_id,
-										'displayType' => $display_type,
-										'buttonType' => $button_type,
-										'buttonText' => $button_text,
-										'buttonColor' => $button_color,
-										'itemsPerPage' => $items_per_page,
-									]); ?>
+									<?php
+									echo render_trip_item(
+										$trip,
+										array(
+											'env'          => $env,
+											'wetravelUserID' => $wetravel_trips_user_id,
+											'displayType'  => $display_type,
+											'buttonType'   => $button_type,
+											'buttonText'   => $button_text,
+											'buttonColor'  => $button_color,
+											'itemsPerPage' => $items_per_page,
+										)
+									);
+									?>
 								</div>
 							<?php endforeach; ?>
 						</div>
@@ -247,17 +258,21 @@ function wetravel_trips_block_render( $attributes ) {
 					<?php
 					$counter = 0;
 					foreach ( $trips as $trip ) :
-						$visibilityClass = $counter < $items_per_page ? 'visible-item' : 'hidden-item';
-						echo render_trip_item( $trip, [
-							'env' => $env,
-							'wetravelUserID' => $wetravel_trips_user_id,
-							'displayType' => $display_type,
-							'buttonType' => $button_type,
-							'buttonText' => $button_text,
-							'buttonColor' => $button_color,
-							'itemsPerPage' => $items_per_page,
-						], $visibilityClass );
-						$counter++;
+						$visibility_class = $counter < $items_per_page ? 'visible-item' : 'hidden-item';
+						echo render_trip_item(
+							$trip,
+							array(
+								'env'            => $env,
+								'wetravelUserID' => $wetravel_trips_user_id,
+								'displayType'    => $display_type,
+								'buttonType'     => $button_type,
+								'buttonText'     => $button_text,
+								'buttonColor'    => $button_color,
+								'itemsPerPage'   => $items_per_page,
+							),
+							$visibility_class
+						);
+						++$counter;
 					endforeach;
 					?>
 				<?php endif; ?>
@@ -265,230 +280,208 @@ function wetravel_trips_block_render( $attributes ) {
 			<?php endif; ?>
 		</div>
 
-		<?php if ( 'carousel' !== $display_type && count($trips) > $items_per_page ) : ?>
+		<?php if ( 'carousel' !== $display_type && count( $trips ) > $items_per_page ) : ?>
 			<!-- Numbered pagination container -->
 			<div id="pagination-<?php echo esc_attr( $block_id ); ?>" class="wetravel-trips-pagination">
 				<div class="pagination-controls">
 					<?php
-					$total_pages = ceil(count($trips) / $items_per_page);
-					for ($i = 1; $i <= $total_pages; $i++) {
-						$active_class = $i === 1 ? 'active' : '';
-						echo '<span class="page-number ' . $active_class . '" data-page="' . $i . '">' . $i . '</span>';
+					$total_pages = ceil( count( $trips ) / $items_per_page );
+					for ( $i = 1; $i <= $total_pages; $i++ ) {
+						$active_class = 1 === $i ? 'active' : '';
+						echo '<span class="page-number ' . esc_attr( $active_class ) . '" data-page="' . esc_attr( $i ) . '">' . esc_html( $i ) . '</span>';
 					}
 					?>
 				</div>
 			</div>
 		<?php endif; ?>
 	</div>
-	<?php if ( $button_type === 'book_now' ) : ?>
-	<script src="<?php echo esc_url(wetravel_trips_get_cdn_url($env) . '/widgets/embed_checkout.js'); ?>"></script>
+	<?php if ( 'book_now' === $button_type ) : ?>
+		<?php
+		wp_enqueue_script(
+			'wetravel-embed-checkout',
+			wetravel_trips_get_cdn_url( $env ) . '/widgets/embed_checkout.js',
+			array(),
+			'1.0.0', // Set a fixed version to avoid browser caching issues.
+			true
+		);
+		?>
 	<?php endif; ?>
 	<?php
 
-	if ( 'carousel' === $display_type ) {
-		// Add script to trigger the tripsRendered event after the page loads
-		$inline_script = "
-		<script>
-			jQuery(document).ready(function($) {
-				// Trigger the carousel initialization event after a short delay
-				setTimeout(function() {
-					$('.wetravel-trips-container').trigger('tripsRendered');
-				}, 300);
-			});
-		</script>
-		";
-
-		// Add the inline script to the output
-		ob_start();
-		echo $inline_script;
-		$additional_script = ob_get_clean();
-
-		// Append the script to the existing output
-		$output = ob_get_clean();
-		$output .= $additional_script;
-
-		// Start a new buffer with the combined content
-		ob_start();
-		echo $output;
-	}
-
-	// Script to handle loading spinner visibility
+	// Script to handle loading spinner visibility.
 	$inline_script = "
-	<script>
-	jQuery(document).ready(function($) {
-		// Function to hide loading spinner once content is loaded
-		function hideLoadingSpinner(blockId) {
-			// Hide the loading spinner
-			$('#loading-' + blockId).fadeOut();
+		jQuery(document).ready(function($) {
+			// Function to hide loading spinner once content is loaded
+			function hideLoadingSpinner(blockId) {
+				// Hide the loading spinner
+				$('#loading-' + blockId).fadeOut();
+			}
 
-			// Trigger the tripsRendered event
-			$('#trips-container-' + blockId).trigger('tripsRendered');
-		}
+			// For server-side rendered content
+			var blockId = '" . esc_js( $block_id ) . "';
+			var tripsContainer = $('#trips-container-' + blockId);
 
-		// For server-side rendered content
-		var blockId = '" . esc_js($block_id) . "';
-		var tripsContainer = $('#trips-container-' + blockId);
+			// If trips are already in the container (server-side rendered),
+			// hide spinner after a short delay to allow for visual feedback
+			if (tripsContainer.find('.trip-item').length > 0) {
+				setTimeout(function() {
+					hideLoadingSpinner(blockId);
+				}, 500);
+			}
 
-		// If trips are already in the container (server-side rendered),
-		// hide spinner after a short delay to allow for visual feedback
-		if (tripsContainer.find('.trip-item').length > 0) {
-			setTimeout(function() {
+			// For client-side loaded content, the spinner is handled in trips-loader.js
+			// Add a global callback function that can be called after AJAX trips load
+			window.tripsLoaded = function(blockId) {
 				hideLoadingSpinner(blockId);
-			}, 500);
-		}
+			};
 
-		// For client-side loaded content, the spinner is handled in trips-loader.js
-		// Add a global callback function that can be called after AJAX trips load
-		window.tripsLoaded = function(blockId) {
-			hideLoadingSpinner(blockId);
-		};
-
-		// Add a fallback timeout to hide spinner after 15 seconds in case of errors
-		setTimeout(function() {
-			$('.wetravel-trips-loading').fadeOut();
-		}, 15000);
-	});
-	</script>
+			// Add a fallback timeout to hide spinner after 15 seconds in case of errors
+			setTimeout(function() {
+				$('.wetravel-trips-loading').fadeOut();
+			}, 100);
+		});
 	";
 
-	// Add the inline script to the output
-	echo $inline_script;
+	// Add the inline script to the output.
+	wp_register_script( 'wetravel-trips-loading', '', array( 'jquery' ), filemtime( WETRAVEL_TRIPS_PLUGIN_DIR . 'assets/js/trips-loader.js' ), true );
+	wp_add_inline_script( 'wetravel-trips-loading', $inline_script );
+	wp_enqueue_script( 'wetravel-trips-loading' );
 	return ob_get_clean();
 }
 
 /**
- * Get button URL for a trip based on options and trip data
+ * Get button URL for a trip based on options and trip data.
  *
- * @param array $trip Trip data
- * @param array $options Button options
- * @return string Button URL
+ * @param array $trip Trip data.
+ * @param array $options Button options.
+ * @return string Button URL.
  */
-function get_button_url($trip, $options) {
-	$env = $options['env'];
-	$buttonUrl = "";
+function get_button_url( $trip, $options ) {
+	$env        = $options['env'];
+	$button_url = '';
 
-	// Set up button URL based on button type
-	if ($options['buttonType'] === "book_now") {
-		$buttonUrl = $env . "/checkout_embed?uuid=" . $trip['uuid'];
+	// Set up button URL based on button type.
+	if ( 'book_now' === $options['buttonType'] ) {
+		$button_url = $env . '/checkout_embed?uuid=' . $trip['uuid'];
 	} else {
-		$buttonUrl = $env . "/trips/" . $trip['uuid'];
-		if (isset($trip['href'])) {
-			$buttonUrl = $trip['href'];
+		$button_url = $env . '/trips/' . $trip['uuid'];
+		if ( isset( $trip['href'] ) ) {
+			$button_url = $trip['href'];
 		}
 	}
 
-	return $buttonUrl;
+	return $button_url;
 }
 
 /**
  * Render a single trip item
  *
- * @param array $trip Trip data
- * @param array $options Display options
- * @param string $visibilityClass CSS class for visibility
- * @return string Trip HTML
+ * @param array  $trip Trip data.
+ * @param array  $options Display options.
+ * @param string $visibility_class CSS class for visibility.
+ * @return string Trip HTML.
  */
-function render_trip_item($trip, $options, $visibilityClass = "") {
-	$html = "";
-	$buttonUrl = get_button_url($trip, $options);
+function render_trip_item( $trip, $options, $visibility_class = '' ) {
+	$html       = '';
+	$button_url = get_button_url( $trip, $options );
 
-	if ($options['displayType'] === "vertical") {
-		$html .= '<div class="trip-item ' . $visibilityClass . '">';
-	} else if ($options['displayType'] === "grid") {
-		$html .= '<div class="trip-item wtrvl-checkout_button ' . $visibilityClass . '" ' .
-				'data-env="' . esc_attr($options['env']) . '" ' .
+	if ( 'vertical' === $options['displayType'] ) {
+		$html .= '<div class="trip-item ' . $visibility_class . '">';
+	} elseif ( 'grid' === $options['displayType'] ) {
+		$html .= '<div class="trip-item wtrvl-checkout_button ' . $visibility_class . '" ' .
+				'data-env="' . esc_attr( $options['env'] ) . '" ' .
 				'data-version="v0.3" ' .
-				'data-uid="' . esc_attr($options['wetravelUserID']) . '" ' .
-				'data-uuid="' . esc_attr($trip['uuid']) . '" ' .
-				'href="' . esc_url($buttonUrl) . '" ' .
+				'data-uid="' . esc_attr( $options['wetravelUserID'] ) . '" ' .
+				'data-uuid="' . esc_attr( $trip['uuid'] ) . '" ' .
+				'href="' . esc_url( $button_url ) . '" ' .
 				'style="cursor: pointer;"' .
 				'>';
-	} else if ($options['displayType'] === "carousel") {
+	} elseif ( 'carousel' === $options['displayType'] ) {
 		$html .= '<div class="trip-item wtrvl-checkout_button" ' .
-				'data-env="' . esc_attr($options['env']) . '" ' .
+				'data-env="' . esc_attr( $options['env'] ) . '" ' .
 				'data-version="v0.3" ' .
-				'data-uid="' . esc_attr($options['wetravelUserID']) . '" ' .
-				'data-uuid="' . esc_attr($trip['uuid']) . '" ' .
-				'href="' . esc_url($buttonUrl) . '" ' .
+				'data-uid="' . esc_attr( $options['wetravelUserID'] ) . '" ' .
+				'data-uuid="' . esc_attr( $trip['uuid'] ) . '" ' .
+				'href="' . esc_url( $button_url ) . '" ' .
 				'style="cursor: pointer;"' .
 				'>';
 	}
 
-	// Image
-	if (!empty($trip['default_image'])) {
+	// Image.
+	if ( ! empty( $trip['default_image'] ) ) {
 		$html .= '<div class="trip-image">';
-		$html .= '<img src="' . esc_url($trip['default_image']) . '" alt="' . esc_attr($trip['title']) . '">';
+		$html .= '<img src="' . esc_url( $trip['default_image'] ) . '" alt="' . esc_attr( $trip['title'] ) . '">';
 		$html .= '</div>';
 	} else {
 		$html .= '<div class="no-image-placeholder"><span>No Image Available</span></div>';
 	}
 
-	// Content
+	// Content.
 	$html .= '<div class="trip-content">';
 	$html .= '<div class="trip-title-desc">';
-	$html .= '<h3>' . esc_html($trip['title']) . '</h3>';
+	$html .= '<h3>' . esc_html( $trip['title'] ) . '</h3>';
 
-	// Description
-	if (!empty($trip['full_description'])) {
-		$html .= '<div class="trip-description">' . wp_kses_post($trip['full_description']) . '</div>';
+	// Description.
+	if ( ! empty( $trip['full_description'] ) ) {
+		$html .= '<div class="trip-description">' . wp_kses_post( $trip['full_description'] ) . '</div>';
 	}
-	$html .= '</div>'; // Close trip-title-desc
+	$html .= '</div>'; // Close trip-title-desc.
 
-	if ($options['displayType'] === "carousel") {
+	if ( 'carousel' === $options['displayType'] ) {
 		$html .= "<div class='trip-loc-price'>";
 	}
 
-	// Date or duration
+	// Date or duration.
 	$html .= '<div class="trip-loc-duration">';
 
-	if (!$trip['all_year']) {
-		$html .= '<div class="trip-date trip-tag">' . esc_html($trip['start_end_dates']) . '</div>';
-	} else if (!empty($trip['custom_duration'])) {
-		$html .= '<div class="trip-duration trip-tag">' . esc_html($trip['custom_duration']) . ' days</div>';
+	if ( ! $trip['all_year'] ) {
+		$html .= '<div class="trip-date trip-tag">' . esc_html( $trip['start_end_dates'] ) . '</div>';
+	} elseif ( ! empty( $trip['custom_duration'] ) ) {
+		$html .= '<div class="trip-duration trip-tag">' . esc_html( $trip['custom_duration'] ) . ' days</div>';
 	}
-	$html .= '<div class="trip-location trip-tag">' . esc_html($trip['location']) . '</div>';
-	$html .= '</div>'; // Close trip-loc-duration
+	$html .= '<div class="trip-location trip-tag">' . esc_html( $trip['location'] ) . '</div>';
+	$html .= '</div>'; // Close trip-loc-duration.
 
-	if ($options['displayType'] !== "carousel") {
-		$html .= '</div>'; // Close trip-content
+	if ( 'carousel' !== $options['displayType'] ) {
+		$html .= '</div>'; // Close trip-content.
 	}
 
-	// Price and button section
+	// Price and button section.
 	$html .= '<div class="trip-price-button">';
 
-	// Price
-	if (!empty($trip['price'])) {
+	// Price.
+	if ( ! empty( $trip['price'] ) ) {
 		$html .= '<div class="trip-price"><p>From</p> <span>' .
-			esc_html($trip['price']['currencySymbol']) .
-			esc_html($trip['price']['amount']) .
+			esc_html( $trip['price']['currencySymbol'] ) .
+			esc_html( $trip['price']['amount'] ) .
 			'</span></div>';
 	}
 
-	// Button
-	if ($options['displayType'] !== "carousel") {
-		if ($options['buttonType'] === "book_now") {
+	// Button.
+	if ( 'carousel' !== $options['displayType'] ) {
+		if ( 'book_now' === $options['buttonType'] ) {
 			$html .= '<button class="wtrvl-checkout_button trip-button" ' .
-				'data-env="' . esc_attr($options['env']) . '" ' .
+				'data-env="' . esc_attr( $options['env'] ) . '" ' .
 				'data-version="v0.3" ' .
-				'data-uid="' . esc_attr($options['wetravelUserID']) . '" ' .
-				'data-uuid="' . esc_attr($trip['uuid']) . '" ' .
-				'href="' . esc_url($buttonUrl) . '">' .
-				esc_html($options['buttonText']) .
+				'data-uid="' . esc_attr( $options['wetravelUserID'] ) . '" ' .
+				'data-uuid="' . esc_attr( $trip['uuid'] ) . '" ' .
+				'href="' . esc_url( $button_url ) . '">' .
+				esc_html( $options['buttonText'] ) .
 				'</button>';
 		} else {
-			// Regular link for "View Trip"
-			$html .= '<a href="' . esc_url($buttonUrl) . '" class="trip-button" target="_blank">' .
-				esc_html($options['buttonText']) .
+			// Regular link for "View Trip".
+			$html .= '<a href="' . esc_url( $button_url ) . '" class="trip-button" target="_blank">' .
+				esc_html( $options['buttonText'] ) .
 				'</a>';
 		}
 	}
 
-	$html .= '</div>'; // Close trip-price-button
-	if ($options['displayType'] === "carousel") {
-		$html .= '</div>'; // Close trip-loc-price
-		$html .= '</div>'; // Close trip-content
+	$html .= '</div>'; // Close trip-price-button.
+	if ( 'carousel' === $options['displayType'] ) {
+		$html .= '</div>'; // Close trip-loc-price.
+		$html .= '</div>'; // Close trip-content.
 	}
-	$html .= '</div>'; // Close trip-item
+	$html .= '</div>'; // Close trip-item.
 
 	return $html;
 }

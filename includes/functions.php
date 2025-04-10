@@ -24,9 +24,9 @@ function wetravel_trips_extract_settings( $embed_code ) {
 	preg_match( '/data-uid="([^"]+)"/', $embed_code, $wetravel_trips_user_id_match );
 
 	return array(
-		'src'  => isset( $src_match[1] ) ? $src_match[1] : '',
-		'slug' => isset( $slug_match[1] ) ? $slug_match[1] : '',
-		'env'  => isset( $env_match[1] ) ? $env_match[1] : '',
+		'src'                    => isset( $src_match[1] ) ? $src_match[1] : '',
+		'slug'                   => isset( $slug_match[1] ) ? $slug_match[1] : '',
+		'env'                    => isset( $env_match[1] ) ? $env_match[1] : '',
 		'wetravel_trips_user_id' => isset( $wetravel_trips_user_id_match[1] ) ? $wetravel_trips_user_id_match[1] : '',
 	);
 }
@@ -45,7 +45,6 @@ function wetravel_trips_save_embed_code() {
 				'data-version' => array(),
 				'data-uid'     => array(),
 				'data-slug'    => array(),
-				'data-uid'     => array(),
 				'data-color'   => array(),
 				'data-text'    => array(),
 				'data-name'    => array(),
@@ -61,7 +60,6 @@ function wetravel_trips_save_embed_code() {
 		update_option( 'wetravel_trips_env', $extracted_values['env'] );
 		update_option( 'wetravel_trips_src', $extracted_values['src'] );
 		update_option( 'wetravel_trips_user_id', $extracted_values['wetravel_trips_user_id'] );
-
 
 		// Save the timestamp of the last update.
 		update_option( 'wetravel_trips_last_saved', wp_date( 'F j, Y \a\t g:i a' ) );
@@ -146,15 +144,15 @@ add_action( 'wp_footer', 'fix_trips_loading_in_editor' );
 /**
  * Get the appropriate CDN URL based on environment
  *
- * @param string $env The environment URL (e.g., 'https://pre.wetravel.to')
+ * @param string $env The environment URL (e.g., 'https://pre.wetravel.to').
  * @return string The corresponding CDN URL
  */
-function wetravel_trips_get_cdn_url($env) {
-	// Remove protocol and trailing slashes
-	$clean_env = rtrim(preg_replace('#^https?://#', '', $env), '/');
+function wetravel_trips_get_cdn_url( $env ) {
+	// Remove protocol and trailing slashes.
+	$clean_env = rtrim( preg_replace( '#^https?://#', '', $env ), '/' );
 
-	// Map environments to their CDN domains
-	switch ($clean_env) {
+	// Map environments to their CDN domains.
+	switch ( $clean_env ) {
 		case 'wetravel.com':
 		case 'www.wetravel.com':
 			return 'https://cdn.wetravel.com';
@@ -166,12 +164,12 @@ function wetravel_trips_get_cdn_url($env) {
 			return 'https://pre.cdn.wetravel.to';
 
 		default:
-			// For custom domains, follow the pattern from the embed script
-			$domain_parts = explode('.', $clean_env);
-			if (count($domain_parts) >= 2) {
-				return 'https://cdn.' . implode('.', array_slice($domain_parts, -2));
+			// For custom domains, follow the pattern from the embed script.
+			$domain_parts = explode( '.', $clean_env );
+			if ( count( $domain_parts ) >= 2 ) {
+				return 'https://cdn.' . implode( '.', array_slice( $domain_parts, -2 ) );
 			}
-			// Fallback to pre environment
+			// Fallback to pre environment.
 			return 'https://pre.cdn.wetravel.to';
 	}
 }

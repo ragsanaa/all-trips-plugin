@@ -23,7 +23,7 @@ $options = array(
 	'wetravel_trips_items_per_row',
 	'wetravel_trips_items_per_slide',
 	'wetravel_trips_load_more_text',
-	'wetravel_trips_designs'
+	'wetravel_trips_designs',
 );
 
 foreach ( $options as $option ) {
@@ -33,7 +33,8 @@ foreach ( $options as $option ) {
 // Delete any transients.
 global $wpdb;
 $like = $wpdb->esc_like( 'wetravel_trips_' ) . '%';
-$wpdb->query( "DELETE FROM $wpdb->options WHERE option_name LIKE '$like' AND option_name LIKE '%transient%'" );
+// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Intentional transient cleanup logic
+$wpdb->query( $wpdb->prepare( "DELETE FROM $wpdb->options WHERE option_name LIKE %s AND option_name LIKE %s", $like, '%transient%' ) );
 
 // Clear any scheduled hooks.
 wp_clear_scheduled_hook( 'wetravel_trips_daily_cleanup' );
