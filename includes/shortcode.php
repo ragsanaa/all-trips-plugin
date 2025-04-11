@@ -40,10 +40,55 @@ function wetravel_trips_shortcode( $atts ) {
 		'date_end'               => '',
 	);
 
-	// Parse incoming attributes into an array and merge it with defaults.
-	$atts = shortcode_atts( $default_atts, $atts, 'wetravel_trips' );
+	// First, get the design if specified
+	$design = null;
+	if (!empty($original_atts['widget'])) {
+		$designs = get_option('wetravel_trips_designs', array());
+		$design_id = $original_atts['widget'];
 
-	// Convert to block attributes format.
+		// First try to find design by keyword
+		foreach ($designs as $id => $design_data) {
+			if (isset($design_data['keyword']) && $design_data['keyword'] === $design_id) {
+				$design = $design_data;
+				break;
+			}
+		}
+
+		// If not found by keyword, try to find by design ID
+		if (null === $design && isset($designs[$design_id])) {
+			$design = $designs[$design_id];
+		}
+
+		// If we found a design, update default attributes with design values
+		if ($design) {
+			if (!empty($design['displayType'])) {
+				$default_atts['display_type'] = $design['displayType'];
+			}
+			if (!empty($design['buttonType'])) {
+				$default_atts['button_type'] = $design['buttonType'];
+			}
+			if (!empty($design['buttonText'])) {
+				$default_atts['button_text'] = $design['buttonText'];
+			}
+			if (!empty($design['buttonColor'])) {
+				$default_atts['button_color'] = $design['buttonColor'];
+			}
+			if (!empty($design['tripType'])) {
+				$default_atts['trip_type'] = $design['tripType'];
+			}
+			if (!empty($design['dateRangeStart'])) {
+				$default_atts['date_start'] = $design['dateRangeStart'];
+			}
+			if (!empty($design['dateRangeEnd'])) {
+				$default_atts['date_end'] = $design['dateRangeEnd'];
+			}
+		}
+	}
+
+	// Now merge with shortcode attributes, allowing them to override both defaults and design values
+	$atts = shortcode_atts($default_atts, $original_atts, 'wetravel_trips');
+
+	// Convert to block attributes format
 	$block_atts = array(
 		'slug'           => $atts['slug'],
 		'env'            => $atts['env'],
@@ -52,73 +97,26 @@ function wetravel_trips_shortcode( $atts ) {
 		'buttonType'     => $atts['button_type'],
 		'buttonText'     => $atts['button_text'],
 		'buttonColor'    => $atts['button_color'],
-		'itemsPerPage'   => intval( $atts['items_per_page'] ),
-		'itemsPerRow'    => intval( $atts['items_per_row'] ),
-		'itemsPerSlide'  => intval( $atts['items_per_slide'] ),
+		'itemsPerPage'   => intval($atts['items_per_page']),
+		'itemsPerRow'    => intval($atts['items_per_row']),
+		'itemsPerSlide'  => intval($atts['items_per_slide']),
 		'loadMoreText'   => $atts['load_more_text'],
 		'tripType'       => $atts['trip_type'],
 		'dateStart'      => $atts['date_start'],
 		'dateEnd'        => $atts['date_end'],
 	);
 
-	// Check if using a design configuration.
-	if ( ! empty( $atts['widget'] ) ) {
-		$block_atts['selectedDesignID'] = $atts['widget'];
-
-		// Get all designs.
-		$designs   = get_option( 'wetravel_trips_designs', array() );
-		$design_id = $atts['widget'];
-		$design    = null;
-
-		// First try to find design by keyword.
-		foreach ( $designs as $id => $design_data ) {
-			if ( isset( $design_data['keyword'] ) && $design_data['keyword'] === $design_id ) {
-				$design                         = $design_data;
-				$block_atts['selectedDesignID'] = $id; // Use the actual ID.
-				break;
-			}
-		}
-
-		// If not found by keyword, try to find by design ID.
-		if ( null === $design && isset( $designs[ $design_id ] ) ) {
-			$design = $designs[ $design_id ];
-		}
-
-		// Apply design parameters to block attributes if needed.
-		if ( $design ) {
-			// Map design parameters to block attributes ONLY if not explicitly set in shortcode
-			if ( ! empty( $design['displayType'] ) && ! isset( $original_atts['display_type'] ) ) {
-				$block_atts['displayType'] = $design['displayType'];
-			}
-			if ( ! empty( $design['buttonType'] ) && ! isset( $original_atts['button_type'] ) ) {
-				$block_atts['buttonType'] = $design['buttonType'];
-			}
-			if ( ! empty( $design['buttonText'] ) && ! isset( $original_atts['button_text'] ) ) {
-				$block_atts['buttonText'] = $design['buttonText'];
-			}
-			if ( ! empty( $design['buttonColor'] ) && ! isset( $original_atts['button_color'] ) ) {
-				$block_atts['buttonColor'] = $design['buttonColor'];
-			}
-			if ( ! empty( $design['tripType'] ) && ! isset( $original_atts['trip_type'] ) ) {
-				$block_atts['tripType'] = $design['tripType'];
-			}
-
-			// Handle date range.
-			if ( ! empty( $design['dateRangeStart'] ) && ! isset( $original_atts['date_start'] ) ) {
-				$block_atts['dateStart'] = $design['dateRangeStart'];
-			}
-			if ( ! empty( $design['dateRangeEnd'] ) && ! isset( $original_atts['date_end'] ) ) {
-				$block_atts['dateEnd'] = $design['dateRangeEnd'];
-			}
-		}
+	// Add the selected design ID if a widget was specified
+	if (!empty($original_atts['widget'])) {
+		$block_atts['selectedDesignID'] = $original_atts['widget'];
 	}
 
-	// Use the existing block render function to maintain consistency.
-	if ( function_exists( 'wetravel_trips_block_render' ) ) {
-		return wetravel_trips_block_render( $block_atts );
+	// Use the existing block render function to maintain consistency
+	if (function_exists('wetravel_trips_block_render')) {
+		return wetravel_trips_block_render($block_atts);
 	} else {
-		// Fallback if block render function doesn't exist.
-		return render_wetravel_trips_fallback( $block_atts );
+		// Fallback if block render function doesn't exist
+		return render_wetravel_trips_fallback($block_atts);
 	}
 }
 add_shortcode( 'wetravel_trips', 'wetravel_trips_shortcode' );

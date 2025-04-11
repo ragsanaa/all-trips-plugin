@@ -461,18 +461,30 @@ function render_trip_item( $trip, $options, $visibility_class = '' ) {
 
 	// Button.
 	if ( 'carousel' !== $options['displayType'] ) {
+		$button_style = '';
+		if ($options['displayType'] === 'vertical') {
+			// Filled button style for vertical view
+			$button_style = 'background-color: ' . esc_attr( $options['buttonColor'] ) . '; border-color: ' . esc_attr( $options['buttonColor'] ) . '; color: #fff;';
+		} else {
+			// Outline button style for grid view
+			$button_style = 'background-color: transparent; border-color: ' . esc_attr( $options['buttonColor'] ) . '; color: ' . esc_attr( $options['buttonColor'] ) . ';';
+		}
+
 		if ( 'book_now' === $options['buttonType'] ) {
 			$html .= '<button class="wtrvl-checkout_button trip-button" ' .
 				'data-env="' . esc_attr( $options['env'] ) . '" ' .
 				'data-version="v0.3" ' .
 				'data-uid="' . esc_attr( $options['wetravelUserID'] ) . '" ' .
 				'data-uuid="' . esc_attr( $trip['uuid'] ) . '" ' .
-				'href="' . esc_url( $button_url ) . '">' .
+				'href="' . esc_url( $button_url ) . '" ' .
+				'style="' . $button_style . '">' .
 				esc_html( $options['buttonText'] ) .
 				'</button>';
 		} else {
 			// Regular link for "View Trip".
-			$html .= '<a href="' . esc_url( $button_url ) . '" class="trip-button" target="_blank">' .
+			$html .= '<a href="' . esc_url( $button_url ) . '" ' .
+				'class="trip-button" target="_blank" ' .
+				'style="' . $button_style . '">' .
 				esc_html( $options['buttonText'] ) .
 				'</a>';
 		}
