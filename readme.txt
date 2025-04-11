@@ -2,7 +2,7 @@
 Contributors: wtragsana
 Tags: travel, widget, trips, booking, wetravel
 Requires at least: 5.0
-Tested up to: 6.7.2
+Tested up to: 6.7
 Stable tag: 1.0
 Requires PHP: 7.0
 License: GPLv2 or later
