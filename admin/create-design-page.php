@@ -1,6 +1,6 @@
 <?php
 /**
- * Admin Create Widget page for WeTravel Trips Plugin.
+ * Admin: Create Widget page for WeTravel Widgets Plugin.
  *
  * @package WordPress
  */
@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 
-/** Render Cretae Widget Page. */
+/** Render Create Widget Page. */
 function wetravel_trips_create_design_page() {
 	// Default values.
 	$design = array(

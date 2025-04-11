@@ -155,7 +155,7 @@ function wetravel_trips_block_render( $attributes ) {
 			'wetravel-trips-carousel',
 			plugins_url( 'assets/js/carousel.js', __DIR__ ),
 			array( 'jquery', 'swiper-js' ),
-			filemtime( WETRAVEL_TRIPS_PLUGIN_DIR . 'assets/js/carousel.js' ),
+			filemtime( WETRAVEL_WIDGETS_PLUGIN_DIR . 'assets/js/carousel.js' ),
 			true
 		);
 	} else {
@@ -164,7 +164,7 @@ function wetravel_trips_block_render( $attributes ) {
 			'wetravel-trips-pagination',
 			plugins_url( 'assets/js/pagination.js', __DIR__ ),
 			array( 'jquery' ),
-			filemtime( WETRAVEL_TRIPS_PLUGIN_DIR . 'assets/js/pagination.js' ),
+			filemtime( WETRAVEL_WIDGETS_PLUGIN_DIR . 'assets/js/pagination.js' ),
 			true
 		);
 	}
@@ -185,9 +185,9 @@ function wetravel_trips_block_render( $attributes ) {
 
 	wp_register_style(
 		'wetravel-trips-styles',
-		WETRAVEL_TRIPS_PLUGIN_URL . 'assets/css/wetravel-trips.css',
+		WETRAVEL_WIDGETS_PLUGIN_URL . 'assets/css/wetravel-trips.css',
 		array(),
-		filemtime( WETRAVEL_TRIPS_PLUGIN_DIR . 'assets/css/wetravel-trips.css' )
+		filemtime( WETRAVEL_WIDGETS_PLUGIN_DIR . 'assets/css/wetravel-trips.css' )
 	);
 
 	wp_enqueue_style( 'wetravel-trips-styles' );
@@ -345,7 +345,7 @@ function wetravel_trips_block_render( $attributes ) {
 	";
 
 	// Add the inline script to the output.
-	wp_register_script( 'wetravel-trips-loading', '', array( 'jquery' ), filemtime( WETRAVEL_TRIPS_PLUGIN_DIR . 'assets/js/trips-loader.js' ), true );
+	wp_register_script( 'wetravel-trips-loading', '', array( 'jquery' ), filemtime( WETRAVEL_WIDGETS_PLUGIN_DIR . 'assets/js/trips-loader.js' ), true );
 	wp_add_inline_script( 'wetravel-trips-loading', $inline_script );
 	wp_enqueue_script( 'wetravel-trips-loading' );
 	return ob_get_clean();
@@ -497,7 +497,7 @@ function enqueue_wetravel_trips_scripts() {
 		'wetravel-trips-loader',
 		plugins_url( 'assets/js/trips-loader.js', __DIR__ ),
 		array( 'jquery' ),
-		filemtime( WETRAVEL_TRIPS_PLUGIN_DIR . 'assets/js/trips-loader.js' ),
+		filemtime( WETRAVEL_WIDGETS_PLUGIN_DIR . 'assets/js/trips-loader.js' ),
 		true
 	);
 

@@ -1,6 +1,6 @@
 <?php
 /**
- * Admin Widget Library page for WeTravel Trips Plugin
+ * Admin Widget Library page for WeTravel Widgets Plugin
  *
  * @package WordPress
  */
@@ -32,7 +32,7 @@ function wetravel_trips_design_library_page() {
 	$designs = get_option( 'wetravel_trips_designs', array() );
 	?>
 	<div class="wrap">
-		<h1>WeTravel Trips Plugin - Widget Library</h1>
+		<h1>WeTravel Widgets Plugin - Widget Library</h1>
 
 		<div class="nav-tab-wrapper">
 			<a href="?page=wetravel-trips-settings" class="nav-tab">Settings</a>

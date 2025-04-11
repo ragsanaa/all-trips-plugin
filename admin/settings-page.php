@@ -1,6 +1,6 @@
 <?php
 /**
- * Admin settings page for WeTravel Trips Plugin
+ * Admin settings page for WeTravel Widgets Plugin
  *
  * @package WordPress
  */
@@ -56,7 +56,7 @@ function wetravel_trips_settings_page() {
 	}
 	?>
 	<div class="wrap">
-		<h1>WeTravel Trips Plugin Settings</h1>
+		<h1>WeTravel Widgets Plugin Settings</h1>
 
 		<div class="nav-tab-wrapper">
 			<a href="?page=wetravel-trips-settings" class="nav-tab nav-tab-active">Settings</a>
@@ -120,8 +120,8 @@ function wetravel_trips_settings_page() {
 function wetravel_trips_add_admin_menu() {
 	// Change the main menu page to point to the design library.
 	add_menu_page(
-		'WeTravel Trips Plugin',
-		'WeTravel Trips',
+		'WeTravel Widgets Plugin',
+		'WeTravel Widgets',
 		'manage_options',
 		'wetravel-trips-design-library', // Change to design library slug.
 		'wetravel_trips_design_library_page', // Use design library callback.
@@ -169,8 +169,8 @@ function wetravel_trips_admin_enqueue_scripts( $hook ) {
 	if ( strpos( $hook, 'wetravel-trips' ) !== false ) {
 		wp_enqueue_style( 'wp-color-picker' );
 		wp_enqueue_script( 'wp-color-picker' );
-		wp_enqueue_style( 'wetravel-trips-admin-styles', WETRAVEL_TRIPS_PLUGIN_URL . 'admin/css/admin-styles.css', array(), filemtime( WETRAVEL_TRIPS_PLUGIN_DIR . 'admin/css/admin-styles.css' ) );
-		wp_enqueue_script( 'wetravel-trips-admin-scripts', WETRAVEL_TRIPS_PLUGIN_URL . 'admin/js/admin-scripts.js', array( 'jquery', 'wp-color-picker' ), filemtime( WETRAVEL_TRIPS_PLUGIN_DIR . 'admin/js/admin-scripts.js' ), true );
+		wp_enqueue_style( 'wetravel-trips-admin-styles', WETRAVEL_WIDGETS_PLUGIN_URL . 'admin/css/admin-styles.css', array(), filemtime( WETRAVEL_WIDGETS_PLUGIN_DIR . 'admin/css/admin-styles.css' ) );
+		wp_enqueue_script( 'wetravel-trips-admin-scripts', WETRAVEL_WIDGETS_PLUGIN_URL . 'admin/js/admin-scripts.js', array( 'jquery', 'wp-color-picker' ), filemtime( WETRAVEL_WIDGETS_PLUGIN_DIR . 'admin/js/admin-scripts.js' ), true );
 	}
 }
 add_action( 'admin_enqueue_scripts', 'wetravel_trips_admin_enqueue_scripts' );

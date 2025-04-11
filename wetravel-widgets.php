@@ -1,13 +1,13 @@
 <?php
 /**
- * Plugin Name: WeTravel Trips Widget
- * Plugin URI:  https://wetravel.com
- * Description: A plugin to embed WeTravel trips dynamically.
+ * Plugin Name: WeTravel Widgets
+ * Plugin URI:  https://github.com/ragsanaa/all-trips-plugin
+ * Description: A plugin to display WeTravel widgets on your WordPress site.
  * Version:     1.0
  * Author:      WeTravel
  * Author URI:  https://wetravel.com
- * License:     GPL2
- * Text Domain: wetravel-trips-widget
+ * License:     GPLv2 or later
+ * Text Domain: wetravel-widgets
  *
  * @package WordPress
  */
@@ -18,29 +18,29 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define plugin path.
-define( 'WETRAVEL_TRIPS_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
-define( 'WETRAVEL_TRIPS_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
+define( 'WETRAVEL_WIDGETS_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
+define( 'WETRAVEL_WIDGETS_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
 // Include admin settings page.
-require_once WETRAVEL_TRIPS_PLUGIN_DIR . 'admin/settings-page.php';
+require_once WETRAVEL_WIDGETS_PLUGIN_DIR . 'admin/settings-page.php';
 
-// In wetravel-trips-widget.php, add this line to include the fetch-trips.php file.
+// In wetravel-widgets.php, add this line to include the fetch-trips.php file.
 // Add this after the other require_once statements near the top of the file.
 
 // Include fetch trips functionality.
-require_once WETRAVEL_TRIPS_PLUGIN_DIR . 'includes/fetch-trips.php';
+require_once WETRAVEL_WIDGETS_PLUGIN_DIR . 'includes/fetch-trips.php';
 
 // Include functions.
-require_once WETRAVEL_TRIPS_PLUGIN_DIR . 'includes/functions.php';
+require_once WETRAVEL_WIDGETS_PLUGIN_DIR . 'includes/functions.php';
 
 /** Enqueue styles and scripts for frontend. */
 function wetravel_trips_enqueue_scripts() {
 	// Register main stylesheet.
 	wp_register_style(
 		'wetravel-trips-styles',
-		WETRAVEL_TRIPS_PLUGIN_URL . 'assets/css/wetravel-trips.css',
+		WETRAVEL_WIDGETS_PLUGIN_URL . 'assets/css/wetravel-trips.css',
 		array(),
-		filemtime( WETRAVEL_TRIPS_PLUGIN_DIR . 'assets/css/wetravel-trips.css' )
+		filemtime( WETRAVEL_WIDGETS_PLUGIN_DIR . 'assets/css/wetravel-trips.css' )
 	);
 
 	// Enqueue main stylesheet.
@@ -58,9 +58,9 @@ function wetravel_trips_enqueue_block_assets() {
 	// Enqueue block editor script.
 	wp_enqueue_script(
 		'wetravel-trips-block',
-		WETRAVEL_TRIPS_PLUGIN_URL . 'blocks/index.js',
+		WETRAVEL_WIDGETS_PLUGIN_URL . 'blocks/index.js',
 		array( 'wp-blocks', 'wp-element', 'wp-editor', 'wp-components' ),
-		filemtime( WETRAVEL_TRIPS_PLUGIN_DIR . 'blocks/index.js' ),
+		filemtime( WETRAVEL_WIDGETS_PLUGIN_DIR . 'blocks/index.js' ),
 		true
 	);
 
@@ -92,7 +92,7 @@ function wetravel_trips_register_block() {
 		return;
 	}
 
-	// In wetravel-trips-widget.php, update the register_block_type attributes.
+	// In wetravel-widgets.php, update the register_block_type attributes.
 	register_block_type(
 		'wetravel-trips/block',
 		array(
@@ -162,16 +162,16 @@ function wetravel_trips_register_block() {
 add_action( 'init', 'wetravel_trips_register_block' );
 
 // Include the block render function.
-require_once WETRAVEL_TRIPS_PLUGIN_DIR . 'includes/block-renderer.php';
+require_once WETRAVEL_WIDGETS_PLUGIN_DIR . 'includes/block-renderer.php';
 
 // Include shortcode functionality.
-require_once WETRAVEL_TRIPS_PLUGIN_DIR . 'includes/shortcode.php';
+require_once WETRAVEL_WIDGETS_PLUGIN_DIR . 'includes/shortcode.php';
 
 // Include admin design library page.
-require_once WETRAVEL_TRIPS_PLUGIN_DIR . 'admin/design-library-page.php';
+require_once WETRAVEL_WIDGETS_PLUGIN_DIR . 'admin/design-library-page.php';
 
 // Include admin create design page.
-require_once WETRAVEL_TRIPS_PLUGIN_DIR . 'admin/create-design-page.php';
+require_once WETRAVEL_WIDGETS_PLUGIN_DIR . 'admin/create-design-page.php';
 
 /**  Register shortcode. */
 function wetravel_trips_register_shortcode() {
@@ -201,11 +201,11 @@ register_activation_hook( __FILE__, 'wetravel_trips_clear_transients' );
 function wetravel_trips_activation() {
 	// Create necessary directories if they don't exist.
 	$dirs = array(
-		WETRAVEL_TRIPS_PLUGIN_DIR . 'assets',
-		WETRAVEL_TRIPS_PLUGIN_DIR . 'assets/css',
-		WETRAVEL_TRIPS_PLUGIN_DIR . 'assets/js',
-		WETRAVEL_TRIPS_PLUGIN_DIR . 'includes',
-		WETRAVEL_TRIPS_PLUGIN_DIR . 'blocks',
+		WETRAVEL_WIDGETS_PLUGIN_DIR . 'assets',
+		WETRAVEL_WIDGETS_PLUGIN_DIR . 'assets/css',
+		WETRAVEL_WIDGETS_PLUGIN_DIR . 'assets/js',
+		WETRAVEL_WIDGETS_PLUGIN_DIR . 'includes',
+		WETRAVEL_WIDGETS_PLUGIN_DIR . 'blocks',
 	);
 
 	foreach ( $dirs as $dir ) {
@@ -243,7 +243,7 @@ if (!defined(\'ABSPATH\')) {
 	WP_Filesystem();
 
 	foreach ( $files as $file => $content ) {
-		$filepath = WETRAVEL_TRIPS_PLUGIN_DIR . $file;
+		$filepath = WETRAVEL_WIDGETS_PLUGIN_DIR . $file;
 
 		if ( ! file_exists( $filepath ) ) {
 			$wp_filesystem->put_contents( $filepath, $content, FS_CHMOD_FILE );

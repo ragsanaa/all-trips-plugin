@@ -1,6 +1,6 @@
 <?php
 /**
- * Shortcode functionality for WeTravel Trips Plugin
+ * Shortcode functionality for WeTravel Widgets Plugin
  *
  * @package WordPress
  */
@@ -18,6 +18,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @return string Rendered HTML
  */
 function wetravel_trips_shortcode( $atts ) {
+	// Store the original unmerged attributes
+	$original_atts = (array) $atts;
 
 	// Define default attributes.
 	$default_atts = array(
@@ -84,28 +86,28 @@ function wetravel_trips_shortcode( $atts ) {
 
 		// Apply design parameters to block attributes if needed.
 		if ( $design ) {
-			// Map design parameters to block attributes.
-			if ( ! empty( $design['displayType'] ) ) {
+			// Map design parameters to block attributes ONLY if not explicitly set in shortcode
+			if ( ! empty( $design['displayType'] ) && ! isset( $original_atts['display_type'] ) ) {
 				$block_atts['displayType'] = $design['displayType'];
 			}
-			if ( ! empty( $design['buttonType'] ) ) {
+			if ( ! empty( $design['buttonType'] ) && ! isset( $original_atts['button_type'] ) ) {
 				$block_atts['buttonType'] = $design['buttonType'];
 			}
-			if ( ! empty( $design['buttonText'] ) ) {
+			if ( ! empty( $design['buttonText'] ) && ! isset( $original_atts['button_text'] ) ) {
 				$block_atts['buttonText'] = $design['buttonText'];
 			}
-			if ( ! empty( $design['buttonColor'] ) ) {
+			if ( ! empty( $design['buttonColor'] ) && ! isset( $original_atts['button_color'] ) ) {
 				$block_atts['buttonColor'] = $design['buttonColor'];
 			}
-			if ( ! empty( $design['tripType'] ) ) {
+			if ( ! empty( $design['tripType'] ) && ! isset( $original_atts['trip_type'] ) ) {
 				$block_atts['tripType'] = $design['tripType'];
 			}
 
 			// Handle date range.
-			if ( ! empty( $design['dateRangeStart'] ) ) {
+			if ( ! empty( $design['dateRangeStart'] ) && ! isset( $original_atts['date_start'] ) ) {
 				$block_atts['dateStart'] = $design['dateRangeStart'];
 			}
-			if ( ! empty( $design['dateRangeEnd'] ) ) {
+			if ( ! empty( $design['dateRangeEnd'] ) && ! isset( $original_atts['date_end'] ) ) {
 				$block_atts['dateEnd'] = $design['dateRangeEnd'];
 			}
 		}
