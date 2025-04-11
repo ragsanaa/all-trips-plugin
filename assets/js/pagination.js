@@ -4,7 +4,7 @@
     initializeAllPagination();
 
     // Listen for dynamic trip rendering
-    $(document).on("tripsRendered", ".all-trips-container", function () {
+    $(document).on("tripsRendered", ".wetravel-trips-container", function () {
       // Skip carousel layout
       const container = $(this);
       if (container.data("display-type") === "carousel") {
@@ -17,7 +17,7 @@
   });
 
   function initializeAllPagination() {
-    $(".all-trips-container").each(function () {
+    $(".wetravel-trips-container").each(function () {
       initializePaginationForContainer($(this));
     });
   }
@@ -34,8 +34,8 @@
     }
 
     // Get all trip items
-    const allTrips = container.find(".trip-item");
-    const totalItems = allTrips.length;
+    const wetravelTrips = container.find(".trip-item");
+    const totalItems = wetravelTrips.length;
 
     // If we don't have enough items for pagination, bail early
     if (totalItems <= itemsPerPage) {
@@ -191,10 +191,13 @@
       const endIndex = startIndex + itemsPerPage;
 
       // Hide all items first
-      allTrips.hide();
+      wetravelTrips.hide();
 
       // Show only items for current page
-      allTrips.slice(startIndex, endIndex).show();
+      wetravelTrips.slice(startIndex, endIndex).show();
+
+      // Apply fade effect to newly visible items
+      applyDescriptionFades(wetravelTrips.slice(startIndex, endIndex));
 
       // Scroll to top of container if needed
       if (page !== currentPage) {
@@ -253,4 +256,26 @@
     // Initial display of items
     displayItems(1);
   }
+
+  // Function to apply fade effects to descriptions
+  function applyDescriptionFades() {
+    $(".trip-description").each(function () {
+      var $this = $(this);
+
+      // Calculate the line height and max height for 3 lines
+      var lineHeight = parseInt($this.css("line-height"));
+      var maxHeight = lineHeight * 3;
+
+      // First, remove any existing class to reset the state
+      $this.removeClass("needs-fade");
+
+      // Check if the actual scroll height exceeds what we want to show
+      if ($this[0].scrollHeight > maxHeight) {
+        $this.addClass("needs-fade");
+      }
+    });
+  }
+
+  // Make the function globally available
+  window.applyDescriptionFades = applyDescriptionFades;
 })(jQuery);

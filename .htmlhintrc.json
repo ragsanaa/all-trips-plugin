@@ -1,0 +1,9 @@
+{
+  "attr-lowercase": true,
+  "attr-no-duplication": true,
+  "tag-pair": true,
+  "tag-self-close": false,
+  "doctype-first": true,
+  "id-unique": true,
+  "style-disabled": false
+}

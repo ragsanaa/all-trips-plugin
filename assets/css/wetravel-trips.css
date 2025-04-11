@@ -1,0 +1,478 @@
+/* General styles for WeTravel Widgets plugin */
+
+.wp-block-wetravel-trips-block {
+  margin-bottom: 30px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+  position: relative;
+  min-height: 200px;
+}
+
+a {
+  text-decoration: none !important;
+}
+
+/* Trip item shared styles */
+.trip-item {
+  box-sizing: border-box;
+  border: 1px solid #cbd5e1;
+  padding: 16px;
+  gap: 16px;
+  border-radius: 6px;
+  background-color: #fff;
+  box-shadow: 0px 4px 4px 0px #aeaeae40;
+  overflow: hidden;
+  transition: transform 0.6s ease, box-shadow 0.6s ease;
+  height: 100%;
+}
+
+.trip-item:hover {
+  /* transform: translateY(-5px); */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.trip-item h3 {
+  margin-top: 0;
+  margin-bottom: 8px;
+  font-size: 24px;
+  color: #333;
+  line-height: 1.3;
+}
+
+.trip-content {
+  height: 100%;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.trip-description {
+  color: #475569;
+  max-height: 100px; /* Limit height */
+  font-family: Inter;
+  font-weight: 400;
+  font-size: 16px;
+  overflow: hidden;
+  line-height: 2;
+  position: relative;
+}
+
+/* Add a new class for the fade effect that we'll apply conditionally */
+.trip-description.needs-fade:after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 30px; /* Height of fade effect */
+  width: 100%;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0),
+    rgba(255, 255, 255, 1)
+  ); /* Transparent to white fade */
+  pointer-events: none; /* Makes sure the fade doesn't interfere with clicks */
+}
+
+.trip-loc-duration {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #64748b;
+  font-family: Inter;
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 100%;
+  letter-spacing: 0%;
+  vertical-align: middle;
+  flex-wrap: wrap;
+}
+
+.trip-loc-price {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.trip-tag {
+  border-radius: 16px;
+  border: 1px solid #cbd5e1;
+  padding: 4px 8px;
+}
+
+.trip-price {
+  font-size: 16px;
+  color: #333;
+}
+
+.trip-price p {
+  margin: 0;
+  color: #64748b;
+  line-height: 1;
+}
+
+.trip-price span {
+  font-size: 20px;
+  font-weight: 600;
+  text-align: right;
+  line-height: 1;
+}
+
+/* Button styling */
+.trip-item .trip-button {
+  background-color: var(--button-color);
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: 1px solid var(--button-color);
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+  width: auto;
+  transition: background-color 0.3s ease;
+  font-weight: 500;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.trip-item .trip-button:hover {
+  opacity: 0.9;
+}
+
+.trip-image {
+  min-width: 200px;
+  align-self: normal;
+  max-height: 200px;
+}
+
+.trip-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  min-height: 200px;
+}
+
+.trip-button-container {
+  margin-top: auto;
+  width: 100%;
+}
+
+.trip-price-button {
+  direction: rtl;
+}
+
+/* Placeholder for missing images */
+.no-image-placeholder {
+  height: 180px;
+  background-color: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #888;
+  border-radius: 12px;
+  font-size: 14px;
+}
+
+.wetravel-trips-container {
+  margin: 0px 20px;
+}
+
+/* Grid view styles */
+.wetravel-trips-container.grid-view {
+  display: grid !important;
+  grid-template-columns: repeat(var(--items-per-row), 1fr);
+  gap: 15px;
+}
+
+.wetravel-trips-container.grid-view .trip-item {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.wetravel-trips-container.grid-view .trip-item:hover {
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.wetravel-trips-container.grid-view .trip-item img {
+  max-height: 200px;
+}
+
+.wetravel-trips-container.grid-view .wetravel-trips-loading {
+  grid-column: 1 / -1; /* Span across all columns */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 30px;
+}
+
+.wetravel-trips-container.grid-view .trip-button,
+.wetravel-trips-container.carousel-view .trip-button {
+  width: 100%;
+  background-color: unset;
+  color: var(--button-color);
+}
+
+.wetravel-trips-container.grid-view .trip-price-button {
+  direction: ltr;
+  display: flex;
+  flex-direction: row;
+  gap: 30px;
+  justify-content: space-between;
+  align-items: end;
+}
+
+/* Vertical view styles */
+.wetravel-trips-container.vertical-view .trip-item {
+  margin-bottom: 16px;
+  display: grid;
+  grid-template-columns: 3fr 6fr 2fr;
+  align-items: start;
+  box-sizing: content-box;
+}
+
+.wetravel-trips-container.vertical-view .trip-button {
+  min-width: 100px;
+  align-self: flex-start;
+}
+
+.wetravel-trips-container.vertical-view .trip-price span {
+  font-size: 24px;
+}
+
+.wetravel-trips-container.vertical-view .trip-price-button {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+}
+
+.wetravel-trips-container.vertical-view h3 {
+  font-size: 24px;
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+/* Carousel view styles */
+
+/* Style for swiper carousel similar to image */
+.wetravel-trips-container.carousel-view .swiper {
+  padding: 0 60px; /* Increase from 40px to 60px to create more space */
+  position: relative;
+  overflow: visible;
+}
+
+/* Position arrows on the sides outside of the carousel */
+.wetravel-trips-container.carousel-view .swiper-button-next,
+.wetravel-trips-container.carousel-view .swiper-button-prev {
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  background-color: var(--button-color);
+  border-radius: 50%;
+  color: #fff;
+}
+
+.wetravel-trips-container.carousel-view .swiper-button-next {
+  right: 10px; /* Move 10px to the right from the edge */
+}
+
+.wetravel-trips-container.carousel-view .swiper-button-prev {
+  left: 10px; /* Move 10px to the left from the edge */
+}
+
+/* Style the arrow icons */
+.wetravel-trips-container.carousel-view .swiper-button-next::after,
+.wetravel-trips-container.carousel-view .swiper-button-prev::after {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+/* Style pagination dots */
+.wetravel-trips-container.carousel-view .swiper-pagination {
+  position: relative;
+  margin-top: 20px;
+}
+
+.wetravel-trips-container.carousel-view .swiper-slide {
+  visibility: hidden; /* Hide all slides by default */
+  height: auto;
+}
+
+.wetravel-trips-container.carousel-view .swiper-slide-active,
+.wetravel-trips-container.carousel-view .swiper-slide-visible {
+  visibility: visible; /* Only show active/visible slides */
+}
+
+.wetravel-trips-container.carousel-view .swiper-pagination-bullet {
+  width: 12px;
+  height: 12px;
+  margin: 0 5px;
+}
+
+.wetravel-trips-container.carousel-view .swiper-wrapper {
+  margin: 0 auto;
+}
+
+.wetravel-trips-container.carousel-view .swiper-pagination-bullet-active {
+  background-color: var(--button-color);
+}
+
+/* Style for trip cards */
+.wetravel-trips-container.carousel-view .trip-item {
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  cursor: pointer;
+}
+
+.wetravel-trips-container.carousel-view .trip-item:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.wetravel-trips-container.carousel-view .trip-item *,
+.wetravel-trips-container.grid-view .trip-item * {
+  pointer-events: none;
+}
+
+.wetravel-trips-container.carousel-view .trip-item,
+.wetravel-trips-container.grid-view .trip-item {
+  pointer-events: auto;
+}
+
+/* Pagination Styles */
+.wetravel-trips-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 20px 0;
+  flex-wrap: wrap;
+}
+
+.wetravel-trips-pagination .page-item {
+  margin: 0 3px;
+}
+
+.wetravel-trips-pagination .page-link {
+  display: inline-block;
+  padding: 8px 12px;
+  color: #333;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.wetravel-trips-pagination .page-link:hover {
+  background-color: #f5f5f5;
+}
+
+.wetravel-trips-pagination .page-item.active .page-link {
+  background-color: var(--button-color);
+  color: #fff;
+  border-color: var(--button-color);
+}
+
+.wetravel-trips-pagination .page-item.disabled .page-link {
+  color: #999;
+  pointer-events: none;
+  cursor: default;
+}
+
+/* Visibility Classes for Pagination */
+.visible-item {
+  display: block;
+}
+
+.hidden-item {
+  display: none;
+}
+
+/* No trips message */
+.no-trips {
+  padding: 20px;
+  text-align: center;
+  background-color: #fff;
+  border-radius: 8px;
+  margin: 20px 0;
+}
+
+/* Handle responsive layout */
+
+@media screen and (max-width: 960px) {
+  .wetravel-trips-container.grid-view {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media screen and (max-width: 640px) {
+  .wetravel-trips-container.vertical-view .trip-item {
+    grid-template-columns: 1fr;
+  }
+
+  .wetravel-trips-container.vertical-view .trip-price {
+    margin-bottom: 0;
+  }
+
+  .wetravel-trips-pagination .page-link {
+    padding: 6px 10px;
+    font-size: 14px;
+  }
+
+  .wetravel-trips-container.grid-view {
+    grid-template-columns: 1fr;
+  }
+
+  .trip-image {
+    min-width: 100px;
+    height: auto;
+  }
+
+  .trip-item img {
+    max-height: 100px;
+  }
+}
+
+/* Add this to your CSS file */
+.wetravel-trips-loading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #33ae3f;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 10px;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
