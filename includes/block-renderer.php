@@ -416,13 +416,16 @@ function wtwidget_render_trip_item( $trip, $options, $visibility_class = '' ) {
 
 	// Image.
 	if ( ! empty( $trip['default_image'] ) ) {
-		$html .= '<div class="trip-image">';
-		$html .= sprintf(
-			'<img src="%s" alt="%s">',
-			esc_url( $trip['default_image'] ),
-			esc_attr( $trip['title'] )
+		$trip_image = wtwidget_render_external_image(
+			$trip['default_image'],
+			$trip['title'],
+			array(
+				'class' => 'trip-image-thumbnail',
+				'width' => 400, // Set appropriate size
+				'height' => 300 // Set appropriate size
+			)
 		);
-		$html .= '</div>';
+		$html .= '<div class="trip-image">' . $trip_image . '</div>';
 	} else {
 		$html .= '<div class="no-image-placeholder"><span>No Image Available</span></div>';
 	}
@@ -517,6 +520,59 @@ function wtwidget_render_trip_item( $trip, $options, $visibility_class = '' ) {
 	$html .= '</div>'; // Close trip-item.
 
 	return $html;
+}
+
+/**
+ * Render external image with proper attributes and fallback
+ *
+ * @param string $url Image URL.
+ * @param string $alt Alt text.
+ * @param array  $args Additional arguments.
+ * @return string HTML for the image.
+ */
+function wtwidget_render_external_image($url, $alt = '', $args = array()) {
+	// Ensure URL is valid
+	$url = esc_url($url);
+	if (empty($url)) {
+		return '';
+	}
+
+	// Default arguments
+	$defaults = array(
+		'class' => 'wetravel-trip-image',
+		'loading' => 'lazy',
+		'decoding' => 'async',
+		'width' => '',
+		'height' => ''
+	);
+	$args = wp_parse_args($args, $defaults);
+
+	// Build attributes string
+	$attributes = array(
+		'src' => $url,
+		'alt' => esc_attr($alt),
+		'class' => esc_attr($args['class']),
+		'loading' => $args['loading'],
+		'decoding' => $args['decoding']
+	);
+
+	// Add optional width and height if provided
+	if (!empty($args['width'])) {
+		$attributes['width'] = absint($args['width']);
+	}
+	if (!empty($args['height'])) {
+		$attributes['height'] = absint($args['height']);
+	}
+
+	// Build HTML attributes
+	$html_attrs = '';
+	foreach ($attributes as $name => $value) {
+		if ($value) {
+			$html_attrs .= ' ' . $name . '="' . $value . '"';
+		}
+	}
+
+	return sprintf('<img%s />', $html_attrs);
 }
 
 /**
