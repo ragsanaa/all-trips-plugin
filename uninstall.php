@@ -24,6 +24,8 @@ $options = array(
 	'wetravel_trips_items_per_slide',
 	'wetravel_trips_load_more_text',
 	'wetravel_trips_designs',
+	'wetravel_trips_embed_code',
+	'wetravel_trips_last_saved',
 );
 
 foreach ( $options as $option ) {
