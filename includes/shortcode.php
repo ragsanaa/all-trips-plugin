@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @param array $atts Shortcode attributes.
  * @return string Rendered HTML
  */
-function wetravel_trips_shortcode( $atts ) {
+function wtwidget_trips_shortcode( $atts ) {
 	// Store the original unmerged attributes
 	$original_atts = (array) $atts;
 
@@ -112,22 +112,22 @@ function wetravel_trips_shortcode( $atts ) {
 	}
 
 	// Use the existing block render function to maintain consistency
-	if (function_exists('wetravel_trips_block_render')) {
-		return wetravel_trips_block_render($block_atts);
+	if (function_exists('wtwidget_trips_block_render')) {
+		return wtwidget_trips_block_render($block_atts);
 	} else {
 		// Fallback if block render function doesn't exist
-		return render_wetravel_trips_fallback($block_atts);
+		return wtwidget_render_trips_fallback($block_atts);
 	}
 }
-add_shortcode( 'wetravel_trips', 'wetravel_trips_shortcode' );
+add_shortcode( 'wetravel_trips', 'wtwidget_trips_shortcode' );
 
 /**
  * Load trips data with AJAX for shortcode or block
  * This makes the shortcode behave the same as the block renderer
  */
-function register_wetravel_trips_ajax_handlers() {
+function wtwidget_register_trips_ajax_handlers() {
 	// Ensure that the AJAX handler from trips-loader.js works correctly.
-	if ( ! function_exists( 'wetravel_trips_get_trips_ajax' ) ) {
+	if ( ! function_exists( 'wtwidget_get_trips_ajax' ) ) {
 		/**
 		 * AJAX handler for fetching trips data.
 		 *
@@ -135,7 +135,7 @@ function register_wetravel_trips_ajax_handlers() {
 		 * It checks the nonce, retrieves the parameters, formats the environment URL, builds the API URL,
 		 * and retrieves the trips data.
 		 */
-		function wetravel_trips_get_trips_ajax() {
+		function wtwidget_get_trips_ajax() {
 			// Security check.
 			check_ajax_referer( 'wetravel_trips_nonce', 'nonce' );
 
@@ -172,8 +172,8 @@ function register_wetravel_trips_ajax_handlers() {
 
 			// Get trips data.
 			$trips = array();
-			if ( function_exists( 'get_wetravel_trips_data' ) ) {
-				$trips = get_wetravel_trips_data( $api_url, $env );
+			if ( function_exists( 'wtwidget_get_trips_data' ) ) {
+				$trips = wtwidget_get_trips_data( $api_url, $env );
 
 				if ( 'recurring' === $trip_type ) {
 					// Filter trips where 'all_year' is true.
@@ -190,8 +190,8 @@ function register_wetravel_trips_ajax_handlers() {
 			wp_send_json_success( $trips );
 		}
 
-		add_action( 'wp_ajax_wetravel_trips_get_trips', 'wetravel_trips_get_trips_ajax' );
-		add_action( 'wp_ajax_nopriv_wetravel_trips_get_trips', 'wetravel_trips_get_trips_ajax' );
+		add_action( 'wp_ajax_wetravel_trips_get_trips', 'wtwidget_get_trips_ajax' );
+		add_action( 'wp_ajax_nopriv_wetravel_trips_get_trips', 'wtwidget_get_trips_ajax' );
 	}
 }
-add_action( 'init', 'register_wetravel_trips_ajax_handlers' );
+add_action( 'init', 'wtwidget_register_trips_ajax_handlers' );

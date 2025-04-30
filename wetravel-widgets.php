@@ -5,7 +5,7 @@
  * Description: A plugin to display WeTravel widgets on your WordPress site.
  * Version:     1.0
  * Author:      WeTravel
- * Author URI:  https://wetravel.com
+ * Author URI:  https://github.com/wetravel-com
  * License:     GPLv2 or later
  * Text Domain: wetravel-widgets
  *
@@ -18,8 +18,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define plugin path.
-define( 'WETRAVEL_WIDGETS_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
-define( 'WETRAVEL_WIDGETS_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
+if ( ! defined( 'WETRAVEL_WIDGETS_PLUGIN_FILE' ) ) {
+	define( 'WETRAVEL_WIDGETS_PLUGIN_FILE', __FILE__ );
+}
+define( 'WETRAVEL_WIDGETS_PLUGIN_DIR', plugin_dir_path( WETRAVEL_WIDGETS_PLUGIN_FILE ) );
+define( 'WETRAVEL_WIDGETS_PLUGIN_URL', plugin_dir_url( WETRAVEL_WIDGETS_PLUGIN_FILE ) );
 
 // Include admin settings page.
 require_once WETRAVEL_WIDGETS_PLUGIN_DIR . 'admin/settings-page.php';
@@ -34,7 +37,7 @@ require_once WETRAVEL_WIDGETS_PLUGIN_DIR . 'includes/fetch-trips.php';
 require_once WETRAVEL_WIDGETS_PLUGIN_DIR . 'includes/functions.php';
 
 /** Enqueue styles and scripts for frontend. */
-function wetravel_trips_enqueue_scripts() {
+function wtwidget_enqueue_frontend_scripts() {
 	// Register main stylesheet.
 	wp_register_style(
 		'wetravel-trips-styles',
@@ -48,13 +51,36 @@ function wetravel_trips_enqueue_scripts() {
 
 	wp_add_inline_style(
 		'wetravel-trips-styles',
-		':root { --button-color: ' . get_option( 'wetravel_trips_button_color', '#33ae3f' ) . '; --items-per-row: ' . get_option( 'wetravel_trips_items_per_row', 3 ) . '; }'
+		':root { --button-color: ' . esc_attr( get_option( 'wetravel_trips_button_color', '#33ae3f' ) ) . '; --items-per-row: ' . esc_attr( get_option( 'wetravel_trips_items_per_row', 3 ) ) . '; }'
+	);
+
+	// Register and enqueue trips loader script
+	wp_register_script(
+		'wetravel-trips-loader',
+		WETRAVEL_WIDGETS_PLUGIN_URL . 'assets/js/trips-loader.js',
+		array('jquery'),
+		filemtime( WETRAVEL_WIDGETS_PLUGIN_DIR . 'assets/js/trips-loader.js' ),
+		true
+	);
+
+	wp_enqueue_script('wetravel-trips-loader');
+
+	// Localize the trips loader script
+	wp_localize_script(
+		'wetravel-trips-loader',
+		'wetravelTripsData',
+		array(
+			'ajaxurl' => admin_url('admin-ajax.php'),
+			'nonce' => wp_create_nonce('wetravel_trips_ajax_nonce'),
+			'security_error' => esc_html__('Security check failed', 'wetravel-widgets'),
+			'loading_error' => esc_html__('Error loading trips', 'wetravel-widgets')
+		)
 	);
 }
-add_action( 'wp_enqueue_scripts', 'wetravel_trips_enqueue_scripts' );
+add_action( 'wp_enqueue_scripts', 'wtwidget_enqueue_frontend_scripts' );
 
 /**  Enqueue scripts for block. */
-function wetravel_trips_enqueue_block_assets() {
+function wtwidget_enqueue_block_assets() {
 	// Enqueue block editor script.
 	wp_enqueue_script(
 		'wetravel-trips-block',
@@ -83,10 +109,10 @@ function wetravel_trips_enqueue_block_assets() {
 	// Localize the script with settings.
 	wp_localize_script( 'wetravel-trips-block', 'wetravelTripsSettings', $wetravel_trips_settings );
 }
-add_action( 'enqueue_block_editor_assets', 'wetravel_trips_enqueue_block_assets' );
+add_action( 'enqueue_block_editor_assets', 'wtwidget_enqueue_block_assets' );
 
 /**  Register block. */
-function wetravel_trips_register_block() {
+function wtwidget_register_block() {
 	// Skip block registration if Gutenberg is not available.
 	if ( ! function_exists( 'register_block_type' ) ) {
 		return;
@@ -97,7 +123,7 @@ function wetravel_trips_register_block() {
 		'wetravel-trips/block',
 		array(
 			'editor_script'   => 'wetravel-trips-block',
-			'render_callback' => 'wetravel_trips_block_render',
+			'render_callback' => 'wtwidget_trips_block_render',
 			'attributes'      => array(
 				'designs'          => array(
 					'type'    => 'array',
@@ -159,7 +185,7 @@ function wetravel_trips_register_block() {
 		)
 	);
 }
-add_action( 'init', 'wetravel_trips_register_block' );
+add_action( 'init', 'wtwidget_register_block' );
 
 // Include the block render function.
 require_once WETRAVEL_WIDGETS_PLUGIN_DIR . 'includes/block-renderer.php';
@@ -174,13 +200,13 @@ require_once WETRAVEL_WIDGETS_PLUGIN_DIR . 'admin/design-library-page.php';
 require_once WETRAVEL_WIDGETS_PLUGIN_DIR . 'admin/create-design-page.php';
 
 /**  Register shortcode. */
-function wetravel_trips_register_shortcode() {
-	add_shortcode( 'wetravel_trips', 'wetravel_trips_shortcode' );
+function wtwidget_register_shortcode() {
+	add_shortcode( 'wetravel_trips', 'wtwidget_trips_shortcode' );
 }
-add_action( 'init', 'wetravel_trips_register_shortcode' );
+add_action( 'init', 'wtwidget_register_shortcode' );
 
 /**  Add this function to clear transient timeouts. */
-function wetravel_trips_clear_transients() {
+function wtwidget_clear_transients() {
 	global $wpdb;
 
 	// Fetch all options (cached by WordPress).
@@ -195,59 +221,87 @@ function wetravel_trips_clear_transients() {
 	// Clear cache after deleting.
 	wp_cache_flush();
 }
-register_activation_hook( __FILE__, 'wetravel_trips_clear_transients' );
+register_activation_hook( __FILE__, 'wtwidget_clear_transients' );
 
 /** Plugin activation hook. */
-function wetravel_trips_activation() {
-	// Create necessary directories if they don't exist.
-	$dirs = array(
-		WETRAVEL_WIDGETS_PLUGIN_DIR . 'assets',
-		WETRAVEL_WIDGETS_PLUGIN_DIR . 'assets/css',
-		WETRAVEL_WIDGETS_PLUGIN_DIR . 'assets/js',
-		WETRAVEL_WIDGETS_PLUGIN_DIR . 'includes',
-		WETRAVEL_WIDGETS_PLUGIN_DIR . 'blocks',
-	);
+function wtwidget_activation() {
+	// Create directory in uploads folder for any user-generated content
+	$upload_dir = wp_upload_dir();
+	$wetravel_upload_dir = $upload_dir['basedir'] . '/wetravel-widgets';
 
-	foreach ( $dirs as $dir ) {
-		if ( ! file_exists( $dir ) ) {
-			wp_mkdir_p( $dir );
+	if ( ! file_exists( $wetravel_upload_dir ) ) {
+		wp_mkdir_p( $wetravel_upload_dir );
+
+		// Protect the directory from direct access
+		$htaccess_content = "Options -Indexes\nDeny from all";
+		$htaccess_file = $wetravel_upload_dir . '/.htaccess';
+
+		if (!function_exists('WP_Filesystem')) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
+		WP_Filesystem();
+		global $wp_filesystem;
+
+		if ($wp_filesystem) {
+			$wp_filesystem->put_contents($htaccess_file, $htaccess_content, FS_CHMOD_FILE);
 		}
 	}
 
-	// Create empty files if they don't exist.
-	$files = array(
-		'assets/css/wetravel-trips.css' => '',
-		'assets/js/pagination.js'       => '',
-		'assets/js/carousel.js'         => '',
-		'blocks/editor.css'             => '',
-		'includes/block-renderer.php'   => '<?php
-// Block renderer file.
-if (!defined(\'ABSPATH\')) {
-    exit;
-}
-',
-		'includes/shortcode.php'        => '<?php
-// Shortcode file.
-if (!defined(\'ABSPATH\')) {
-    exit;
-}
-',
+	// Initialize default plugin settings in the database
+	$default_settings = array(
+		'wetravel_trips_button_color' => '#33ae3f',
+		'wetravel_trips_items_per_row' => 3,
+		'wetravel_trips_items_per_page' => 10,
+		'wetravel_trips_display_type' => 'vertical',
+		'wetravel_trips_button_type' => 'book_now',
+		'wetravel_trips_env' => 'https://pre.wetravel.to',
+		'wetravel_trips_load_more_text' => 'Load More'
 	);
 
-	global $wp_filesystem;
+	foreach ($default_settings as $key => $value) {
+		if (get_option($key) === false) {
+			add_option($key, $value);
+		}
+	}
+}
+register_activation_hook( __FILE__, 'wtwidget_activation' );
 
-	if ( ! function_exists( 'WP_Filesystem' ) ) {
+// Add deactivation hook to clean up if needed
+function wtwidget_deactivation() {
+	// Clean up transients
+	wtwidget_clear_transients();
+}
+register_deactivation_hook( __FILE__, 'wtwidget_deactivation' );
+
+// Add uninstall hook to clean up when plugin is deleted
+function wtwidget_uninstall() {
+	// Remove all plugin options
+	$options = array(
+		'wetravel_trips_button_color',
+		'wetravel_trips_items_per_row',
+		'wetravel_trips_items_per_page',
+		'wetravel_trips_display_type',
+		'wetravel_trips_button_type',
+		'wetravel_trips_env',
+		'wetravel_trips_load_more_text'
+	);
+
+	foreach ($options as $option) {
+		delete_option($option);
+	}
+
+	// Optionally remove the uploads directory
+	$upload_dir = wp_upload_dir();
+	$wetravel_upload_dir = $upload_dir['basedir'] . '/wetravel-widgets';
+
+	if (file_exists($wetravel_upload_dir)) {
 		require_once ABSPATH . 'wp-admin/includes/file.php';
-	}
+		WP_Filesystem();
+		global $wp_filesystem;
 
-	WP_Filesystem();
-
-	foreach ( $files as $file => $content ) {
-		$filepath = WETRAVEL_WIDGETS_PLUGIN_DIR . $file;
-
-		if ( ! file_exists( $filepath ) ) {
-			$wp_filesystem->put_contents( $filepath, $content, FS_CHMOD_FILE );
+		if ($wp_filesystem) {
+			$wp_filesystem->rmdir($wetravel_upload_dir, true);
 		}
 	}
 }
-register_activation_hook( __FILE__, 'wetravel_trips_activation' );
+register_uninstall_hook( __FILE__, 'wtwidget_uninstall' );

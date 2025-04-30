@@ -7,12 +7,17 @@
  * @package WordPress
  */
 
+// Exit if accessed directly.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * Render callback for dynamic block.
  *
  * @param array $attributes Give all settings and designs details.
  */
-function wetravel_trips_block_render( $attributes ) {
+function wtwidget_trips_block_render( $attributes ) {
 	// Generate a unique ID for this block instance.
 	$block_id = wp_unique_id( 'wetravel-' );
 
@@ -124,7 +129,7 @@ function wetravel_trips_block_render( $attributes ) {
 	$api_url = add_query_arg( $query_params, $api_url );
 
 	// Get trips data with caching.
-	$trips = get_wetravel_trips_data( $api_url, $env );
+	$trips = wtwidget_get_trips_data( $api_url, $env );
 
 	if ( 'recurring' === $trip_type ) {
 		// Filter trips where 'all_year' is true.
@@ -140,31 +145,31 @@ function wetravel_trips_block_render( $attributes ) {
 	if ( 'carousel' === $display_type ) {
 		wp_enqueue_style(
 			'swiper-css',
-			plugin_dir_url( __DIR__ ) . 'assets/css/swiper-bundle.min.css',
+			plugins_url( 'assets/css/swiper-bundle.min.css', dirname( __FILE__ ) ),
 			array(),
-			filemtime( plugin_dir_path( __DIR__ ) . 'assets/css/swiper-bundle.min.css' )
+			filemtime( plugin_dir_path( dirname( __FILE__ ) ) . 'assets/css/swiper-bundle.min.css' )
 		);
 		wp_enqueue_script(
 			'swiper-js',
-			plugin_dir_url( __DIR__ ) . 'assets/js/swiper-bundle.min.js',
+			plugins_url( 'assets/js/swiper-bundle.min.js', dirname( __FILE__ ) ),
 			array(),
-			filemtime( plugin_dir_path( __DIR__ ) . 'assets/js/swiper-bundle.min.js' ),
+			filemtime( plugin_dir_path( dirname( __FILE__ ) ) . 'assets/js/swiper-bundle.min.js' ),
 			true
 		);
 		wp_enqueue_script(
 			'wetravel-trips-carousel',
-			plugins_url( 'assets/js/carousel.js', __DIR__ ),
+			plugins_url( 'assets/js/carousel.js', dirname( __FILE__ ) ),
 			array( 'jquery', 'swiper-js' ),
-			filemtime( WETRAVEL_WIDGETS_PLUGIN_DIR . 'assets/js/carousel.js' ),
+			filemtime( plugin_dir_path( dirname( __FILE__ ) ) . 'assets/js/carousel.js' ),
 			true
 		);
 	} else {
 		// Always enqueue pagination script for grid and vertical views.
 		wp_enqueue_script(
 			'wetravel-trips-pagination',
-			plugins_url( 'assets/js/pagination.js', __DIR__ ),
+			plugins_url( 'assets/js/pagination.js', dirname( __FILE__ ) ),
 			array( 'jquery' ),
-			filemtime( WETRAVEL_WIDGETS_PLUGIN_DIR . 'assets/js/pagination.js' ),
+			filemtime( plugin_dir_path( dirname( __FILE__ ) ) . 'assets/js/pagination.js' ),
 			true
 		);
 	}
@@ -172,9 +177,9 @@ function wetravel_trips_block_render( $attributes ) {
 	// Only add dynamic CSS that depends on block attributes.
 	$custom_css = "
     /* Set dynamic CSS variables for this block instance */
-    #trips-container-{$block_id} {
-      --button-color: {$button_color};
-			--items-per-row: {$items_per_row};
+    #trips-container-" . esc_attr($block_id) . " {
+      --button-color: " . esc_attr($button_color) . ";
+			--items-per-row: " . esc_attr($items_per_row) . ";
     }
   ";
 
@@ -185,9 +190,9 @@ function wetravel_trips_block_render( $attributes ) {
 
 	wp_register_style(
 		'wetravel-trips-styles',
-		WETRAVEL_WIDGETS_PLUGIN_URL . 'assets/css/wetravel-trips.css',
+		plugins_url( 'assets/css/wetravel-trips.css', dirname( __FILE__ ) ),
 		array(),
-		filemtime( WETRAVEL_WIDGETS_PLUGIN_DIR . 'assets/css/wetravel-trips.css' )
+		filemtime( plugin_dir_path( dirname( __FILE__ ) ) . 'assets/css/wetravel-trips.css' )
 	);
 
 	wp_enqueue_style( 'wetravel-trips-styles' );
@@ -234,8 +239,8 @@ function wetravel_trips_block_render( $attributes ) {
 							<?php foreach ( $trips as $trip ) : ?>
 								<div class="swiper-slide">
 									<?php
-									// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- HTML output is escaped inside render_trip_item().
-									echo render_trip_item(
+									// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in render_trip_item function. Special handling for embed checkout functionality.
+									echo wtwidget_render_trip_item(
 										$trip,
 										array(
 											'env'          => $env,
@@ -260,8 +265,8 @@ function wetravel_trips_block_render( $attributes ) {
 					$counter = 0;
 					foreach ( $trips as $trip ) :
 						$visibility_class = $counter < $items_per_page ? 'visible-item' : 'hidden-item';
-						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- HTML output is escaped inside render_trip_item().
-						echo render_trip_item(
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in render_trip_item function. Special handling for embed checkout functionality.
+						echo wtwidget_render_trip_item(
 							$trip,
 							array(
 								'env'            => $env,
@@ -301,7 +306,7 @@ function wetravel_trips_block_render( $attributes ) {
 		<?php
 		wp_enqueue_script(
 			'wetravel-embed-checkout',
-			wetravel_trips_get_cdn_url( $env ) . '/widgets/embed_checkout.js',
+			wtwidget_get_cdn_url( $env ) . '/widgets/embed_checkout.js',
 			array(),
 			'1.0.0', // Set a fixed version to avoid browser caching issues.
 			true
@@ -345,7 +350,8 @@ function wetravel_trips_block_render( $attributes ) {
 	";
 
 	// Add the inline script to the output.
-	wp_register_script( 'wetravel-trips-loading', '', array( 'jquery' ), filemtime( WETRAVEL_WIDGETS_PLUGIN_DIR . 'assets/js/trips-loader.js' ), true );
+	wp_register_script( 'wetravel-trips-loading', '', array( 'jquery' ),
+		filemtime( plugin_dir_path( dirname( __FILE__ ) ) . 'assets/js/trips-loader.js' ), true );
 	wp_add_inline_script( 'wetravel-trips-loading', $inline_script );
 	wp_enqueue_script( 'wetravel-trips-loading' );
 	return ob_get_clean();
@@ -358,7 +364,7 @@ function wetravel_trips_block_render( $attributes ) {
  * @param array $options Button options.
  * @return string Button URL.
  */
-function get_button_url( $trip, $options ) {
+function wtwidget_get_button_url( $trip, $options ) {
 	$env        = $options['env'];
 	$button_url = '';
 
@@ -383,36 +389,39 @@ function get_button_url( $trip, $options ) {
  * @param string $visibility_class CSS class for visibility.
  * @return string Trip HTML.
  */
-function render_trip_item( $trip, $options, $visibility_class = '' ) {
+function wtwidget_render_trip_item( $trip, $options, $visibility_class = '' ) {
 	$html       = '';
-	$button_url = get_button_url( $trip, $options );
+	$button_url = wtwidget_get_button_url( $trip, $options );
 
 	if ( 'vertical' === $options['displayType'] ) {
-		$html .= '<div class="trip-item ' . $visibility_class . '">';
+		$html .= '<div class="trip-item ' . esc_attr( $visibility_class ) . '">';
 	} elseif ( 'grid' === $options['displayType'] ) {
-		$html .= '<div class="trip-item wtrvl-checkout_button ' . $visibility_class . '" ' .
-				'data-env="' . esc_attr( $options['env'] ) . '" ' .
-				'data-version="v0.3" ' .
-				'data-uid="' . esc_attr( $options['wetravelUserID'] ) . '" ' .
-				'data-uuid="' . esc_attr( $trip['uuid'] ) . '" ' .
-				'href="' . esc_url( $button_url ) . '" ' .
-				'style="cursor: pointer;"' .
-				'>';
+		$html .= sprintf(
+			'<div class="trip-item wtrvl-checkout_button %s" data-env="%s" data-version="v0.3" data-uid="%s" data-uuid="%s" href="%s" style="cursor: pointer;">',
+			esc_attr( $visibility_class ),
+			esc_attr( $options['env'] ),
+			esc_attr( $options['wetravelUserID'] ),
+			esc_attr( $trip['uuid'] ),
+			esc_url( $button_url )
+		);
 	} elseif ( 'carousel' === $options['displayType'] ) {
-		$html .= '<div class="trip-item wtrvl-checkout_button" ' .
-				'data-env="' . esc_attr( $options['env'] ) . '" ' .
-				'data-version="v0.3" ' .
-				'data-uid="' . esc_attr( $options['wetravelUserID'] ) . '" ' .
-				'data-uuid="' . esc_attr( $trip['uuid'] ) . '" ' .
-				'href="' . esc_url( $button_url ) . '" ' .
-				'style="cursor: pointer;"' .
-				'>';
+		$html .= sprintf(
+			'<div class="trip-item wtrvl-checkout_button" data-env="%s" data-version="v0.3" data-uid="%s" data-uuid="%s" href="%s" style="cursor: pointer;">',
+			esc_attr( $options['env'] ),
+			esc_attr( $options['wetravelUserID'] ),
+			esc_attr( $trip['uuid'] ),
+			esc_url( $button_url )
+		);
 	}
 
 	// Image.
 	if ( ! empty( $trip['default_image'] ) ) {
 		$html .= '<div class="trip-image">';
-		$html .= '<img src="' . esc_url( $trip['default_image'] ) . '" alt="' . esc_attr( $trip['title'] ) . '">';
+		$html .= sprintf(
+			'<img src="%s" alt="%s">',
+			esc_url( $trip['default_image'] ),
+			esc_attr( $trip['title'] )
+		);
 		$html .= '</div>';
 	} else {
 		$html .= '<div class="no-image-placeholder"><span>No Image Available</span></div>';
@@ -439,7 +448,10 @@ function render_trip_item( $trip, $options, $visibility_class = '' ) {
 	if ( ! $trip['all_year'] ) {
 		$html .= '<div class="trip-date trip-tag">' . esc_html( $trip['start_end_dates'] ) . '</div>';
 	} elseif ( ! empty( $trip['custom_duration'] ) ) {
-		$html .= '<div class="trip-duration trip-tag">' . esc_html( $trip['custom_duration'] ) . ' days</div>';
+		$html .= sprintf(
+			'<div class="trip-duration trip-tag">%s days</div>',
+			esc_html( $trip['custom_duration'] )
+		);
 	}
 	$html .= '<div class="trip-location trip-tag">' . esc_html( $trip['location'] ) . '</div>';
 	$html .= '</div>'; // Close trip-loc-duration.
@@ -453,10 +465,11 @@ function render_trip_item( $trip, $options, $visibility_class = '' ) {
 
 	// Price.
 	if ( ! empty( $trip['price'] ) ) {
-		$html .= '<div class="trip-price"><p>From</p> <span>' .
-			esc_html( $trip['price']['currencySymbol'] ) .
-			esc_html( $trip['price']['amount'] ) .
-			'</span></div>';
+		$html .= sprintf(
+			'<div class="trip-price"><p>From</p> <span>%s%s</span></div>',
+			esc_html( $trip['price']['currencySymbol'] ),
+			esc_html( $trip['price']['amount'] )
+		);
 	}
 
 	// Button.
@@ -464,29 +477,35 @@ function render_trip_item( $trip, $options, $visibility_class = '' ) {
 		$button_style = '';
 		if ($options['displayType'] === 'vertical') {
 			// Filled button style for vertical view
-			$button_style = 'background-color: ' . esc_attr( $options['buttonColor'] ) . '; border-color: ' . esc_attr( $options['buttonColor'] ) . '; color: #fff;';
+			$button_style = sprintf(
+				'background-color: %1$s; border-color: %1$s; color: #fff;',
+				esc_attr( $options['buttonColor'] )
+			);
 		} else {
 			// Outline button style for grid view
-			$button_style = 'background-color: transparent; border-color: ' . esc_attr( $options['buttonColor'] ) . '; color: ' . esc_attr( $options['buttonColor'] ) . ';';
+			$button_style = sprintf(
+				'background-color: transparent; border-color: %1$s; color: %1$s;',
+				esc_attr( $options['buttonColor'] )
+			);
 		}
 
 		if ( 'book_now' === $options['buttonType'] ) {
-			$html .= '<button class="wtrvl-checkout_button trip-button" ' .
-				'data-env="' . esc_attr( $options['env'] ) . '" ' .
-				'data-version="v0.3" ' .
-				'data-uid="' . esc_attr( $options['wetravelUserID'] ) . '" ' .
-				'data-uuid="' . esc_attr( $trip['uuid'] ) . '" ' .
-				'href="' . esc_url( $button_url ) . '" ' .
-				'style="' . $button_style . '">' .
-				esc_html( $options['buttonText'] ) .
-				'</button>';
+			$html .= sprintf(
+				'<button class="wtrvl-checkout_button trip-button" data-env="%s" data-version="v0.3" data-uid="%s" data-uuid="%s" href="%s" style="%s">%s</button>',
+				esc_attr( $options['env'] ),
+				esc_attr( $options['wetravelUserID'] ),
+				esc_attr( $trip['uuid'] ),
+				esc_url( $button_url ),
+				$button_style,
+				esc_html( $options['buttonText'] )
+			);
 		} else {
-			// Regular link for "View Trip".
-			$html .= '<a href="' . esc_url( $button_url ) . '" ' .
-				'class="trip-button" target="_blank" ' .
-				'style="' . $button_style . '">' .
-				esc_html( $options['buttonText'] ) .
-				'</a>';
+			$html .= sprintf(
+				'<a href="%s" class="trip-button" target="_blank" style="%s">%s</a>',
+				esc_url( $button_url ),
+				$button_style,
+				esc_html( $options['buttonText'] )
+			);
 		}
 	}
 
@@ -501,15 +520,14 @@ function render_trip_item( $trip, $options, $visibility_class = '' ) {
 }
 
 /**
- * Make sure this is outside the function (in the main plugin file or a setup function).
- * Add this in the enqueue_wetravel_trips_scripts function.
+ * Enqueue necessary scripts for WeTravel Trips
  */
-function enqueue_wetravel_trips_scripts() {
+function wtwidget_enqueue_trips_scripts() {
 	wp_enqueue_script(
 		'wetravel-trips-loader',
-		plugins_url( 'assets/js/trips-loader.js', __DIR__ ),
+		plugins_url( 'assets/js/trips-loader.js', dirname( __FILE__ ) ),
 		array( 'jquery' ),
-		filemtime( WETRAVEL_WIDGETS_PLUGIN_DIR . 'assets/js/trips-loader.js' ),
+		filemtime( plugin_dir_path( dirname( __FILE__ ) ) . 'assets/js/trips-loader.js' ),
 		true
 	);
 
@@ -523,4 +541,4 @@ function enqueue_wetravel_trips_scripts() {
 		)
 	);
 }
-add_action( 'wp_enqueue_scripts', 'enqueue_wetravel_trips_scripts' );
+add_action( 'wp_enqueue_scripts', 'wtwidget_enqueue_trips_scripts' );

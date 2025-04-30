@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @param  string $embed_code WeTravel All Trips widget code.
  */
-function wetravel_trips_extract_settings( $embed_code ) {
+function wtwidget_extract_settings( $embed_code ) {
 	preg_match( '/src="([^"]+)"/', $embed_code, $src_match );
 	preg_match( '/data-slug="([^"]+)"/', $embed_code, $slug_match );
 	preg_match( '/data-env="([^"]+)"/', $embed_code, $env_match );
@@ -32,7 +32,7 @@ function wetravel_trips_extract_settings( $embed_code ) {
 }
 
 /** Hook into 'admin_init' to process the settings update. */
-function wetravel_trips_save_embed_code() {
+function wtwidget_save_embed_code() {
 	if ( isset( $_POST['wetravel_trips_embed_code'] ) ) {
 		check_admin_referer( 'wetravel_trips_options-options' ); // Verify nonce.
 
@@ -55,7 +55,7 @@ function wetravel_trips_save_embed_code() {
 		update_option( 'wetravel_trips_embed_code', $new_embed_code );
 
 		// Extract and save the details.
-		$extracted_values = wetravel_trips_extract_settings( $new_embed_code );
+		$extracted_values = wtwidget_extract_settings( $new_embed_code );
 		update_option( 'wetravel_trips_slug', $extracted_values['slug'] );
 		update_option( 'wetravel_trips_env', $extracted_values['env'] );
 		update_option( 'wetravel_trips_src', $extracted_values['src'] );
@@ -69,16 +69,16 @@ function wetravel_trips_save_embed_code() {
 		exit;
 	}
 }
-add_action( 'admin_init', 'wetravel_trips_save_embed_code' );
+add_action( 'admin_init', 'wtwidget_save_embed_code' );
 
 /** Register AJAX endpoint for keyword validation. */
-function wetravel_trips_register_ajax() {
-	add_action( 'wp_ajax_check_keyword_unique', 'wetravel_trips_check_keyword_unique' );
+function wtwidget_register_ajax() {
+	add_action( 'wp_ajax_check_keyword_unique', 'wtwidget_check_keyword_unique' );
 }
-add_action( 'init', 'wetravel_trips_register_ajax' );
+add_action( 'init', 'wtwidget_register_ajax' );
 
 /** AJAX callback to check keyword uniqueness. */
-function wetravel_trips_check_keyword_unique() {
+function wtwidget_check_keyword_unique() {
 	// Check nonce for security.
 	check_ajax_referer( 'wetravel_trips_nonce', 'nonce' );
 
@@ -105,41 +105,22 @@ function wetravel_trips_check_keyword_unique() {
 	);
 }
 
-/** Add this function to your plugin file or functions.php. */
-function fix_trips_loading_in_editor() {
-	?>
-	<script>
-	jQuery(document).ready(function($) {
-		// Check if we're in any editing environment.
-		var isEditMode = (
-			// Generic ways to detect edit mode across different page builders.
-			window.parent && window.parent !== window ||
-			window.frames && window.frames.length > 0 ||
-			document.body.classList.contains('editor-body') ||
-			document.body.classList.contains('wp-admin') ||
-			document.body.classList.contains('edit-php') ||
-			(window.location.href && window.location.href.indexOf('action=edit') > -1)
-		);
+/**
+ * Enqueue scripts and styles for the plugin
+ */
+function wtwidget_enqueue_scripts() {
+	// Enqueue editor fix script
+	wp_register_script(
+		'wetravel-trips-editor-fix',
+		plugins_url( 'assets/js/editor-fix.js', dirname( __FILE__ ) ),
+		array( 'jquery' ),
+		filemtime( plugin_dir_path( dirname( __FILE__ ) ) . 'assets/js/editor-fix.js' ),
+		true
+	);
 
-		if (isEditMode) {
-			// Force reload trips in any editor.
-			setTimeout(function() {
-				$(".wetravel-trips-container").each(function() {
-					var container = $(this);
-					// Clear any existing content.
-					container.find(".wetravel-trips-loading").show();
-					// Reload trips.
-					if (typeof loadTrips === 'function') {
-						loadTrips(container);
-					}
-				});
-			}, 1000); // Wait for everything to load.
-		}
-	});
-	</script>
-	<?php
+	wp_enqueue_script( 'wetravel-trips-editor-fix' );
 }
-add_action( 'wp_footer', 'fix_trips_loading_in_editor' );
+add_action( 'wp_enqueue_scripts', 'wtwidget_enqueue_scripts' );
 
 /**
  * Get the appropriate CDN URL based on environment
@@ -147,7 +128,7 @@ add_action( 'wp_footer', 'fix_trips_loading_in_editor' );
  * @param string $env The environment URL (e.g., 'https://pre.wetravel.to').
  * @return string The corresponding CDN URL
  */
-function wetravel_trips_get_cdn_url( $env ) {
+function wtwidget_get_cdn_url( $env ) {
 	// Remove protocol and trailing slashes.
 	$clean_env = rtrim( preg_replace( '#^https?://#', '', $env ), '/' );
 
@@ -172,4 +153,11 @@ function wetravel_trips_get_cdn_url( $env ) {
 			// Fallback to pre environment.
 			return 'https://pre.cdn.wetravel.to';
 	}
+}
+
+/**
+ * Fix trips loading in editor
+ */
+function wtwidget_fix_trips_loading_in_editor() {
+	// ... existing code ...
 }

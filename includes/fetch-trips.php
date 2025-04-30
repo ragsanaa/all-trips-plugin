@@ -5,14 +5,19 @@
  * @package WordPress
  */
 
+// Exit if accessed directly.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 // Register AJAX handlers.
-add_action( 'wp_ajax_fetch_wetravel_trips', 'fetch_wetravel_trips_handler' );
-add_action( 'wp_ajax_nopriv_fetch_wetravel_trips', 'fetch_wetravel_trips_handler' );
+add_action( 'wp_ajax_fetch_wetravel_trips', 'wtwidget_fetch_trips_handler' );
+add_action( 'wp_ajax_nopriv_fetch_wetravel_trips', 'wtwidget_fetch_trips_handler' );
 
 /**
  * AJAX handler for fetching trips from WeTravel API.
  */
-function fetch_wetravel_trips_handler() {
+function wtwidget_fetch_trips_handler() {
 	// Validate nonce for security.
 	if ( ! isset( $_GET['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['nonce'] ) ), 'wetravel_trips_nonce' ) ) {
 		wp_send_json_error( 'Invalid security token' );
@@ -78,7 +83,7 @@ function fetch_wetravel_trips_handler() {
 	$api_url = add_query_arg( $query_params, $api_url );
 
 	// Get trips data with caching.
-	$trips = get_wetravel_trips_data( $api_url, $env );
+	$trips = wtwidget_get_trips_data( $api_url, $env );
 
 	if ( 'recurring' === $trip_type ) {
 		// Filter trips where 'all_year' is true.
@@ -100,7 +105,7 @@ function fetch_wetravel_trips_handler() {
  * @param string $env The environment URL base.
  * @return array|false The trips data or false on error.
  */
-function get_wetravel_trips_data( $api_url, $env = '' ) {
+function wtwidget_get_trips_data( $api_url, $env = '' ) {
 	// Try to get cached data first (1 minute cache).
 	$cache_key   = 'wetravel_trips_' . md5( $api_url . '_details' );
 	$cached_data = get_transient( $cache_key );
@@ -135,7 +140,7 @@ function get_wetravel_trips_data( $api_url, $env = '' ) {
 	$trips = $data['trips'];
 
 	// Enhance trips data with detailed information.
-	$trips = fetch_trip_seo_config( $trips, $env );
+	$trips = wtwidget_fetch_trip_seo_config( $trips, $env );
 
 	// Cache for 1 minute (60 seconds).
 	set_transient( $cache_key, $trips, 60 );
@@ -150,7 +155,7 @@ function get_wetravel_trips_data( $api_url, $env = '' ) {
  * @param string $env The environment URL base.
  * @return array Enhanced trips data with details.
  */
-function fetch_trip_seo_config( $trips, $env ) {
+function wtwidget_fetch_trip_seo_config( $trips, $env ) {
 	$enhanced_trips = array();
 
 	foreach ( $trips as $trip ) {
@@ -217,7 +222,7 @@ function fetch_trip_seo_config( $trips, $env ) {
 				$trip['price'] = array(
 					'amount'         => $formatted_price,
 					'raw_amount'     => $formatted_price,
-					'currencySymbol' => isset( $trip_details['currency'] ) ? get_currency_symbol( $trip_details['currency'] ) : '$',
+					'currencySymbol' => isset( $trip_details['currency'] ) ? wtwidget_get_currency_symbol( $trip_details['currency'] ) : '$',
 				);
 			}
 		}
@@ -229,17 +234,17 @@ function fetch_trip_seo_config( $trips, $env ) {
 }
 
 /**
- * Helper function to get currency symbol from currency code
+ * Get currency symbol for a given currency code
  *
- * @param string $currency Currency code (e.g., USD, EUR).
- * @return string Currency symbol
+ * @param string $currency_code The currency code.
+ * @return string The currency symbol.
  */
-function get_currency_symbol( $currency ) {
+function wtwidget_get_currency_symbol( $currency_code ) {
 	// Reference: https://github.com/bengourley/currency-symbol-map/blob/master/map.js.
 	// use currencies json file to get the symbols.
 	$currencies_file = __DIR__ . '/../assets/constant/currencies.json';
 	$currencies_json = file_exists( $currencies_file ) ? file_get_contents( $currencies_file ) : '{}';
 	$currencies      = json_decode( $currencies_json, true );
 
-	return isset( $currencies[ $currency ] ) ? $currencies[ $currency ] : $currency;
+	return isset( $currencies[ $currency_code ] ) ? $currencies[ $currency_code ] : $currency_code;
 }

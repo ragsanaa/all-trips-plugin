@@ -2,7 +2,7 @@
 Contributors: wtragsana
 Tags: travel, widget, trips, booking, wetravel
 Requires at least: 5.0
-Tested up to: 6.7
+Tested up to: 6.8
 Stable tag: 1.0
 Requires PHP: 7.0
 License: GPLv2 or later
@@ -28,6 +28,28 @@ The WeTravel Widgets plugin allows you to customize WeTravel's embedded widgets 
 
 The plugin connects directly to the WeTravel API to ensure your trip information is always up-to-date. When you update trip details, prices, or availability on WeTravel, changes will automatically reflect on your website.
 Perfect for travel agencies, tour operators, and any business using WeTravel who wants to customize their widget appearance to match their brand.
+
+== External Services ==
+
+This plugin connects to WeTravel's services for two main purposes:
+
+1. **Trip Information Retrieval**
+   - The plugin fetches trip data from WeTravel's API (api.wetravel.com) to display your trips on your website
+   - The only configuration needed is the identification information extracted from the WeTravel embed code that you provide in the plugin settings
+   - Data retrieved includes trip details, pricing, availability, and SEO configuration
+   - This data is fetched whenever a widget is loaded or refreshed on your site
+   - No personal user data is sent during this process - only the necessary identification data parsed from your provided embed code
+
+2. **Booking Widget Integration**
+   - When users interact with booking buttons, the plugin loads WeTravel's embed checkout functionality
+   - The integration uses only the necessary identification data extracted from the embed code you provided in the WordPress admin settings
+   - During the booking process, users may provide personal information directly to WeTravel (not through your WordPress site)
+   - The checkout process is handled entirely by WeTravel's secure platform
+   - User data collected during booking is subject to WeTravel's privacy policy
+
+For more information about how WeTravel handles data and provides services, please review:
+- Terms of Service: https://www.wetravel.com/terms
+- Privacy Policy: https://www.wetravel.com/privacy
 
 == Installation ==
 

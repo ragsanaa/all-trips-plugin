@@ -27,34 +27,59 @@
       return;
     }
 
-    // Create a nonce for security
-    var nonce = container.data("nonce") || "";
-
-    // Get the AJAX URL from the global object or use the default WordPress path
-    var ajaxUrl = window.wetravelTripsData
-      ? window.wetravelTripsData.ajaxurl
-      : "/wp-admin/admin-ajax.php";
-
-    // Check if we're in an editing environment
-    var isEditMode =
-      (window.parent && window.parent !== window) ||
-      (window.frames && window.frames.length > 0) ||
-      document.body.classList.contains("editor-body") ||
-      document.body.classList.contains("wp-admin") ||
-      document.body.classList.contains("edit-php") ||
-      (window.location.href &&
-        window.location.href.indexOf("action=edit") > -1);
-
-    // Hide spinner on success
-    $loadingSpinner.fadeOut();
-
-    // Call the global tripsLoaded function if it exists
-    if (typeof window.tripsLoaded === "function") {
-      window.tripsLoaded(blockId);
+    // Verify wetravelTripsData exists
+    if (!window.wetravelTripsData || !window.wetravelTripsData.ajaxurl) {
+      console.error(
+        "WeTravel Trips: Ajax URL not found. Make sure the plugin is properly initialized."
+      );
+      container.html(
+        window.wetravelTripsData?.loading_error ||
+          "Error: Plugin not properly initialized"
+      );
+      $loadingSpinner.fadeOut();
+      return;
     }
 
-    // Trigger the tripsRendered event after content is loaded
-    container.trigger("tripsRendered");
+    // Make the Ajax call
+    $.ajax({
+      url: window.wetravelTripsData.ajaxurl,
+      type: "POST",
+      data: {
+        action: "wetravel_load_trips",
+        nonce: window.wetravelTripsData.nonce,
+        slug: slug,
+        env: env,
+        block_id: blockId,
+      },
+      success: function (response) {
+        if (response.success) {
+          // Update container with trips HTML
+          container.html(response.data.html);
+
+          // Initialize event handlers
+          initializeEventHandlers(container);
+
+          // Call the global tripsLoaded function if it exists
+          if (typeof window.tripsLoaded === "function") {
+            window.tripsLoaded(blockId);
+          }
+
+          // Trigger the tripsRendered event
+          container.trigger("tripsRendered");
+        } else {
+          container.html(
+            response.data.message || window.wetravelTripsData.loading_error
+          );
+        }
+      },
+      error: function (xhr, status, error) {
+        console.error("WeTravel Trips: Ajax error", error);
+        container.html(window.wetravelTripsData.loading_error);
+      },
+      complete: function () {
+        $loadingSpinner.fadeOut();
+      },
+    });
   };
 
   // Function to initialize event handlers for interactive elements

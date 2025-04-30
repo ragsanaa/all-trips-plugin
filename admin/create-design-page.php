@@ -9,10 +9,107 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * Handle form submission for widget creation/editing
+ */
+function wtwidget_handle_form_submission() {
+	// Verify user capabilities
+	if ( ! current_user_can( 'manage_options' ) ) {
+		wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'wetravel-widgets' ) );
+	}
+
+	// Verify nonce
+	if (
+		! isset( $_POST['wetravel_trips_design_nonce'] ) ||
+		! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wetravel_trips_design_nonce'] ) ), 'wetravel_trips_design_action' )
+	) {
+		wp_die( esc_html__( 'Invalid nonce verification', 'wetravel-widgets' ) );
+	}
+
+	// Get design ID if editing
+	$design_id = '';
+	$editing = false;
+	if ( isset( $_POST['design_id'] ) ) {
+		$design_id = sanitize_text_field( wp_unslash( $_POST['design_id'] ) );
+		$editing = true;
+	}
+
+	// Validate keyword uniqueness if provided
+	$keyword = isset( $_POST['design_keyword'] ) ? sanitize_text_field( wp_unslash( $_POST['design_keyword'] ) ) : '';
+	$keyword_error = false;
+
+	if ( ! empty( $keyword ) ) {
+		$designs = get_option( 'wetravel_trips_designs', array() );
+		foreach ( $designs as $id => $existing_design ) {
+			if ( isset( $existing_design['keyword'] ) && $existing_design['keyword'] === $keyword && $id !== $design_id ) {
+				$keyword_error = true;
+				break;
+			}
+		}
+	}
+
+	if ( $keyword_error ) {
+		return array(
+			'success' => false,
+			'message' => 'This keyword is already in use. Please choose a unique keyword.'
+		);
+	}
+
+	// Get date range values if trip type is one-time
+	$date_range_start = '';
+	$date_range_end = '';
+	if ( isset( $_POST['trip_type'] ) && 'one-time' === $_POST['trip_type'] ) {
+		$date_range_start = isset( $_POST['date_range_start'] ) ? sanitize_text_field( wp_unslash( $_POST['date_range_start'] ) ) : '';
+		$date_range_end = isset( $_POST['date_range_end'] ) ? sanitize_text_field( wp_unslash( $_POST['date_range_end'] ) ) : '';
+	}
+
+	$designs = get_option( 'wetravel_trips_designs', array() );
+	$current_design = isset( $designs[$design_id] ) ? $designs[$design_id] : array( 'created' => time() );
+
+	$new_design = array(
+		'name'           => isset( $_POST['design_name'] ) ? sanitize_text_field( wp_unslash( $_POST['design_name'] ) ) : '',
+		'displayType'    => isset( $_POST['display_type'] ) ? sanitize_text_field( wp_unslash( $_POST['display_type'] ) ) : '',
+		'buttonType'     => isset( $_POST['button_type'] ) ? sanitize_text_field( wp_unslash( $_POST['button_type'] ) ) : '',
+		'buttonText'     => isset( $_POST['button_text'] ) ? sanitize_text_field( wp_unslash( $_POST['button_text'] ) ) : '',
+		'buttonColor'    => isset( $_POST['button_color'] ) ? sanitize_hex_color( wp_unslash( $_POST['button_color'] ) ) : '',
+		'keyword'        => $keyword,
+		'tripType'       => isset( $_POST['trip_type'] ) ? sanitize_text_field( wp_unslash( $_POST['trip_type'] ) ) : '',
+		'dateRangeStart' => $date_range_start,
+		'dateRangeEnd'   => $date_range_end,
+		'created'        => $current_design['created'],
+		'modified'       => time(),
+	);
+
+	// Generate a new ID if we're not editing
+	if ( ! $editing ) {
+		$design_id = 'design_' . time() . '_' . wp_rand( 1000, 9999 );
+	}
+
+	$designs[$design_id] = $new_design;
+	update_option( 'wetravel_trips_designs', $designs );
+
+	$redirect_url = add_query_arg(
+		array(
+			'page'     => 'wetravel-trips-create-design',
+			'edit'     => $design_id,
+			'updated'  => '1',
+			'_wpnonce' => wp_create_nonce( 'wetravel_trips_edit_nonce' ),
+		),
+		admin_url( 'admin.php' )
+	);
+
+	wp_safe_redirect( $redirect_url );
+	exit;
+}
 
 /** Render Create Widget Page. */
-function wetravel_trips_create_design_page() {
-	// Default values.
+function wtwidget_trip_create_design_page() {
+	// Verify user capabilities
+	if ( ! current_user_can( 'manage_options' ) ) {
+		wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'wetravel-widgets' ) );
+	}
+
+	// Default values
 	$design = array(
 		'name'           => '',
 		'displayType'    => 'vertical',
@@ -26,107 +123,53 @@ function wetravel_trips_create_design_page() {
 		'created'        => time(),
 	);
 
-	$editing   = false;
+	$editing = false;
 	$design_id = '';
+	$success_message = '';
+	$error_message = '';
 
+	// Handle form submission
+	if ( isset( $_POST['save_design'] ) ) {
+		$result = wtwidget_handle_form_submission();
+		if ( isset( $result['success'] ) && ! $result['success'] ) {
+			$error_message = $result['message'];
+		}
+	}
+
+	// Check for successful update
 	if ( isset( $_GET['updated'] ) && '1' === $_GET['updated'] ) {
 		$success_message = 'Widget updated successfully.';
 
-		// If we're in edit mode, generate the shortcode.
+		// If we're in edit mode, generate the shortcode
 		if ( isset( $_GET['edit'] ) && ! empty( $_GET['edit'] ) ) {
-			$design_id = sanitize_text_field( wp_unslash( $_GET['edit'] ) );
-			$designs   = get_option( 'wetravel_trips_designs', array() );
+			// Verify edit nonce
+			if ( ! isset( $_GET['_wpnonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'wetravel_trips_edit_nonce' ) ) {
+				wp_die( esc_html__( 'Invalid nonce verification', 'wetravel-widgets' ) );
+			}
 
-			if ( isset( $designs[ $design_id ] ) ) {
-				$design    = $designs[ $design_id ];
+			$design_id = sanitize_text_field( wp_unslash( $_GET['edit'] ) );
+			$designs = get_option( 'wetravel_trips_designs', array() );
+
+			if ( isset( $designs[$design_id] ) ) {
+				$design = $designs[$design_id];
 				$shortcode = '[wetravel_trips widget="' . ( ! empty( $design['keyword'] ) ? $design['keyword'] : $design_id ) . '"]';
 			}
 		}
 	}
 
-	// Check if we're editing an existing design.
+	// Check if we're editing an existing design
 	if ( isset( $_GET['edit'] ) && ! empty( $_GET['edit'] ) ) {
-		// Only check nonce when editing.
-		if ( isset( $_GET['edit'] ) && ( ! isset( $_GET['_wpnonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'wetravel_trips_edit_nonce' ) ) ) {
-			wp_die( 'Security check failed' );
+		// Verify edit nonce
+		if ( ! isset( $_GET['_wpnonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'wetravel_trips_edit_nonce' ) ) {
+			wp_die( esc_html__( 'Invalid nonce verification', 'wetravel-widgets' ) );
 		}
 
 		$design_id = sanitize_text_field( wp_unslash( $_GET['edit'] ) );
-		$designs   = get_option( 'wetravel_trips_designs', array() );
+		$designs = get_option( 'wetravel_trips_designs', array() );
 
-		if ( isset( $designs[ $design_id ] ) ) {
-			$design  = $designs[ $design_id ];
+		if ( isset( $designs[$design_id] ) ) {
+			$design = $designs[$design_id];
 			$editing = true;
-		}
-	}
-
-	// Handle form submission.
-	if ( isset( $_POST['save_design'] ) ) {
-		// Validate keyword uniqueness if provided.
-		$keyword       = isset( $_POST['design_keyword'] ) ? sanitize_text_field( wp_unslash( $_POST['design_keyword'] ) ) : '';
-		$keyword_error = false;
-
-		if ( ! empty( $keyword ) ) {
-			$designs = get_option( 'wetravel_trips_designs', array() );
-			foreach ( $designs as $id => $existing_design ) {
-				if ( isset( $existing_design['keyword'] ) && $existing_design['keyword'] === $keyword && $id !== $design_id ) {
-					$keyword_error = true;
-					break;
-				}
-			}
-		}
-
-		if ( $keyword_error ) {
-			$error_message = 'This keyword is already in use. Please choose a unique keyword.';
-		} else {
-			// Get date range values if trip type is one-time.
-			$date_range_start = '';
-			$date_range_end   = '';
-			if ( isset( $_POST['trip_type'] ) && 'one-time' === $_POST['trip_type'] ) {
-				$date_range_start = isset( $_POST['date_range_start'] ) ? sanitize_text_field( wp_unslash( $_POST['date_range_start'] ) ) : '';
-				$date_range_end   = isset( $_POST['date_range_end'] ) ? sanitize_text_field( wp_unslash( $_POST['date_range_end'] ) ) : '';
-			}
-
-			$new_design = array(
-				'name'           => isset( $_POST['design_name'] ) ? sanitize_text_field( wp_unslash( $_POST['design_name'] ) ) : '',
-				'displayType'    => isset( $_POST['display_type'] ) ? sanitize_text_field( wp_unslash( $_POST['display_type'] ) ) : '',
-				'buttonType'     => isset( $_POST['button_type'] ) ? sanitize_text_field( wp_unslash( $_POST['button_type'] ) ) : '',
-				'buttonText'     => isset( $_POST['button_text'] ) ? sanitize_text_field( wp_unslash( $_POST['button_text'] ) ) : '',
-				'buttonColor'    => isset( $_POST['button_color'] ) ? sanitize_hex_color( wp_unslash( $_POST['button_color'] ) ) : '',
-				'keyword'        => $keyword,
-				'tripType'       => isset( $_POST['trip_type'] ) ? sanitize_text_field( wp_unslash( $_POST['trip_type'] ) ) : '',
-				'dateRangeStart' => $date_range_start,
-				'dateRangeEnd'   => $date_range_end,
-				'created'        => $design['created'],
-				'modified'       => time(),
-			);
-
-			$designs = get_option( 'wetravel_trips_designs', array() );
-
-			// Generate a new ID if we're not editing.
-			if ( ! $editing ) {
-				$design_id = 'design_' . time() . '_' . wp_rand( 1000, 9999 );
-			}
-
-			$designs[ $design_id ] = $new_design;
-			update_option( 'wetravel_trips_designs', $designs );
-
-			$success_message = $editing ? 'Widget updated successfully.' : 'Widget created successfully.';
-
-			// Generate shortcode for user.
-			$shortcode = '[wetravel_trips widget="' . ( $keyword ? $keyword : $design_id ) . '"]';
-
-			$redirect_url = add_query_arg(
-				array(
-					'page'     => 'wetravel-trips-create-design',
-					'edit'     => $design_id,
-					'updated'  => '1',
-					'_wpnonce' => wp_create_nonce( 'wetravel_trips_edit_nonce' ),
-				),
-				admin_url( 'admin.php' )
-			);
-			wp_safe_redirect( $redirect_url );
-			exit;
 		}
 	}
 
@@ -140,7 +183,7 @@ function wetravel_trips_create_design_page() {
 			<a href="?page=wetravel-trips-create-design" class="nav-tab nav-tab-active">Create Widget</a>
 		</div>
 
-		<?php if ( isset( $success_message ) ) : ?>
+		<?php if ( ! empty( $success_message ) ) : ?>
 			<div class="notice notice-success is-dismissible">
 				<p><?php echo esc_html( $success_message ); ?></p>
 				<?php if ( isset( $shortcode ) ) : ?>
@@ -149,7 +192,7 @@ function wetravel_trips_create_design_page() {
 			</div>
 		<?php endif; ?>
 
-		<?php if ( isset( $error_message ) ) : ?>
+		<?php if ( ! empty( $error_message ) ) : ?>
 			<div class="notice notice-error is-dismissible">
 				<p><?php echo esc_html( $error_message ); ?></p>
 			</div>
@@ -159,6 +202,8 @@ function wetravel_trips_create_design_page() {
 			<div class="wetravel-trips-design-form-and-preview">
 				<div class="wetravel-trips-design-form">
 					<form method="post" action="">
+						<?php wp_nonce_field( 'wetravel_trips_design_action', 'wetravel_trips_design_nonce' ); ?>
+
 						<div class="wetravel-trips-form-field">
 							<label for="design_name">Widget Name <span style="color:red;">*</span></label>
 							<input type="text" id="design_name" name="design_name" value="<?php echo esc_attr( $design['name'] ); ?>" required>

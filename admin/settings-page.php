@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @param string $input User embed code.
  */
-function wetravel_trips_sanitize_embed_code( $input ) {
+function wtwidget_sanitize_embed_code( $input ) {
 	return wp_kses_post( $input ); // Allows safe HTML while stripping dangerous elements.
 }
 
@@ -25,16 +25,21 @@ function wetravel_trips_sanitize_embed_code( $input ) {
  *
  * @param string $input Setting save time.
  */
-function wetravel_trips_sanitize_text( $input ) {
+function wtwidget_sanitize_text( $input ) {
 	return sanitize_text_field( $input ); // Ensures plain text only.
 }
 
 /** Register settings */
-function wetravel_trips_register_settings() {
+function wtwidget_register_settings() {
+	// Register embed code setting with explicit sanitization
 	register_setting( 'wetravel_trips_options', 'wetravel_trips_embed_code', 'wetravel_trips_sanitize_embed_code' );
+
+
+	// Register last saved timestamp with explicit sanitization
 	register_setting( 'wetravel_trips_options', 'wetravel_trips_last_saved', 'wetravel_trips_sanitize_text' );
+
 }
-add_action( 'admin_init', 'wetravel_trips_register_settings' );
+add_action('admin_init', 'wtwidget_register_settings');
 
 /** Render Setting page */
 function wetravel_trips_settings_page() {
@@ -100,10 +105,11 @@ function wetravel_trips_settings_page() {
 						<?php
 						settings_fields( 'wetravel_trips_options' );
 						do_settings_sections( 'wetravel_trips_options' );
+						wp_nonce_field('wetravel_trips_settings_nonce', 'wetravel_trips_settings_nonce');
 						?>
 						<div class="wetravel-trips-embed-input-container">
 							<textarea id="wetravel_trips_embed_code" name="wetravel_trips_embed_code" class="large-text code" rows="4" placeholder='Paste your WeTravel "All Trips" embed script here...'><?php echo esc_textarea( $embed_code ); ?></textarea>
-							<p class="description">The plugin will extract the necessary details automatically.</p>
+							<p class="description"><?php esc_html_e('The plugin will extract the necessary details automatically.', 'wetravel-widgets'); ?></p>
 						</div>
 						<div class="wetravel-trips-embed-button-container">
 							<?php submit_button(); ?>
@@ -145,7 +151,7 @@ function wetravel_trips_add_admin_menu() {
 		'Create Widget',
 		'manage_options',
 		'wetravel-trips-create-design',
-		'wetravel_trips_create_design_page'
+		'wtwidget_trip_create_design_page'
 	);
 
 	// Add Settings as submenu.
