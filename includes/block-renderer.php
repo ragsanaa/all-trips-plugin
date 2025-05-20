@@ -175,17 +175,19 @@ function wtwidget_trips_block_render( $attributes ) {
 	}
 
 	// Only add dynamic CSS that depends on block attributes.
-	$custom_css = "
-    /* Set dynamic CSS variables for this block instance */
-    #trips-container-" . esc_attr($block_id) . " {
-      --button-color: " . esc_attr($button_color) . ";
-			--items-per-row: " . esc_attr($items_per_row) . ";
-    }
-  ";
+	$button_color = safecss_filter_attr($button_color);
+	$items_per_row = absint($items_per_row); // Convert to positive integer
+
+	$custom_css = sprintf(
+		'#trips-container-%1$s { --button-color: %2$s; --items-per-row: %3$d; }',
+		esc_attr($block_id),
+		$button_color,
+		$items_per_row
+	);
 
 	// Add design-specific custom CSS if available.
 	if ( ! empty( $custom_css_design ) ) {
-		$custom_css .= "\n/* Design-specific custom CSS */\n{$custom_css_design}";
+		$custom_css .= "\n/* Design-specific custom CSS */\n" . safecss_filter_attr($custom_css_design);
 	}
 
 	wp_register_style(
@@ -228,6 +230,31 @@ function wtwidget_trips_block_render( $attributes ) {
 			data-trip-type="<?php echo esc_attr( $trip_type ); ?>"
 			data-date-start="<?php echo esc_attr( $date_start ); ?>"
 			data-date-end="<?php echo esc_attr( $date_end ); ?>">
+			<?php
+				$allowed_html_tags = array(
+					'div' => array(
+							'class' => true,
+							'data-env' => true,
+							'data-version' => true,
+							'data-uid' => true,
+							'data-uuid' => true,
+							'href' => true,
+							'style' => true,
+					),
+					'img' => array(
+							'src' => true,
+							'alt' => true,
+							'class' => true,
+							'loading' => true,
+							'decoding' => true,
+							'width' => true,
+							'height' => true,
+					),
+					'h3' => array(),
+					'p' => array(),
+					'span' => array(),
+				);
+			?>
 
 			<?php if ( empty( $trips ) ) : ?>
 				<div class="no-trips">No trips found</div>
@@ -239,8 +266,10 @@ function wtwidget_trips_block_render( $attributes ) {
 							<?php foreach ( $trips as $trip ) : ?>
 								<div class="swiper-slide">
 									<?php
-									// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in render_trip_item function. Special handling for embed checkout functionality.
-									echo wtwidget_render_trip_item(
+									// The output contains trusted, controlled HTML (e.g., iframe, div, etc.)
+									// Escaping it with esc_html() breaks embed functionality
+									// So we sanitize with wp_kses_post() to allow only safe HTML
+									echo wp_kses(wtwidget_render_trip_item(
 										$trip,
 										array(
 											'env'          => $env,
@@ -251,7 +280,7 @@ function wtwidget_trips_block_render( $attributes ) {
 											'buttonColor'  => $button_color,
 											'itemsPerPage' => $items_per_page,
 										)
-									);
+									), $allowed_html_tags );
 									?>
 								</div>
 							<?php endforeach; ?>
@@ -265,8 +294,10 @@ function wtwidget_trips_block_render( $attributes ) {
 					$counter = 0;
 					foreach ( $trips as $trip ) :
 						$visibility_class = $counter < $items_per_page ? 'visible-item' : 'hidden-item';
-						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in render_trip_item function. Special handling for embed checkout functionality.
-						echo wtwidget_render_trip_item(
+						// The output contains trusted, controlled HTML (e.g., iframe, div, etc.)
+						// Escaping it with esc_html() breaks embed functionality
+						// So we sanitize with wp_kses_post() to allow only safe HTML
+						echo wp_kses(wtwidget_render_trip_item(
 							$trip,
 							array(
 								'env'            => $env,
@@ -278,7 +309,7 @@ function wtwidget_trips_block_render( $attributes ) {
 								'itemsPerPage'   => $items_per_page,
 							),
 							$visibility_class
-						);
+						), $allowed_html_tags );
 						++$counter;
 					endforeach;
 					?>

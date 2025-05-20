@@ -5,11 +5,9 @@
  * @package WordPress
  */
 
-ob_start();
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 
-if ( ! defined( 'ABSPATH' ) ) {
-	exit;
-}
+ob_start();
 
 /**
  * Sanitize embed code
@@ -54,8 +52,13 @@ function wetravel_trips_settings_page() {
 			wp_die( 'Security check failed' );
 		}
 
+		// Delete options
 		delete_option( 'wetravel_trips_embed_code' );
 		delete_option( 'wetravel_trips_last_saved' );
+		delete_option( 'wetravel_trips_slug' );
+		delete_option( 'wetravel_trips_env' );
+		delete_option( 'wetravel_trips_user_id' );
+
 		wp_safe_redirect( admin_url( 'admin.php?page=wetravel-trips-settings' ) );
 		exit;
 	}
