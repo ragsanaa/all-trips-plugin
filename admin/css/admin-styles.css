@@ -198,3 +198,33 @@
 .wetravel-trips-extracted-info p {
   margin: 5px 0;
 }
+
+.notice ul {
+  margin: 5px 0 5px 20px;
+  list-style-type: disc;
+}
+
+.notice ul li {
+  margin: 3px 0;
+}
+
+.notice ul li a {
+  text-decoration: none;
+}
+
+.notice ul li a:hover {
+  text-decoration: underline;
+}
+
+.description .dashicons {
+  color: #72aee6;
+  margin-right: 5px;
+  vertical-align: middle;
+}
+
+.wetravel-trips-embed-info .description {
+  margin-top: 15px;
+  padding: 10px;
+  background: #f0f6fc;
+  border-left: 4px solid #72aee6;
+}

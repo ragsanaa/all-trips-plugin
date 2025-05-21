@@ -1,6 +1,6 @@
 === WeTravel Widgets ===
 Contributors: wtragsana
-Tags: travel, widget, trips, booking, wetravel
+Tags: travel, widget, multi-day, booking, wetravel
 Requires at least: 5.0
 Tested up to: 6.8
 Stable tag: 1.0
@@ -89,6 +89,17 @@ You can use either:
 = Can I still use the default WeTravel widget? =
 
 Yes! This plugin enhances WeTravel's embedded widgets with customization options. You can still use the default widget if you prefer.
+
+= What should I know about embed code behavior in Gutenberg blocks? =
+
+When using the Gutenberg block editor, it's important to add your embed code before making any design customizations. If you customize the design first and add the embed code later, the block might not immediately recognize the change due to how Gutenberg handles block attributes.
+
+To avoid any issues:
+1. Always start by inserting your embed code
+2. Then proceed with your design customizations
+3. If you added the embed code after customizing and it's not detected, refresh the page and re-save your post/page
+
+Note: This behavior only affects Gutenberg blocks. Shortcodes work as expected and update dynamically.
 
 == Screenshots ==
 

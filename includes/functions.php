@@ -161,3 +161,67 @@ function wtwidget_get_cdn_url( $env ) {
 function wtwidget_fix_trips_loading_in_editor() {
 	// ... existing code ...
 }
+
+/**
+ * Check if WeTravel widgets are being used in any posts or pages
+ *
+ * @return array Array containing usage information
+ */
+function wtwidget_check_widget_usage() {
+	// Try to get cached results first
+	$cache_key = 'wetravel_widget_usage';
+	$usage = wp_cache_get($cache_key);
+
+	if (false === $usage) {
+		$usage = array(
+			'has_usage' => false,
+			'blocks' => array(),
+			'shortcodes' => array()
+		);
+
+		// Check for Gutenberg blocks
+		$block_posts = get_posts(array(
+			'post_type' => 'any',
+			'post_status' => 'publish',
+			'posts_per_page' => -1,
+			's' => '<!-- wp:wetravel-trips/block'
+		));
+
+		if (!empty($block_posts)) {
+			$usage['has_usage'] = true;
+			foreach ($block_posts as $post) {
+				$usage['blocks'][] = array(
+					'id' => $post->ID,
+					'title' => $post->post_title,
+					'type' => $post->post_type,
+					'edit_url' => get_edit_post_link($post->ID)
+				);
+			}
+		}
+
+		// Check for shortcodes
+		$shortcode_posts = get_posts(array(
+			'post_type' => 'any',
+			'post_status' => 'publish',
+			'posts_per_page' => -1,
+			's' => '[wetravel_trips'
+		));
+
+		if (!empty($shortcode_posts)) {
+			$usage['has_usage'] = true;
+			foreach ($shortcode_posts as $post) {
+				$usage['shortcodes'][] = array(
+					'id' => $post->ID,
+					'title' => $post->post_title,
+					'type' => $post->post_type,
+					'edit_url' => get_edit_post_link($post->ID)
+				);
+			}
+		}
+
+		// Cache the results for 1 hour
+		wp_cache_set($cache_key, $usage, '', HOUR_IN_SECONDS);
+	}
+
+	return $usage;
+}

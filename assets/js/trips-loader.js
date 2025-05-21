@@ -22,7 +22,9 @@
 
     // Validate required data
     if (!slug || !env) {
-      container.html("Error: Missing configuration");
+      container.html(
+        "Error: Missing configuration. Please check your WeTravel Widgets Plugin settings and try again."
+      );
       $loadingSpinner.fadeOut();
       return;
     }

@@ -318,7 +318,7 @@ function wtwidget_trips_block_render( $attributes ) {
 			<?php endif; ?>
 		</div>
 
-		<?php if ( 'carousel' !== $display_type && count( $trips ) > $items_per_page ) : ?>
+		<?php if ( ! empty( $trips ) && 'carousel' !== $display_type && count( $trips ) > $items_per_page ) : ?>
 			<!-- Numbered pagination container -->
 			<div id="pagination-<?php echo esc_attr( $block_id ); ?>" class="wetravel-trips-pagination">
 				<div class="pagination-controls">

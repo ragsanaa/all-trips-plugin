@@ -45,11 +45,20 @@ function wetravel_trips_settings_page() {
 	$last_saved     = get_option( 'wetravel_trips_last_saved', '' );
 	$has_embed_code = ! empty( $embed_code );
 
-	// Reset embed code if requested.
+	// Check for widget usage
+	$widget_usage = wtwidget_check_widget_usage();
+
+	// Reset embed code if requested and no active widgets
 	if ( isset( $_GET['reset_embed'] ) && 'true' === $_GET['reset_embed'] ) {
 		// Only verify nonce when actually processing a reset action.
 		if ( ! isset( $_GET['_wpnonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'wetravel_trips_reset_nonce' ) ) {
 			wp_die( 'Security check failed' );
+		}
+
+		// Check if widgets are in use
+		if ($widget_usage['has_usage']) {
+			wp_safe_redirect( add_query_arg('error', 'widgets_in_use', admin_url( 'admin.php?page=wetravel-trips-settings' )) );
+			exit;
 		}
 
 		// Delete options
@@ -81,6 +90,37 @@ function wetravel_trips_settings_page() {
 				</div>
 			<?php endif; ?>
 
+			<?php if ( isset( $_GET['error'] ) && 'widgets_in_use' === $_GET['error'] ) : ?>
+				<div class="notice notice-error is-dismissible">
+					<p><strong>Cannot reset embed code:</strong> There are active WeTravel widgets being used in your content.</p>
+					<?php if (!empty($widget_usage['blocks'])) : ?>
+						<p><strong>Blocks found in:</strong></p>
+						<ul>
+							<?php foreach ($widget_usage['blocks'] as $post) : ?>
+								<li>
+									<a href="<?php echo esc_url($post['edit_url']); ?>" target="_blank">
+										<?php echo esc_html($post['title']); ?> (<?php echo esc_html($post['type']); ?>)
+									</a>
+								</li>
+							<?php endforeach; ?>
+						</ul>
+					<?php endif; ?>
+					<?php if (!empty($widget_usage['shortcodes'])) : ?>
+						<p><strong>Shortcodes found in:</strong></p>
+						<ul>
+							<?php foreach ($widget_usage['shortcodes'] as $post) : ?>
+								<li>
+									<a href="<?php echo esc_url($post['edit_url']); ?>" target="_blank">
+										<?php echo esc_html($post['title']); ?> (<?php echo esc_html($post['type']); ?>)
+									</a>
+								</li>
+							<?php endforeach; ?>
+						</ul>
+					<?php endif; ?>
+					<p>Please remove all WeTravel widgets from your content before resetting the embed code.</p>
+				</div>
+			<?php endif; ?>
+
 			<div class="wetravel-trips-embed-form-container">
 				<?php if ( $has_embed_code ) : ?>
 					<div class="wetravel-trips-embed-info">
@@ -93,15 +133,22 @@ function wetravel_trips_settings_page() {
 							<p><strong>Environment:</strong> <?php echo esc_html( get_option( 'wetravel_trips_env', '' ) ); ?></p>
 							<p><strong>WeTravel User ID:</strong> <?php echo esc_html( get_option( 'wetravel_trips_user_id', '' ) ); ?></p>
 						</div>
-						<?php
-						// Create a reset link with a proper nonce.
-						$reset_url = wp_nonce_url(
-							admin_url( 'admin.php?page=wetravel-trips-settings&reset_embed=true' ),
-							'wetravel_trips_reset_nonce',
-							'_wpnonce'
-						);
-						?>
-						<a href="<?php echo esc_url( $reset_url ); ?>" class="button button-secondary">Re-enter Embed Code</a>
+						<?php if (!$widget_usage['has_usage']) : ?>
+							<?php
+							// Create a reset link with a proper nonce.
+							$reset_url = wp_nonce_url(
+								admin_url( 'admin.php?page=wetravel-trips-settings&reset_embed=true' ),
+								'wetravel_trips_reset_nonce',
+								'_wpnonce'
+							);
+							?>
+							<a href="<?php echo esc_url( $reset_url ); ?>" class="button button-secondary">Re-enter Embed Code</a>
+						<?php else : ?>
+							<p class="description">
+								<span class="dashicons dashicons-info"></span>
+								Cannot re-enter embed code while WeTravel widgets are in use. Please remove all widgets from your content first.
+							</p>
+						<?php endif; ?>
 					</div>
 				<?php else : ?>
 					<form method="post" action="options.php" class="wetravel-trips-embed-form">
