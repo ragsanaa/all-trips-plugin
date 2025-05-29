@@ -253,6 +253,21 @@ function wtwidget_trips_block_render( $attributes ) {
 					'h3' => array(),
 					'p' => array(),
 					'span' => array(),
+					'button' => array(
+						'class' => true,
+						'style' => true,
+						'href' => true,
+						'data-uuid' => true,
+						'data-uid' => true,
+						'data-env' => true,
+						'data-version' => true,
+					),
+					'a' => array(
+						'class' => true,
+						'style' => true,
+						'href' => true,
+						'target' => true,
+					),
 				);
 			?>
 
