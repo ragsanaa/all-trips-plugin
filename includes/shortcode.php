@@ -151,44 +151,29 @@ function wtwidget_register_trips_ajax_handlers() {
 			$date_start = isset( $_POST['dateStart'] ) ? sanitize_text_field( wp_unslash( $_POST['dateStart'] ) ) : '';
 			$date_end   = isset( $_POST['dateEnd'] ) ? sanitize_text_field( wp_unslash( $_POST['dateEnd'] ) ) : '';
 
-			// Ensure the environment URL is properly formatted.
-			$env = rtrim( $env, '/' );
+			// Build API URL with parameters
+			$api_url = wtwidget_build_api_url($env, $slug, array(
+				'trip_type' => $trip_type,
+				'date_start' => $date_start,
+				'date_end' => $date_end
+			));
 
-			// Build the API URL.
-			$api_url      = "{$env}/api/v2/embeds/all_trips";
-			$query_params = array( 'slug' => $slug );
+			// Get trips data
+			$trips = wtwidget_get_trips_data($api_url);
 
-			// Set recurring/one-time parameters.
-			if ( 'one-time' === $trip_type ) {
-				$query_params['all_year'] = 'false';
-
-				// Add date range for one-time trips.
-				if ( ! empty( $date_start ) ) {
-					$query_params['from_date'] = $date_start;
-				}
-
-				if ( ! empty( $date_end ) ) {
-					$query_params['to_date'] = $date_end;
-				}
+			if ( 'recurring' === $trip_type ) {
+				// Filter trips where 'all_year' is true.
+				$trips = array_filter(
+					$trips,
+					function ( $trip ) {
+						return ! empty( $trip['all_year'] ) && true === $trip['all_year'];
+					}
+				);
 			}
 
-			// Build the final URL with parameters.
-			$api_url = add_query_arg( $query_params, $api_url );
-
-			// Get trips data.
-			$trips = array();
-			if ( function_exists( 'wtwidget_get_trips_data' ) ) {
-				$trips = wtwidget_get_trips_data( $api_url, $env );
-
-				if ( 'recurring' === $trip_type ) {
-					// Filter trips where 'all_year' is true.
-					$trips = array_filter(
-						$trips,
-						function ( $trip ) {
-							return ! empty( $trip['all_year'] ) && true === $trip['all_year'];
-						}
-					);
-				}
+			// Enhance trips with details since we need them for display
+			if (!empty($trips)) {
+				$trips = wtwidget_enhance_trips_with_details($trips, $env);
 			}
 
 			// Return the trips data as JSON.

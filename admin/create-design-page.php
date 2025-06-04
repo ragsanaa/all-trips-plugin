@@ -234,10 +234,11 @@ function wtwidget_trip_create_design_page() {
 								$env = get_option('wetravel_trips_env', 'https://pre.wetravel.to');
 								$slug = get_option('wetravel_trips_slug', '');
 
-								// Get trips data using new function
-								$trips = wtwidget_fetch_trips_data($env, $slug, array(
+								// Get trips data (we only need basic data for locations)
+								$api_url = wtwidget_build_api_url($env, $slug, array(
 									'trip_type' => isset($design['tripType']) ? $design['tripType'] : 'all'
 								));
+								$trips = wtwidget_get_trips_data($api_url);
 
 								// Get unique locations
 								$locations = wtwidget_get_trip_locations($trips);
@@ -343,8 +344,19 @@ function wtwidget_trip_create_design_page() {
 	</div>
 	<?php
 	// Enqueue Select2 library
-	wp_enqueue_style('select2', plugins_url('select2.min.css', __FILE__));
-	wp_enqueue_script('select2', plugins_url('select2.min.js', __FILE__), array('jquery'), '4.1.0', true);
+	wp_enqueue_style(
+		'select2',
+		plugins_url('assets/css/select2.min.css', dirname(__FILE__)),
+		array(),
+		filemtime(plugin_dir_path(dirname(__FILE__)) . 'assets/css/select2.min.css')
+	);
+	wp_enqueue_script(
+		'select2',
+		plugins_url('assets/js/select2.min.js', dirname(__FILE__)),
+		array('jquery'),
+		filemtime(plugin_dir_path(dirname(__FILE__)) . 'assets/js/select2.min.js'),
+		true
+	);
 
 	// Initialize Select2
 	?>
