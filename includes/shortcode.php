@@ -38,6 +38,7 @@ function wtwidget_trips_shortcode( $atts ) {
 		'trip_type'              => 'all',
 		'date_start'             => '',
 		'date_end'               => '',
+		'search_visibility'      => get_option( 'wetravel_trips_search_visibility', false ),
 	);
 
 	// First, get the design if specified
@@ -82,6 +83,9 @@ function wtwidget_trips_shortcode( $atts ) {
 			if (!empty($design['dateRangeEnd'])) {
 				$default_atts['date_end'] = $design['dateRangeEnd'];
 			}
+			if (!empty($design['searchVisibility'])) {
+				$default_atts['search_visibility'] = $design['searchVisibility'];
+			}
 		}
 	}
 
@@ -104,6 +108,7 @@ function wtwidget_trips_shortcode( $atts ) {
 		'tripType'       => $atts['trip_type'],
 		'dateStart'      => $atts['date_start'],
 		'dateEnd'        => $atts['date_end'],
+		'searchVisibility' => $atts['search_visibility'],
 	);
 
 	// Add the selected design ID if a widget was specified

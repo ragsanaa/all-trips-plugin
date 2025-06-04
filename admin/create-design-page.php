@@ -122,6 +122,7 @@ function wtwidget_trip_create_design_page() {
 		'tripType'       => 'all',
 		'dateRangeStart' => '',
 		'dateRangeEnd'   => '',
+		'searchVisibility' => false,
 		'created'        => time(),
 	);
 

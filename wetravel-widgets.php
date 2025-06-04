@@ -182,6 +182,10 @@ function wtwidget_register_block() {
 					'type'    => 'string',
 					'default' => 'Load More',
 				),
+				'searchVisibility' => array(
+					'type'    => 'boolean',
+					'default' => false,
+				),
 			),
 		)
 	);
@@ -256,7 +260,8 @@ function wtwidget_activation() {
 		'wetravel_trips_display_type' => 'vertical',
 		'wetravel_trips_button_type' => 'book_now',
 		'wetravel_trips_env' => 'https://pre.wetravel.to',
-		'wetravel_trips_load_more_text' => 'Load More'
+		'wetravel_trips_load_more_text' => 'Load More',
+		'wetravel_trips_search_visibility' => false,
 	);
 
 	foreach ($default_settings as $key => $value) {
@@ -278,13 +283,17 @@ register_deactivation_hook( __FILE__, 'wtwidget_deactivation' );
 function wtwidget_uninstall() {
 	// Remove all plugin options
 	$options = array(
+		'wetravel_trips_src',
+		'wetravel_trips_slug',
+		'wetravel_trips_env',
+		'wetravel_trips_user_id',
 		'wetravel_trips_button_color',
 		'wetravel_trips_items_per_row',
 		'wetravel_trips_items_per_page',
 		'wetravel_trips_display_type',
 		'wetravel_trips_button_type',
-		'wetravel_trips_env',
-		'wetravel_trips_load_more_text'
+		'wetravel_trips_load_more_text',
+		'wetravel_trips_search_visibility',
 	);
 
 	foreach ($options as $option) {
