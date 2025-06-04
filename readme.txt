@@ -3,7 +3,7 @@ Contributors: wtragsana
 Tags: travel, widget, multi-day, booking, wetravel
 Requires at least: 5.0
 Tested up to: 6.8
-Stable tag: 1.0
+Stable tag: 1.1
 Requires PHP: 7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -101,13 +101,29 @@ To avoid any issues:
 
 Note: This behavior only affects Gutenberg blocks. Shortcodes work as expected and update dynamically.
 
+= How do I use the new search functionality? =
+
+The search bar allows visitors to filter trips by name and location. To enable/disable the search bar:
+1. Edit your widget design in WeTravel Widgets > Create Widget
+2. Look for the "Display Search Bar" option
+3. Toggle it on/off as needed
+Note: Search functionality is not available for carousel layouts.
+
+= Can I create location-based widget designs? =
+
+Yes! With version 1.1, you can create widget designs that focus on specific locations:
+1. Create a new widget design
+2. Use the location filter options
+3. Save the design with a location-specific keyword
+This is perfect for creating region-specific trip displays.
+
 == Screenshots ==
 
-1. Widget Library showing multiple saved designs (/assets/screenshots/screenshot-1.png)
-2. Widget customization interface with live preview (/assets/screenshots/screenshot-2.png)
-3. Different layout options (vertical, grid, carousel) (/assets/screenshots/screenshot-3.png)
-4. Gutenberg block interface (/assets/screenshots/screenshot-4.png)
-5. Mobile view of customized widgets (/assets/screenshots/screenshot-5.png)
+1. Widget Library showing multiple saved designs
+2. Widget customization interface with live preview
+3. Different layout options (vertical, grid, carousel)
+4. Gutenberg block interface
+5. Mobile view of customized widgets
 
 == Changelog ==
 
@@ -120,10 +136,22 @@ Note: This behavior only affects Gutenberg blocks. Shortcodes work as expected a
 * Button customization
 * Live preview feature
 
+= 1.1 =
+* Search Features
+  - Search bar by trip name and locations
+  - Locations based widget design
+  - Manage search bar visibility from widget design page
+
+* Bug Fixes
+  - Fixed broken trip button functionality
+
 == Upgrade Notice ==
 
 = 1.0 =
 Initial release of the WeTravel Widgets plugin. Customize your WeTravel widgets to match your website's design.
+
+= 1.1 =
+Improved search bar functionality and widget design options. Broken trip button functionality has been fixed.
 
 == Shortcode Parameters ==
 
@@ -140,8 +168,9 @@ The `[wetravel_trips]` shortcode accepts the following parameters:
 * `trip_type` - Filter trips by type: "all", "one-time", or "recurring"
 * `date_start` - Start date for filtering trips (format: YYYY-MM-DD)
 * `date_end` - End date for filtering trips (format: YYYY-MM-DD)
+* `search_visibility` - Toggle search bar visibility: true (1) or false(0) (default: false). This is not available for carousel display type.
 
-Example with a saved design:
+Basic usage with a saved design:
 `[wetravel_trips widget="my-custom-design"]`
 
 Example with custom parameters:

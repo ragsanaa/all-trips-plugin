@@ -96,12 +96,15 @@ function wtwidget_trips_block_render( $attributes ) {
 	// Get selected locations from design
 	$locations = !empty($design['locations']) ? $design['locations'] : array();
 
-	// Fetch trips data using new function
-	$trips = wtwidget_fetch_trips_data($env, $slug, array(
+	// Build API URL with parameters
+	$api_url = wtwidget_build_api_url($env, $slug, array(
 		'trip_type' => $trip_type,
 		'date_start' => $date_start,
 		'date_end' => $date_end
 	));
+
+	// Get trips data
+	$trips = wtwidget_get_trips_data($api_url);
 
 	// Filter trips by location if locations are specified
 	if (!empty($locations)) {
@@ -118,6 +121,11 @@ function wtwidget_trips_block_render( $attributes ) {
 				return ! empty( $trip['all_year'] ) && true === $trip['all_year'];
 			}
 		);
+	}
+
+	// Fetch enhanced trip data with additional details since we need it for display
+	if (!empty($trips)) {
+		$trips = wtwidget_enhance_trips_with_details($trips, $env);
 	}
 
 	// Enqueue necessary assets based on display type.

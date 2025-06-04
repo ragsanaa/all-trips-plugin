@@ -37,56 +37,25 @@ function wtwidget_fetch_trips_handler() {
 		return;
 	}
 
-	// Clean up the environment URL if needed.
-	$env = rtrim( $env, '/' );
-
-	// Build API endpoint.
-	$api_url = "{$env}/api/v2/embeds/all_trips";
-
-	// Add query parameters.
-	$query_params = array(
-		'slug' => $slug,
+	// Build API URL with parameters
+	$params = array(
+		'trip_type' => $trip_type,
+		'date_start' => $date_start,
+		'date_end' => $date_end
 	);
 
-	// Format dates if they exist (ensure YYYY-MM-DD format).
-	if ( ! empty( $date_start ) ) {
-		// Parse and reformat the date to ensure correct format.
-		$date_obj = date_create( $date_start );
-		if ( $date_obj ) {
-				$date_start = date_format( $date_obj, 'Y-m-d' );
-		}
+	$api_url = wtwidget_build_api_url($env, $slug, $params);
+
+	// Get trips data with caching and enhancement
+	$trips = wtwidget_get_trips_data($api_url);
+
+	if (false === $trips) {
+		wp_send_json_error('Failed to fetch trips data');
+		return;
 	}
-
-	if ( ! empty( $date_end ) ) {
-			// Parse and reformat the date to ensure correct format.
-			$date_obj = date_create( $date_end );
-		if ( $date_obj ) {
-				$date_end = date_format( $date_obj, 'Y-m-d' );
-		}
-	}
-
-	// Set recurring/one-time parameters.
-	if ( 'one-time' === $trip_type ) {
-			$query_params['all_year'] = 'false';
-
-			// Add date range for one-time trips.
-		if ( ! empty( $date_start ) ) {
-				$query_params['from_date'] = $date_start;
-		}
-
-		if ( ! empty( $date_end ) ) {
-			$query_params['to_date']   = $date_end;
-		}
-	}
-
-	// Build the final URL with parameters.
-	$api_url = add_query_arg( $query_params, $api_url );
-
-	// Get trips data with caching.
-	$trips = wtwidget_get_trips_data( $api_url, $env );
 
 	if ( 'recurring' === $trip_type ) {
-		// Filter trips where 'all_year' is true.
+		// Filter trips where 'all_year' is true
 		$trips = array_filter(
 			$trips,
 			function ( $trip ) {
@@ -102,12 +71,11 @@ function wtwidget_fetch_trips_handler() {
  * Get trips data from WeTravel API with caching
  *
  * @param string $api_url The API URL to fetch data from.
- * @param string $env The environment URL base.
  * @return array|false The trips data or false on error.
  */
-function wtwidget_get_trips_data( $api_url, $env = '' ) {
+function wtwidget_get_trips_data( $api_url ) {
 	// Try to get cached data first (1 minute cache).
-	$cache_key   = 'wetravel_trips_' . md5( $api_url . '_details' );
+	$cache_key   = 'wetravel_trips_' . md5( $api_url );
 	$cached_data = get_transient( $cache_key );
 
 	if ( false !== $cached_data ) {
@@ -139,9 +107,6 @@ function wtwidget_get_trips_data( $api_url, $env = '' ) {
 
 	$trips = $data['trips'];
 
-	// Enhance trips data with detailed information.
-	$trips = wtwidget_fetch_trip_seo_config( $trips, $env );
-
 	// Cache for 1 minute (60 seconds).
 	set_transient( $cache_key, $trips, 60 );
 
@@ -149,13 +114,13 @@ function wtwidget_get_trips_data( $api_url, $env = '' ) {
 }
 
 /**
- * Fetch detailed information for each trip
+ * Enhance trips with detailed information including SEO config
  *
  * @param array  $trips The basic trips data.
  * @param string $env The environment URL base.
  * @return array Enhanced trips data with details.
  */
-function wtwidget_fetch_trip_seo_config( $trips, $env ) {
+function wtwidget_enhance_trips_with_details( $trips, $env ) {
 	$enhanced_trips = array();
 
 	foreach ( $trips as $trip ) {
@@ -168,24 +133,33 @@ function wtwidget_fetch_trip_seo_config( $trips, $env ) {
 		// Build detail endpoint URL.
 		$seo_config_url = "{$env}/api/v2/user/trips/{$trip['uuid']}/seo_config";
 
-		// Fetch trip seo_configs.
-		$response = wp_remote_get(
-			$seo_config_url,
-			array(
-				'timeout' => 15,
-				'headers' => array(
-					'Accept' => 'application/json',
-				),
-			)
-		);
+		// Try to get cached seo config first
+		$cache_key = 'wetravel_trip_seo_' . $trip['uuid'];
+		$seo_config_data = get_transient($cache_key);
 
-		if ( is_wp_error( $response ) ) {
-			$enhanced_trips[] = $trip;
-			continue;
+		if (false === $seo_config_data) {
+			// Fetch trip seo_configs.
+			$response = wp_remote_get(
+				$seo_config_url,
+				array(
+					'timeout' => 15,
+					'headers' => array(
+						'Accept' => 'application/json',
+					),
+				)
+			);
+
+			if ( is_wp_error( $response ) ) {
+				$enhanced_trips[] = $trip;
+				continue;
+			}
+
+			$body = wp_remote_retrieve_body( $response );
+			$seo_config_data = json_decode( $body, true );
+
+			// Cache individual trip SEO data for 1 minute
+			set_transient($cache_key, $seo_config_data, 60);
 		}
-
-		$body            = wp_remote_retrieve_body( $response );
-		$seo_config_data = json_decode( $body, true );
 
 		// Check if we have valid detailed data.
 		if ( ! isset( $seo_config_data['data'] ) ) {
@@ -197,7 +171,7 @@ function wtwidget_fetch_trip_seo_config( $trips, $env ) {
 		$trip_details = $seo_config_data['data'];
 
 		// Find specific paragraphs.
-		$full_description = isset( $seo_config_data['data']['description'] ) ? $seo_config_data['data']['description'] : array();
+		$full_description = isset( $trip_details['description'] ) ? $trip_details['description'] : array();
 
 		// Enhance trip data with detailed information.
 		$trip['full_description'] = $full_description;
@@ -306,20 +280,3 @@ function wtwidget_get_trip_locations(array $trips): array {
     return $unique_locations;
 }
 
-/**
- * Fetch trips data from WeTravel API
- *
- * @param string $env Environment URL.
- * @param string $slug WeTravel slug.
- * @param array  $params Additional query parameters.
- * @return array Array of trip data.
- */
-function wtwidget_fetch_trips_data($env, $slug, $params = array()) {
-    $api_url = wtwidget_build_api_url($env, $slug, $params);
-
-    // Use the existing get_trips_data function
-    $trips = wtwidget_get_trips_data($api_url, $env);
-
-    // Return empty array if the result is false
-    return $trips !== false ? $trips : array();
-}
