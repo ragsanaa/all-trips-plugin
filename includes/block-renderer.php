@@ -37,6 +37,7 @@ function wtwidget_trips_block_render( $attributes ) {
 	$items_per_row          = intval( $attributes['itemsPerRow'] ?? get_option( 'wetravel_trips_items_per_row', 3 ) );
 	$items_per_slide        = intval( $attributes['itemsPerSlide'] ?? get_option( 'wetravel_trips_items_per_slide', 3 ) );
 	$load_more_text         = $attributes['loadMoreText'] ?? get_option( 'wetravel_trips_load_more_text', 'Load More' );
+	$search_visibility      = $attributes['searchVisibility'] ?? get_option( 'wetravel_trips_search_visibility', false );
 
 	// Override with design settings if a design is selected.
 	if ( ! empty( $selected_design_id ) ) {
@@ -61,7 +62,7 @@ function wtwidget_trips_block_render( $attributes ) {
 			$display_type = isset( $design['displayType'] ) ? $design['displayType'] : $display_type;
 			$button_type  = isset( $design['buttonType'] ) ? $design['buttonType'] : $button_type;
 			$button_color = isset( $design['buttonColor'] ) ? $design['buttonColor'] : $button_color;
-
+			$search_visibility = isset( $design['searchVisibility'] ) ? $design['searchVisibility'] : $search_visibility;
 			// If the design has custom CSS, we'll add it later.
 			$custom_css_design = isset( $design['customCSS'] ) ? $design['customCSS'] : '';
 
@@ -92,44 +93,22 @@ function wtwidget_trips_block_render( $attributes ) {
 	$date_start = ! empty( $attributes['dateStart'] ) ? $attributes['dateStart'] : ( ! empty( $design['dateRangeStart'] ) ? $design['dateRangeStart'] : '' );
 	$date_end   = ! empty( $attributes['dateEnd'] ) ? $attributes['dateEnd'] : ( ! empty( $design['dateRangeEnd'] ) ? $design['dateRangeEnd'] : '' );
 
-	// Fetch trips data directly.
-	$api_url      = "{$env}/api/v2/embeds/all_trips";
-	$query_params = array( 'slug' => $slug );
+	// Get selected locations from design
+	$locations = !empty($design['locations']) ? $design['locations'] : array();
 
-	// Format dates if they exist.
-	if ( ! empty( $date_start ) ) {
-		$date_obj = date_create( $date_start );
-		if ( $date_obj ) {
-			$date_start = date_format( $date_obj, 'Y-m-d' );
-		}
+	// Fetch trips data using new function
+	$trips = wtwidget_fetch_trips_data($env, $slug, array(
+		'trip_type' => $trip_type,
+		'date_start' => $date_start,
+		'date_end' => $date_end
+	));
+
+	// Filter trips by location if locations are specified
+	if (!empty($locations)) {
+		$trips = array_filter($trips, function($trip) use ($locations) {
+			return !empty($trip['location']) && in_array($trip['location'], $locations);
+		});
 	}
-
-	if ( ! empty( $date_end ) ) {
-		$date_obj = date_create( $date_end );
-		if ( $date_obj ) {
-			$date_end = date_format( $date_obj, 'Y-m-d' );
-		}
-	}
-
-	// Set recurring/one-time parameters.
-	if ( 'one-time' === $trip_type ) {
-		$query_params['all_year'] = 'false';
-
-		// Add date range for one-time trips.
-		if ( ! empty( $date_start ) ) {
-			$query_params['from_date'] = $date_start;
-		}
-
-		if ( ! empty( $date_end ) ) {
-			$query_params['to_date'] = $date_end;
-		}
-	}
-
-	// Build the final URL with parameters.
-	$api_url = add_query_arg( $query_params, $api_url );
-
-	// Get trips data with caching.
-	$trips = wtwidget_get_trips_data( $api_url, $env );
 
 	if ( 'recurring' === $trip_type ) {
 		// Filter trips where 'all_year' is true.
@@ -174,6 +153,42 @@ function wtwidget_trips_block_render( $attributes ) {
 		);
 	}
 
+	// Enqueue Select2 for location filter
+	wp_enqueue_style(
+		'select2-css',
+		plugins_url( 'assets/css/select2.min.css', dirname( __FILE__ ) ),
+		array(),
+		filemtime( plugin_dir_path( dirname( __FILE__ ) ) . 'assets/css/select2.min.css' )
+	);
+	wp_enqueue_script(
+		'select2-js',
+		plugins_url( 'assets/js/select2.min.js', dirname( __FILE__ ) ),
+		array('jquery'),
+		filemtime( plugin_dir_path( dirname( __FILE__ ) ) . 'assets/js/select2.min.js' ),
+		true
+	);
+
+	// Enqueue search filter script
+	wp_enqueue_script(
+		'wetravel-trips-search-filter',
+		plugins_url( 'assets/js/search-filter.js', dirname( __FILE__ ) ),
+		array( 'jquery', 'select2-js' ),
+		filemtime( plugin_dir_path( dirname( __FILE__ ) ) . 'assets/js/search-filter.js' ),
+		true
+	);
+
+	// Initialize Select2 for this specific block
+	wp_add_inline_script('select2-js', sprintf(
+		'jQuery(document).ready(function($) {
+			$("#search-filter-%s .location-filter").select2({
+				placeholder: "Filter by location...",
+				allowClear: true,
+				width: "100%%"
+			});
+		});',
+		esc_js($block_id)
+	));
+
 	// Only add dynamic CSS that depends on block attributes.
 	$button_color = safecss_filter_attr($button_color);
 	$items_per_row = absint($items_per_row); // Convert to positive integer
@@ -210,6 +225,57 @@ function wtwidget_trips_block_render( $attributes ) {
 			<div class="loading-spinner"></div>
 			<p>Loading trips...</p>
 		</div>
+
+		<?php
+			if ( 'carousel' !== $display_type && $search_visibility ) :
+		?>
+		<!-- Search Filter UI -->
+		<div class="wetravel-trips-search-filter" id="search-filter-<?php echo esc_attr( $block_id ); ?>"
+			style="--button-color: <?php echo esc_attr( $button_color ); ?>; --button-color-rgb: <?php echo esc_attr(wtwidget_hex_to_rgb($button_color)); ?>;">
+			<div class="search-filter-container">
+				<!-- Search input with icon -->
+				<input type="text"
+						class="search-input"
+						placeholder="Search trips by name..."
+						data-block-id="<?php echo esc_attr( $block_id ); ?>"
+					/>
+
+				<!-- Location Filter -->
+				<button type="button" class="location-button" data-block-id="<?php echo esc_attr( $block_id ); ?>">
+					<span id="selected-text">Select locations</span>
+					<span class="selected-count" id="selected-count" style="display: none;">0 selected</span>
+					<span class="dropdown-arrow" id="dropdown-arrow">▲</span>
+				</button>
+			</div>
+			<!-- Custom Location Dropdown -->
+			<div class="location-dropdown">
+				<div class="dropdown-menu" id="dropdown-menu">
+					<div class="location-search">
+						<input type="text" placeholder="Search Location" id="location-search" data-block-id="<?php echo esc_attr( $block_id ); ?>" />
+					</div>
+					<div class="location-list" id="location-list">
+						<?php
+						// Get unique locations from trips
+						$locations = array_unique(array_filter(array_map(function($trip) {
+							return isset($trip['location']) ? $trip['location'] : '';
+						}, $trips)));
+						sort($locations);
+
+						foreach ($locations as $location) {
+							if (!empty($location)) {
+								$location_id = sanitize_title($location);
+								echo '<div class="location-item" data-location="' . esc_attr($location) . '" data-block-id="' . esc_attr($block_id) . '">';
+								echo '<div class="checkmark" id="check-' . esc_attr($location_id) . '"></div>';
+								echo '<div class="location-name">' . esc_html($location) . '</div>';
+								echo '</div>';
+							}
+						}
+						?>
+					</div>
+				</div>
+			</div>
+		</div>
+		<?php endif; ?>
 
 		<div class="wetravel-trips-container <?php echo esc_attr( $display_type ); ?>-view"
 			id="trips-container-<?php echo esc_attr( $block_id ); ?>"
@@ -644,3 +710,21 @@ function wtwidget_enqueue_trips_scripts() {
 	);
 }
 add_action( 'wp_enqueue_scripts', 'wtwidget_enqueue_trips_scripts' );
+
+/**
+ * Convert hex color to RGB values
+ *
+ * @param string $hex_color The hex color code.
+ * @return string RGB values separated by commas.
+ */
+function wtwidget_hex_to_rgb($hex_color) {
+    // Remove # if present
+    $hex_color = ltrim($hex_color, '#');
+
+    // Convert to RGB
+    $r = hexdec(substr($hex_color, 0, 2));
+    $g = hexdec(substr($hex_color, 2, 2));
+    $b = hexdec(substr($hex_color, 4, 2));
+
+    return "$r, $g, $b";
+}

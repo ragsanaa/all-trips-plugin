@@ -19,6 +19,7 @@
     const tripType = $("#trip_type").val();
     const itemsPerPage = $("#items_per_page").val() || 10;
     const itemsPerRow = $("#items_per_row").val() || 3;
+    const searchVisibility = $("#search_visibility").is(":checked");
 
     // Create container based on display type
     let previewHtml = "";
@@ -75,10 +76,43 @@
       `;
     }
 
+    // Create pagination preview
+    function createPaginationPreview(buttonColor) {
+      return `
+        <div class="preview-pagination">
+          <div class="preview-pagination-item">«</div>
+          <div class="preview-pagination-item">‹</div>
+          <div class="preview-pagination-item active">1</div>
+          <div class="preview-pagination-item">2</div>
+          <div class="preview-pagination-item">3</div>
+          <div class="preview-pagination-item">...</div>
+          <div class="preview-pagination-item">10</div>
+          <div class="preview-pagination-item">›</div>
+          <div class="preview-pagination-item">»</div>
+        </div>
+      `;
+    }
+
+    // Create search bar preview
+    function createSearchBarPreview(buttonColor) {
+      return `
+        <div class="preview-search-filter">
+          <div class="preview-search-filter-container">
+            <input type="text" class="preview-search-input" placeholder="Search trips by name..." disabled />
+            <button type="button" class="preview-location-button" style="background-color: ${buttonColor}; border-color: ${buttonColor}; color: white;">
+              <span>Select locations</span>
+              <span class="preview-dropdown-arrow">▲</span>
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
     // Generate preview based on display type
     if (displayType === "grid") {
       previewHtml = `
         <h4>Grid Layout Preview</h4>
+        ${searchVisibility ? createSearchBarPreview(buttonColor) : ""}
         <div class="${containerClass}" style="grid-template-columns: repeat(${itemsPerRow}, 1fr);">
           ${createTripItem(1, displayType)}
           ${createTripItem(2, displayType)}
@@ -110,6 +144,7 @@
       // Vertical layout
       previewHtml = `
         <h4>Vertical Layout Preview</h4>
+        ${searchVisibility ? createSearchBarPreview(buttonColor) : ""}
         <div class="${containerClass}">
           ${createTripItem(1, displayType)}
           ${createTripItem(2, displayType)}
@@ -307,6 +342,53 @@
           justify-content: space-between;
           align-items: end;
         }
+
+        /* Search filter styles */
+        .preview-search-filter {
+          margin-bottom: 20px;
+        }
+
+        .preview-search-filter-container {
+          display: flex;
+          gap: 10px;
+          margin-bottom: 10px;
+        }
+
+        .preview-search-input {
+          flex: 1;
+          padding: 8px 12px;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          font-size: 14px;
+          background-color: #f5f5f5;
+          cursor: not-allowed;
+        }
+
+        .preview-search-input::placeholder {
+          color: #888;
+        }
+
+        .preview-location-button {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 8px 12px;
+          border: 1px solid;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 14px;
+          transition: all 0.3s ease;
+        }
+
+        .preview-location-button:hover {
+          opacity: 0.9;
+        }
+
+        .preview-dropdown-arrow {
+          font-size: 10px;
+          transform: rotate(180deg);
+          color: white;
+        }
       </style>
     `);
 
@@ -316,23 +398,6 @@
         "<p>Shortcode will be generated after saving.</p>"
       );
     }
-  }
-
-  // Create pagination preview
-  function createPaginationPreview(buttonColor) {
-    return `
-      <div class="preview-pagination">
-        <div class="preview-pagination-item">«</div>
-        <div class="preview-pagination-item">‹</div>
-        <div class="preview-pagination-item active">1</div>
-        <div class="preview-pagination-item">2</div>
-        <div class="preview-pagination-item">3</div>
-        <div class="preview-pagination-item">...</div>
-        <div class="preview-pagination-item">10</div>
-        <div class="preview-pagination-item">›</div>
-        <div class="preview-pagination-item">»</div>
-      </div>
-    `;
   }
 
   // Copy shortcode to clipboard
@@ -386,7 +451,7 @@
 
     // Update preview when form fields change
     $(
-      "#display_type, #button_type, #button_text, #button_color, #trip_type, #items_per_page, #items_per_row"
+      "#display_type, #button_type, #button_text, #button_color, #trip_type, #items_per_page, #items_per_row, #search_visibility"
     ).on("change input", function () {
       // Force immediate update when any field changes
       setTimeout(updatePreview, 0);

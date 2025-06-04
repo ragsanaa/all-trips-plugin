@@ -248,3 +248,78 @@ function wtwidget_get_currency_symbol( $currency_code ) {
 
 	return isset( $currencies[ $currency_code ] ) ? $currencies[ $currency_code ] : $currency_code;
 }
+
+/**
+ * Build WeTravel API URL with parameters
+ *
+ * @param string $env Environment URL.
+ * @param string $slug WeTravel slug.
+ * @param array  $params Additional query parameters.
+ * @return string Complete API URL.
+ */
+function wtwidget_build_api_url($env, $slug, $params = array()) {
+    $api_url = rtrim($env, '/') . '/api/v2/embeds/all_trips';
+    $query_params = array_merge(array('slug' => $slug), $params);
+
+    // Format dates if they exist
+    if (!empty($params['date_start'])) {
+        $date_obj = date_create($params['date_start']);
+        if ($date_obj) {
+            $query_params['from_date'] = date_format($date_obj, 'Y-m-d');
+        }
+    }
+
+    if (!empty($params['date_end'])) {
+        $date_obj = date_create($params['date_end']);
+        if ($date_obj) {
+            $query_params['to_date'] = date_format($date_obj, 'Y-m-d');
+        }
+    }
+
+    // Set recurring/one-time parameters
+    if (isset($params['trip_type']) && 'one-time' === $params['trip_type']) {
+        $query_params['all_year'] = 'false';
+    }
+
+    return add_query_arg($query_params, $api_url);
+}
+
+/**
+ * Get unique trip locations from trips data
+ *
+ * @param array<int|string, mixed> $trips Array of trip data.
+ * @return array<string> Array of unique locations.
+ */
+function wtwidget_get_trip_locations(array $trips): array {
+    // Extract all locations using array_column and filter out empty ones
+    $locations = array_filter(
+        array_column($trips, 'location'),
+        function(mixed $location): bool {
+            return !empty($location) && is_string($location);
+        }
+    );
+
+    // Get unique values and sort them
+    $unique_locations = array_unique($locations);
+    sort($unique_locations, SORT_STRING);
+
+    return $unique_locations;
+}
+
+/**
+ * Fetch trips data from WeTravel API
+ *
+ * @param string $env Environment URL.
+ * @param string $slug WeTravel slug.
+ * @param array  $params Additional query parameters.
+ * @return array Array of trip data.
+ */
+function wtwidget_fetch_trips_data($env, $slug, $params = array()) {
+    $api_url = wtwidget_build_api_url($env, $slug, $params);
+
+    // Use the existing get_trips_data function
+    $trips = wtwidget_get_trips_data($api_url, $env);
+
+    // Return empty array if the result is false
+    return $trips !== false ? $trips : array();
+}

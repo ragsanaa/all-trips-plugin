@@ -104,6 +104,7 @@ function wtwidget_enqueue_block_assets() {
 		'itemsPerSlide'  => (int) get_option( 'wetravel_trips_items_per_slide', 3 ),
 		'loadMoreText'   => get_option( 'wetravel_trips_load_more_text', 'Load More' ),
 		'designs'        => get_option( 'wetravel_trips_designs', array() ),
+		'searchVisibility' => (bool) get_option( 'wetravel_trips_search_visibility', false ),
 	);
 
 	// Localize the script with settings.

@@ -78,6 +78,8 @@ function wtwidget_handle_form_submission() {
 		'dateRangeEnd'   => $date_range_end,
 		'created'        => $current_design['created'],
 		'modified'       => time(),
+		'locations'      => isset($_POST['trip_location']) ? array_map('sanitize_text_field', wp_unslash($_POST['trip_location'])) : array(),
+		'searchVisibility' => isset($_POST['search_visibility']) ? (bool) $_POST['search_visibility'] : false,
 	);
 
 	// Generate a new ID if we're not editing
@@ -226,6 +228,34 @@ function wtwidget_trip_create_design_page() {
 						</div>
 
 						<div class="wetravel-trips-form-field">
+							<label for="trip_location">Trip Locations</label>
+							<?php
+								$env = get_option('wetravel_trips_env', 'https://pre.wetravel.to');
+								$slug = get_option('wetravel_trips_slug', '');
+
+								// Get trips data using new function
+								$trips = wtwidget_fetch_trips_data($env, $slug, array(
+									'trip_type' => isset($design['tripType']) ? $design['tripType'] : 'all'
+								));
+
+								// Get unique locations
+								$locations = wtwidget_get_trip_locations($trips);
+
+								// Get selected locations from design
+								$selected_locations = isset($design['locations']) ? (array)$design['locations'] : array();
+							?>
+							<select id="trip_location" name="trip_location[]" multiple="multiple" class="wetravel-select2">
+								<?php foreach ($locations as $location) : ?>
+									<option value="<?php echo esc_attr($location); ?>"
+										<?php selected(in_array($location, $selected_locations), true); ?>>
+										<?php echo esc_html($location); ?>
+									</option>
+								<?php endforeach; ?>
+							</select>
+							<p class="description">Select one or more locations. Leave empty to show all locations.</p>
+						</div>
+
+						<div class="wetravel-trips-form-field">
 							<label for="trip_type">Trip Type</label>
 							<select id="trip_type" name="trip_type">
 								<option value="all" <?php selected( isset( $design['tripType'] ) ? $design['tripType'] : 'all', 'all' ); ?>>All Trips</option>
@@ -266,6 +296,15 @@ function wtwidget_trip_create_design_page() {
 							<input type="text" id="button_color" name="button_color" class="color-picker" value="<?php echo esc_attr( $design['buttonColor'] ); ?>">
 						</div>
 
+						<div class="wetravel-trips-form-field">
+							<label for="search_visibility">Display Search Bar</label>
+							<label class="toogle-switch">
+								<input type="checkbox" id="search_visibility" name="search_visibility" value="1" <?php echo isset( $design['searchVisibility'] ) ? checked( $design['searchVisibility'], 1, false ) : ''; ?>>
+								<span class="toogle-switch-slider"></span>
+							</label>
+							<p class="description">This is not available for carousel display type.</p>
+						</div>
+
 						<div class="wetravel-trips-form-actions">
 							<input type="submit" name="save_design" class="button button-primary" value="Save Widget">
 							<a href="?page=wetravel-trips-design-library" class="button button-secondary">Cancel</a>
@@ -301,5 +340,53 @@ function wtwidget_trip_create_design_page() {
 			</div>
 		</div>
 	</div>
+	<?php
+	// Enqueue Select2 library
+	wp_enqueue_style('select2', plugins_url('select2.min.css', __FILE__));
+	wp_enqueue_script('select2', plugins_url('select2.min.js', __FILE__), array('jquery'), '4.1.0', true);
+
+	// Initialize Select2
+	?>
+	<script type="text/javascript">
+		jQuery(document).ready(function($) {
+			$('.wetravel-select2').select2({
+				placeholder: 'Select locations',
+				allowClear: true,
+				width: '100%'
+			});
+
+			// Add custom styles for Select2
+			$('<style>')
+				.prop('type', 'text/css')
+				.html(`
+					.select2-container--default .select2-selection--multiple {
+						border: 1px solid #8c8f94;
+						border-radius: 4px;
+						min-height: 35px;
+						max-height: 80px;
+						overflow-y: auto;
+					}
+					.select2-container--default.select2-container--focus .select2-selection--multiple {
+						border-color: #2271b1;
+						box-shadow: 0 0 0 1px #2271b1;
+						outline: 2px solid transparent;
+					}
+					.select2-container--default .select2-results>.select2-results__options {
+						max-height: 200px;
+						overflow-y: auto;
+					}
+					.select2-container--default .select2-selection--multiple .select2-selection__rendered {
+						display: flex;
+						flex-wrap: wrap;
+						gap: 4px;
+						padding: 4px;
+					}
+					.select2-container--default .select2-selection--multiple .select2-selection__choice {
+						margin: 0;
+					}
+				`)
+				.appendTo('head');
+		});
+	</script>
 	<?php
 }

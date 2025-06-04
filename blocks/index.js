@@ -62,6 +62,10 @@
         type: "number",
         default: 3,
       },
+      searchVisibility: {
+        type: "boolean",
+        default: false,
+      },
       // Removed loadMoreText attribute as it's no longer needed
     },
 
@@ -77,6 +81,7 @@
         itemsPerPage,
         itemsPerRow,
         itemsPerSlide,
+        searchVisibility,
       } = attributes;
 
       // Set default values from PHP settings on first load only
@@ -106,6 +111,8 @@
           updatedAttributes.itemsPerRow = parseInt(settings.itemsPerRow);
         if (attributes.itemsPerSlide === 3 && settings.itemsPerSlide)
           updatedAttributes.itemsPerSlide = parseInt(settings.itemsPerSlide);
+        if (attributes.searchVisibility === false && settings.searchVisibility)
+          updatedAttributes.searchVisibility = settings.searchVisibility;
 
         // Properly load designs
         if (settings.designs) {
@@ -132,6 +139,7 @@
             buttonType: design.buttonType || attributes.buttonType,
             buttonText: design.buttonText || buttonText,
             tripType: design.tripType || "all",
+            searchVisibility: design.searchVisibility || searchVisibility,
           };
 
           setAttributes(designAttributes);
@@ -266,7 +274,6 @@
       };
 
       // Generate preview based on display type
-      // Generate preview based on display type
       const renderPreview = () => {
         // Get current design details
         const currentDesign =
@@ -285,6 +292,55 @@
         const containerWithCSSVars = {
           ...containerStyle,
           "--button-color": buttonColor,
+        };
+
+        // Create search bar component
+        const renderSearchBar = () => {
+          const searchContainerStyle = {
+            margin: "0 20px 20px 20px",
+            display: "flex",
+            gap: "10px",
+            alignItems: "stretch",
+          };
+
+          const searchInputStyle = {
+            flex: 1,
+            padding: "12px 15px",
+            borderRadius: "6px",
+            border: "1px solid #cbd5e1",
+            fontSize: "16px",
+            outline: "none",
+            height: "48px",
+          };
+
+          const searchButtonStyle = {
+            ...buttonStyle,
+            padding: "12px 20px",
+            minWidth: "180px",
+            height: "48px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          };
+
+          return createElement(
+            "div",
+            {
+              className: "wetravel-search-container",
+              style: searchContainerStyle,
+            },
+            createElement("input", {
+              type: "text",
+              placeholder: "Search trips by name...",
+              style: searchInputStyle,
+              className: "wetravel-search-input",
+            }),
+            createElement(
+              "button",
+              { style: searchButtonStyle, className: "wetravel-search-button" },
+              "Select Location ▲"
+            )
+          );
         };
 
         // Create common button styles based on current button color
@@ -754,6 +810,7 @@
                 {},
                 `Widget: ${currentDesign.name || "Default"} (Grid View)`
               ),
+              searchVisibility && renderSearchBar(),
               createElement(
                 "div",
                 {
@@ -770,7 +827,33 @@
               displayType !== "carousel" && renderPagination()
             )
           );
-        } else if (displayType === "carousel") {
+        } else if (displayType === "vertical") {
+          // Vertical view
+          return createElement(
+            Fragment,
+            {},
+            createElement(
+              "div",
+              { style: containerWithCSSVars },
+              createElement(
+                "h2",
+                {},
+                `Widget: ${currentDesign.name || "Default"} (Vertical View)`
+              ),
+              searchVisibility && renderSearchBar(),
+              createElement(
+                "div",
+                {
+                  className: "wetravel-trips-container vertical-view",
+                  style: { margin: "0px 20px" },
+                },
+                ...tripItems
+              ),
+              displayType !== "carousel" && renderPagination()
+            )
+          );
+        } else {
+          // Carousel view (no search bar)
           return createElement(
             Fragment,
             {},
@@ -895,30 +978,6 @@
                   })
                 )
               )
-            )
-          );
-        } else {
-          // Vertical view (default)
-          return createElement(
-            Fragment,
-            {},
-            createElement(
-              "div",
-              { style: containerWithCSSVars },
-              createElement(
-                "h2",
-                {},
-                `Widget: ${currentDesign.name || "Default"} (Vertical View)`
-              ),
-              createElement(
-                "div",
-                {
-                  className: "wetravel-trips-container vertical-view",
-                  style: { margin: "0px 20px" },
-                },
-                ...tripItems
-              ),
-              displayType !== "carousel" && renderPagination()
             )
           );
         }
