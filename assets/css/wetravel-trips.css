@@ -395,8 +395,12 @@ a {
 
 /* No trips message */
 .no-trips {
-  padding: 20px;
   text-align: center;
+  padding: 40px 20px;
+  color: #666;
+  font-size: 16px;
+  font-style: italic;
+  grid-column: 1 / -1; /* Make it span all columns in grid view */
   background-color: #fff;
   border-radius: 8px;
   margin: 20px 0;
@@ -670,13 +674,4 @@ a {
 /* Filter States */
 .trip-item.filtered {
   display: none !important;
-}
-
-/* No trips message styling */
-.no-trips {
-  text-align: center;
-  padding: 40px 20px;
-  color: #666;
-  font-size: 16px;
-  font-style: italic;
 }

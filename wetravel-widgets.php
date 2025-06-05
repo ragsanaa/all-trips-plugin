@@ -17,6 +17,30 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// Check PHP Version
+if ( version_compare( PHP_VERSION, '7.0', '<' ) ) {
+	add_action( 'admin_notices', function() {
+		?>
+		<div class="notice notice-error">
+			<p><?php esc_html_e( 'WeTravel Widgets plugin requires PHP version 7.0 or higher. Please upgrade your PHP version or contact your hosting provider.', 'wetravel-widgets' ); ?></p>
+		</div>
+		<?php
+	});
+	return;
+}
+
+// Check WordPress Version
+if ( version_compare( get_bloginfo( 'version' ), '5.0', '<' ) ) {
+	add_action( 'admin_notices', function() {
+		?>
+		<div class="notice notice-error">
+			<p><?php esc_html_e( 'WeTravel Widgets plugin requires WordPress version 5.0 or higher. Please upgrade WordPress to continue using this plugin.', 'wetravel-widgets' ); ?></p>
+		</div>
+		<?php
+	});
+	return;
+}
+
 // Define plugin path.
 if ( ! defined( 'WETRAVEL_WIDGETS_PLUGIN_FILE' ) ) {
 	define( 'WETRAVEL_WIDGETS_PLUGIN_FILE', __FILE__ );

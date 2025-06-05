@@ -264,10 +264,13 @@ function wtwidget_trips_block_render( $attributes ) {
 					<div class="location-list" id="location-list">
 						<?php
 						// Get unique locations from trips
-						$locations = array_unique(array_filter(array_map(function($trip) {
-							return isset($trip['location']) ? $trip['location'] : '';
-						}, $trips)));
-						sort($locations);
+						$locations = array();
+						if (is_array($trips)) {
+							$locations = array_unique(array_filter(array_map(function($trip) {
+								return isset($trip['location']) ? $trip['location'] : '';
+							}, $trips)));
+							sort($locations);
+						}
 
 						foreach ($locations as $location) {
 							if (!empty($location)) {

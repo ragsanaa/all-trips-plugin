@@ -213,14 +213,40 @@ function wtwidget_enhance_trips_with_details( $trips, $env ) {
  * @param string $currency_code The currency code.
  * @return string The currency symbol.
  */
-function wtwidget_get_currency_symbol( $currency_code ) {
-	// Reference: https://github.com/bengourley/currency-symbol-map/blob/master/map.js.
-	// use currencies json file to get the symbols.
-	$currencies_file = __DIR__ . '/../assets/constant/currencies.json';
-	$currencies_json = file_exists( $currencies_file ) ? file_get_contents( $currencies_file ) : '{}';
-	$currencies      = json_decode( $currencies_json, true );
+function wtwidget_get_currency_symbol($currency_code) {
+	// Default currency symbols for common currencies
+	$default_symbols = array(
+		'USD' => '$',
+		'EUR' => '€',
+		'GBP' => '£',
+		'JPY' => '¥',
+		'AUD' => 'A$',
+		'CAD' => 'C$',
+		'CHF' => 'Fr',
+		'CNY' => '¥',
+		'INR' => '₹',
+		'NZD' => 'NZ$'
+	);
 
-	return isset( $currencies[ $currency_code ] ) ? $currencies[ $currency_code ] : $currency_code;
+	// First try to get from default symbols
+	if (isset($default_symbols[$currency_code])) {
+		return $default_symbols[$currency_code];
+	}
+
+	// Then try to get from JSON file
+	$currencies_file = __DIR__ . '/../assets/constant/currencies.json';
+	if (file_exists($currencies_file)) {
+		$currencies_json = file_get_contents($currencies_file);
+		if ($currencies_json !== false) {
+			$currencies = json_decode($currencies_json, true);
+			if (isset($currencies[$currency_code])) {
+				return $currencies[$currency_code];
+			}
+		}
+	}
+
+	// If all else fails, return the currency code itself
+	return $currency_code;
 }
 
 /**

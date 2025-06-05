@@ -241,7 +241,10 @@ function wtwidget_trip_create_design_page() {
 								$trips = wtwidget_get_trips_data($api_url);
 
 								// Get unique locations
-								$locations = wtwidget_get_trip_locations($trips);
+								$locations = array();
+								if (is_array($trips)) {
+									$locations = wtwidget_get_trip_locations($trips);
+								}
 
 								// Get selected locations from design
 								$selected_locations = isset($design['locations']) ? (array)$design['locations'] : array();
