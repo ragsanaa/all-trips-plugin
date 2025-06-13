@@ -106,6 +106,11 @@ function wtwidget_trips_block_render( $attributes ) {
 	// Get trips data
 	$trips = wtwidget_get_trips_data($api_url);
 
+	// Handle case when trips data is false (error occurred)
+	if (false === $trips) {
+		$trips = array(); // Set to empty array to show "No trips found" message
+	}
+
 	// Filter trips by location if locations are specified
 	if (!empty($locations)) {
 		$trips = array_filter($trips, function($trip) use ($locations) {
@@ -353,33 +358,37 @@ function wtwidget_trips_block_render( $attributes ) {
 			<?php else : ?>
 
 				<?php if ( 'carousel' === $display_type ) : ?>
-					<div class="swiper">
-						<div class="swiper-wrapper">
-							<?php foreach ( $trips as $trip ) : ?>
-								<div class="swiper-slide">
-									<?php
-									// The output contains trusted, controlled HTML (e.g., iframe, div, etc.)
-									// Escaping it with esc_html() breaks embed functionality
-									// So we sanitize with wp_kses_post() to allow only safe HTML
-									echo wp_kses(wtwidget_render_trip_item(
-										$trip,
-										array(
-											'env'          => $env,
-											'wetravelUserID' => $wetravel_trips_user_id,
-											'displayType'  => $display_type,
-											'buttonType'   => $button_type,
-											'buttonText'   => $button_text,
-											'buttonColor'  => $button_color,
-											'itemsPerPage' => $items_per_page,
-										)
-									), $allowed_html_tags );
-									?>
-								</div>
-							<?php endforeach; ?>
-						</div>
-						<div class="swiper-pagination"></div>
-						<div class="swiper-button-next"></div>
+					<div class="swiper-container-wrapper">
 						<div class="swiper-button-prev"></div>
+
+						<div class="swiper">
+							<div class="swiper-wrapper">
+								<?php foreach ( $trips as $trip ) : ?>
+									<div class="swiper-slide">
+										<?php
+										// The output contains trusted, controlled HTML (e.g., iframe, div, etc.)
+										// Escaping it with esc_html() breaks embed functionality
+										// So we sanitize with wp_kses_post() to allow only safe HTML
+										echo wp_kses(wtwidget_render_trip_item(
+											$trip,
+											array(
+												'env'          => $env,
+												'wetravelUserID' => $wetravel_trips_user_id,
+												'displayType'  => $display_type,
+												'buttonType'   => $button_type,
+												'buttonText'   => $button_text,
+												'buttonColor'  => $button_color,
+												'itemsPerPage' => $items_per_page,
+											)
+										), $allowed_html_tags );
+										?>
+									</div>
+								<?php endforeach; ?>
+							</div>
+							<div class="swiper-pagination"></div>
+						</div>
+
+						<div class="swiper-button-next"></div>
 					</div>
 				<?php else : ?>
 					<?php
@@ -436,6 +445,17 @@ function wtwidget_trips_block_render( $attributes ) {
 		);
 		?>
 	<?php endif; ?>
+
+	<?php
+	// Enqueue trip link handler script
+	wp_enqueue_script(
+		'wetravel-trip-link-handler',
+		plugins_url( 'assets/js/trip-link-handler.js', dirname( __FILE__ ) ),
+		array( 'jquery' ),
+		filemtime( plugin_dir_path( dirname( __FILE__ ) ) . 'assets/js/trip-link-handler.js' ),
+		true
+	);
+	?>
 	<?php
 
 	// Script to handle loading spinner visibility.

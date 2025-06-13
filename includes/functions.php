@@ -145,6 +145,27 @@ function wtwidget_get_cdn_url( $env ) {
 			return 'https://pre.cdn.wetravel.to';
 
 		default:
+			// For any subdomain of wetravel.com, use the main CDN
+			if (strpos($clean_env, 'wetravel.com') !== false) {
+				return 'https://cdn.wetravel.com';
+			}
+			// For any subdomain of demo.wetravel.to, use demo CDN
+			if (strpos($clean_env, 'demo.wetravel.to') !== false) {
+				return 'https://demo.cdn.wetravel.com';
+			}
+			// For any subdomain of pre.wetravel.to, use pre CDN
+			if (strpos($clean_env, 'pre.wetravel.to') !== false) {
+				return 'https://pre.cdn.wetravel.to';
+			}
+			// For staging environments (stage.wetravel.to), use staging CDN
+			if (strpos($clean_env, 'stage.wetravel.to') !== false) {
+				$domain_parts = explode('.', $clean_env);
+				if (count($domain_parts) >= 3) {
+					$subdomain = $domain_parts[0];
+					return "https://{$subdomain}.cdn.wetravel.to";
+				}
+			}
+
 			// For custom domains, follow the pattern from the embed script.
 			$domain_parts = explode( '.', $clean_env );
 			if ( count( $domain_parts ) >= 2 ) {

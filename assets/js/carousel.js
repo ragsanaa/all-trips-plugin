@@ -23,8 +23,9 @@
 
       // Initialize Swiper
       const swiper = new Swiper(swiperElement, {
+        init: false,
+        spaceBetween: 20,
         slidesPerView: 1,
-        spaceBetween: 20, // Increased space between slides
         loop: false,
         watchOverflow: true,
         loopAdditionalSlides: 0,
@@ -37,8 +38,8 @@
           clickable: true,
         },
         navigation: {
-          nextEl: swiperElement.querySelector(".swiper-button-next"),
-          prevEl: swiperElement.querySelector(".swiper-button-prev"),
+          nextEl: container.querySelector(".swiper-button-next"),
+          prevEl: container.querySelector(".swiper-button-prev"),
         },
         breakpoints: {
           // when window width is >= 480px
@@ -51,20 +52,20 @@
             slidesPerView: 2,
             spaceBetween: 20,
           },
-          // when window width is >= 960px
-          960: { slidesPerView: 3, spaceBetween: 20 },
-          // when window width is >= 1024px
-          1024: { slidesPerView: itemsPerSlide, spaceBetween: 20 },
+          960: {
+            slidesPerView: 3,
+            spaceBetween: 20,
+          },
+          1024: {
+            slidesPerView: itemsPerSlide,
+            spaceBetween: 20,
+          },
         },
         on: {
           init: function () {
             // Apply custom color to navigation buttons
-            const nextButton = swiperElement.querySelector(
-              ".swiper-button-next"
-            );
-            const prevButton = swiperElement.querySelector(
-              ".swiper-button-prev"
-            );
+            const nextButton = container.querySelector(".swiper-button-next");
+            const prevButton = container.querySelector(".swiper-button-prev");
             if (nextButton) nextButton.style.backgroundColor = buttonColor;
             if (prevButton) prevButton.style.backgroundColor = buttonColor;
 
@@ -87,10 +88,32 @@
         }
       }
 
-      // Manually trigger a resize event to ensure Swiper updates properly
-      setTimeout(function () {
-        window.dispatchEvent(new Event("resize"));
-      }, 500);
+      // Initialize swiper
+      swiper.init();
+
+      // Update swiper when all images are loaded
+      const images = swiperElement.getElementsByTagName("img");
+      let loadedImages = 0;
+
+      function checkAllImagesLoaded() {
+        loadedImages++;
+        if (loadedImages === images.length) {
+          swiper.update();
+        }
+      }
+
+      Array.from(images).forEach((img) => {
+        if (img.complete) {
+          checkAllImagesLoaded();
+        } else {
+          img.addEventListener("load", checkAllImagesLoaded);
+        }
+      });
+
+      // Update on window resize
+      window.addEventListener("resize", () => {
+        swiper.update();
+      });
     }
   );
 

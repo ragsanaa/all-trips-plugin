@@ -49,9 +49,9 @@ function wtwidget_fetch_trips_handler() {
 	// Get trips data with caching and enhancement
 	$trips = wtwidget_get_trips_data($api_url);
 
+	// Handle case when trips data is false (error occurred)
 	if (false === $trips) {
-		wp_send_json_error('Failed to fetch trips data');
-		return;
+		$trips = array(); // Set to empty array to show "No trips found" message
 	}
 
 	if ( 'recurring' === $trip_type ) {

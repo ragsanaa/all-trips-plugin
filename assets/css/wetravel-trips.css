@@ -211,6 +211,10 @@ a {
   width: 100%;
   background-color: unset;
   color: var(--button-color);
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+  cursor: pointer;
 }
 
 .wetravel-trips-container.grid-view .trip-price-button {
@@ -253,33 +257,50 @@ a {
   margin-bottom: 10px;
 }
 
-/* Carousel view styles */
-
-/* Style for swiper carousel similar to image */
-.wetravel-trips-container.carousel-view .swiper {
-  padding: 0 60px; /* Increase from 40px to 60px to create more space */
-  position: relative;
-  overflow: visible;
+/* Style for swiper carousel */
+.wetravel-trips-container.carousel-view {
+  margin: 0;
 }
 
-/* Position arrows on the sides outside of the carousel */
+/* Carousel view styles */
+.wetravel-trips-container.carousel-view .swiper-container-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+}
+
+.wetravel-trips-container.carousel-view .swiper {
+  flex: 1;
+  width: 100%;
+}
+
+.wetravel-trips-container.carousel-view .swiper-wrapper {
+  align-items: stretch;
+}
+
+.wetravel-trips-container.carousel-view .swiper-slide {
+  height: auto;
+}
+
 .wetravel-trips-container.carousel-view .swiper-button-next,
 .wetravel-trips-container.carousel-view .swiper-button-prev {
-  top: 50%;
-  transform: translateY(-50%);
+  position: static;
+  margin: 0;
   width: 40px;
   height: 40px;
   background-color: var(--button-color);
   border-radius: 50%;
   color: #fff;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
 }
 
-.wetravel-trips-container.carousel-view .swiper-button-next {
-  right: 10px; /* Move 10px to the right from the edge */
-}
-
-.wetravel-trips-container.carousel-view .swiper-button-prev {
-  left: 10px; /* Move 10px to the left from the edge */
+.wetravel-trips-container.carousel-view .swiper-button-next:hover,
+.wetravel-trips-container.carousel-view .swiper-button-prev:hover {
+  background-color: var(--button-color);
+  opacity: 0.8;
+  transform: scale(1.1);
 }
 
 /* Style the arrow icons */
@@ -295,24 +316,10 @@ a {
   margin-top: 20px;
 }
 
-.wetravel-trips-container.carousel-view .swiper-slide {
-  visibility: hidden; /* Hide all slides by default */
-  height: auto;
-}
-
-.wetravel-trips-container.carousel-view .swiper-slide-active,
-.wetravel-trips-container.carousel-view .swiper-slide-visible {
-  visibility: visible; /* Only show active/visible slides */
-}
-
 .wetravel-trips-container.carousel-view .swiper-pagination-bullet {
   width: 12px;
   height: 12px;
   margin: 0 5px;
-}
-
-.wetravel-trips-container.carousel-view .swiper-wrapper {
-  margin: 0 auto;
 }
 
 .wetravel-trips-container.carousel-view .swiper-pagination-bullet-active {
@@ -327,6 +334,7 @@ a {
   flex-direction: column;
   gap: 24px;
   cursor: pointer;
+  margin: 10px 0; /* Add margin to create space for hover effect */
 }
 
 .wetravel-trips-container.carousel-view .trip-item:hover {
@@ -412,6 +420,16 @@ a {
   .wetravel-trips-container.grid-view {
     grid-template-columns: repeat(2, 1fr);
   }
+
+  .wetravel-trips-container.carousel-view .swiper-container-wrapper {
+    gap: 15px;
+  }
+
+  .wetravel-trips-container.carousel-view .swiper-button-next,
+  .wetravel-trips-container.carousel-view .swiper-button-prev {
+    width: 45px;
+    height: 45px;
+  }
 }
 
 @media screen and (max-width: 640px) {
@@ -439,6 +457,21 @@ a {
 
   .trip-item img {
     max-height: 100px;
+  }
+
+  .wetravel-trips-container.carousel-view .swiper-container-wrapper {
+    gap: 10px;
+  }
+
+  .wetravel-trips-container.carousel-view .swiper-button-next,
+  .wetravel-trips-container.carousel-view .swiper-button-prev {
+    width: 40px;
+    height: 40px;
+  }
+
+  .wetravel-trips-container.carousel-view .swiper-button-next::after,
+  .wetravel-trips-container.carousel-view .swiper-button-prev::after {
+    font-size: 16px;
   }
 }
 

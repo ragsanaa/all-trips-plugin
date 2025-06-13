@@ -161,12 +161,28 @@ function wtwidget_register_trips_ajax_handlers() {
 			// Get trips data
 			$trips = wtwidget_get_trips_data($api_url);
 
+			// Handle case when trips data is false (error occurred)
+			if (false === $trips) {
+				$trips = array(); // Set to empty array to show "No trips found" message
+			}
+
 			if ( 'recurring' === $trip_type ) {
 				// Filter trips where 'all_year' is true.
 				$trips = array_filter(
 					$trips,
 					function ( $trip ) {
 						return ! empty( $trip['all_year'] ) && true === $trip['all_year'];
+					}
+				);
+			}
+
+			// Filter trips by location if design location is specified
+			if ($design && !empty($design['location'])) {
+				$design_location = $design['location'];
+				$trips = array_filter(
+					$trips,
+					function($trip) use ($design_location) {
+						return !empty($trip['location']) && strtolower($trip['location']) === strtolower($design_location);
 					}
 				);
 			}
