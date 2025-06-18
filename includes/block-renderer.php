@@ -358,6 +358,7 @@ function wtwidget_trips_block_render( $attributes ) {
 			<?php else : ?>
 
 				<?php if ( 'carousel' === $display_type ) : ?>
+					<div class="wetravel-carousel-wrapper">
 					<div class="swiper-container-wrapper">
 						<div class="swiper-button-prev"></div>
 
@@ -389,6 +390,7 @@ function wtwidget_trips_block_render( $attributes ) {
 						</div>
 
 						<div class="swiper-button-next"></div>
+					</div>
 					</div>
 				<?php else : ?>
 					<?php
