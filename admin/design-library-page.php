@@ -30,11 +30,19 @@ function wetravel_trips_design_library_page() {
 
 	// Get all saved designs.
 	$designs = get_option( 'wetravel_trips_designs', array() );
+
+	// Redirect to settings page if there are no widget designs
+	if ( empty( $designs ) ) {
+		wp_safe_redirect( admin_url( 'admin.php?page=wetravel-trips-settings' ) );
+		exit;
+	}
+
 	?>
 	<div class="wrap">
 		<h1>WeTravel Widgets Plugin - Widget Library</h1>
 
 		<div class="nav-tab-wrapper">
+			<a href="?page=wetravel-trips-instructions" class="nav-tab">Instructions</a>
 			<a href="?page=wetravel-trips-settings" class="nav-tab">Settings</a>
 			<a href="?page=wetravel-trips-design-library" class="nav-tab nav-tab-active">Widget Library</a>
 			<a href="?page=wetravel-trips-create-design" class="nav-tab">Create Widget</a>

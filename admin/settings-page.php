@@ -73,9 +73,10 @@ function wetravel_trips_settings_page() {
 	}
 	?>
 	<div class="wrap">
-		<h1>WeTravel Widgets Plugin Settings</h1>
+		<h1>WeTravel Widgets Plugin - Settings</h1>
 
 		<div class="nav-tab-wrapper">
+			<a href="?page=wetravel-trips-instructions" class="nav-tab">Instructions</a>
 			<a href="?page=wetravel-trips-settings" class="nav-tab nav-tab-active">Settings</a>
 			<a href="?page=wetravel-trips-design-library" class="nav-tab">Widget Library</a>
 			<a href="?page=wetravel-trips-create-design" class="nav-tab">Create Widget</a>
@@ -202,6 +203,16 @@ function wetravel_trips_add_admin_menu() {
 		'manage_options',
 		'wetravel-trips-create-design',
 		'wtwidget_trip_create_design_page'
+	);
+
+	// Add instructions submenu.
+	add_submenu_page(
+		'wetravel-trips-design-library',
+		'Instructions',
+		'Instructions',
+		'manage_options',
+		'wetravel-trips-instructions',
+		'wetravel_trips_instructions_page'
 	);
 
 	// Add Settings as submenu.

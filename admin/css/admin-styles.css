@@ -278,3 +278,129 @@ input:focus + .toogle-switch-slider {
 input:checked + .toogle-switch-slider:before {
   transform: translateX(26px);
 }
+
+/* --- WeTravel Instructions Page Tabs & Content --- */
+.wetravel-instructions-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #0073aa;
+  padding-bottom: 10px;
+  margin-top: 24px;
+}
+
+.tab-button {
+  background: #f1f1f1;
+  border: 1px solid #ccd0d4;
+  padding: 10px 15px;
+  cursor: pointer;
+  border-radius: 4px 4px 0 0;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.tab-button:hover {
+  background: #e5e5e5;
+}
+
+.tab-button.active {
+  background: #0073aa;
+  color: white;
+  border-color: #0073aa;
+}
+
+.tab-content {
+  position: relative;
+}
+
+.tab-pane {
+  display: none;
+  animation: fadeIn 0.3s ease-in;
+}
+
+.tab-pane.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.wetravel-instructions-section {
+  margin-bottom: 30px;
+  padding: 20px;
+  background: #fff;
+  border: 1px solid #ccd0d4;
+  border-radius: 4px;
+}
+
+.wetravel-instructions-section h2 {
+  color: #23282d;
+  border-bottom: 2px solid #0073aa;
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+}
+
+.wetravel-instructions-section h3 {
+  color: #0073aa;
+  margin-top: 25px;
+  margin-bottom: 15px;
+}
+
+.wetravel-instructions-section h4 {
+  color: #23282d;
+  margin-top: 20px;
+  margin-bottom: 10px;
+}
+
+.code-example {
+  background: #f1f1f1;
+  padding: 15px;
+  border-left: 4px solid #0073aa;
+  margin: 15px 0;
+}
+
+.code-example code {
+  background: #fff;
+  padding: 5px 8px;
+  border-radius: 3px;
+  font-size: 13px;
+}
+
+.wetravel-instructions-section table {
+  margin: 15px 0;
+}
+
+.wetravel-instructions-section table th {
+  background: #f9f9f9;
+}
+
+.wetravel-instructions-section ul,
+.wetravel-instructions-section ol {
+  margin-left: 20px;
+}
+
+.wetravel-instructions-section li {
+  margin-bottom: 8px;
+}
+
+/* Responsive design for tabs */
+@media (max-width: 768px) {
+  .wetravel-instructions-tabs {
+    flex-direction: column;
+  }
+
+  .tab-button {
+    border-radius: 4px;
+    margin-bottom: 2px;
+  }
+}

@@ -178,12 +178,13 @@ function wtwidget_trip_create_design_page() {
 
 	?>
 	<div class="wrap">
-		<h1><?php echo $editing ? 'Edit Widget' : 'Create New Widget'; ?></h1>
+		<h1>WeTravel Widgets Plugin - <?php echo $editing ? 'Edit Widget' : 'Create Widget'; ?></h1>
 
 		<div class="nav-tab-wrapper">
+			<a href="?page=wetravel-trips-instructions" class="nav-tab">Instructions</a>
 			<a href="?page=wetravel-trips-settings" class="nav-tab">Settings</a>
 			<a href="?page=wetravel-trips-design-library" class="nav-tab">Widget Library</a>
-			<a href="?page=wetravel-trips-create-design" class="nav-tab nav-tab-active">Create Widget</a>
+			<a href="?page=wetravel-trips-create-design" class="nav-tab nav-tab-active"><?php echo $editing ? 'Edit Widget' : 'Create Widget'; ?></a>
 		</div>
 
 		<?php if ( ! empty( $success_message ) ) : ?>

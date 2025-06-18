@@ -228,6 +228,9 @@ require_once WETRAVEL_WIDGETS_PLUGIN_DIR . 'admin/design-library-page.php';
 // Include admin create design page.
 require_once WETRAVEL_WIDGETS_PLUGIN_DIR . 'admin/create-design-page.php';
 
+// Include admin instructions page.
+require_once WETRAVEL_WIDGETS_PLUGIN_DIR . 'admin/instructions-page.php';
+
 /**  Register shortcode. */
 function wtwidget_register_shortcode() {
 	add_shortcode( 'wetravel_trips', 'wtwidget_trips_shortcode' );

@@ -26,9 +26,8 @@
         init: false,
         spaceBetween: 20,
         slidesPerView: 1,
-        loop: false,
+        loop: true,
         watchOverflow: true,
-        loopAdditionalSlides: 0,
         watchSlidesProgress: true,
         slidesOffsetBefore: 0,
         slidesOffsetAfter: 0,
@@ -46,6 +45,7 @@
           480: {
             slidesPerView: 1,
             spaceBetween: 10,
+            navigation: { },
           },
           // when window width is >= 640px
           640: {
