@@ -14,6 +14,21 @@
       // Initialize pagination for this container
       initializePaginationForContainer(container);
     });
+
+    // Listen for filter changes
+    $(document).on(
+      "tripsFiltered",
+      ".wetravel-trips-container",
+      function (event, data) {
+        const container = $(this);
+        if (container.data("display-type") === "carousel") {
+          return;
+        }
+
+        // Reinitialize pagination with filtered data
+        initializePaginationForContainer(container);
+      }
+    );
   });
 
   function initializeAllPagination() {
@@ -33,12 +48,14 @@
       return;
     }
 
-    // Get all trip items
-    const wetravelTrips = container.find(".trip-item");
-    const totalItems = wetravelTrips.length;
+    // Get all visible trip items (not filtered out)
+    const visibleTrips = container.find(".trip-item:not(.filtered)");
+    const totalItems = visibleTrips.length;
 
-    // If we don't have enough items for pagination, bail early
+    // If we don't have enough items for pagination, show all items
     if (totalItems <= itemsPerPage) {
+      visibleTrips.show();
+      $(`#pagination-${blockId}`).hide();
       return;
     }
 
@@ -190,71 +207,48 @@
       const startIndex = (page - 1) * itemsPerPage;
       const endIndex = startIndex + itemsPerPage;
 
-      // Hide all items first
-      wetravelTrips.hide();
+      // Hide all visible items first
+      visibleTrips.hide();
 
       // Show only items for current page
-      wetravelTrips.slice(startIndex, endIndex).show();
+      visibleTrips.slice(startIndex, endIndex).show();
 
       // Apply fade effect to newly visible items
-      applyDescriptionFades(wetravelTrips.slice(startIndex, endIndex));
-
-      // Scroll to top of container if needed
-      if (page !== currentPage) {
-        $("html, body").animate(
-          {
-            scrollTop: container.offset().top - 50,
-          },
-          200
-        );
-      }
-
-      // Update current page
-      currentPage = page;
-
-      // Re-render pagination
-      renderPagination();
+      applyDescriptionFades(visibleTrips.slice(startIndex, endIndex));
     }
 
-    // Initial pagination rendering
-    renderPagination();
+    // Function to handle page changes
+    function changePage(page) {
+      if (page < 1 || page > totalPages) {
+        return;
+      }
+
+      currentPage = page;
+      displayItems(currentPage);
+      renderPagination();
+    }
 
     // Handle pagination clicks
     paginationElement.on("click", ".page-link", function (e) {
       e.preventDefault();
+      const page = $(this).data("page");
 
-      const pageAction = $(this).data("page");
-      let targetPage = currentPage;
-
-      // Handle special page actions
-      switch (pageAction) {
-        case "first":
-          targetPage = 1;
-          break;
-        case "prev":
-          targetPage = Math.max(1, currentPage - 1);
-          break;
-        case "next":
-          targetPage = Math.min(totalPages, currentPage + 1);
-          break;
-        case "last":
-          targetPage = totalPages;
-          break;
-        default:
-          // If it's a number
-          if (!isNaN(pageAction)) {
-            targetPage = parseInt(pageAction);
-          }
-      }
-
-      // Only update if page changed
-      if (targetPage !== currentPage) {
-        displayItems(targetPage);
+      if (page === "first") {
+        changePage(1);
+      } else if (page === "prev") {
+        changePage(currentPage - 1);
+      } else if (page === "next") {
+        changePage(currentPage + 1);
+      } else if (page === "last") {
+        changePage(totalPages);
+      } else {
+        changePage(parseInt(page));
       }
     });
 
-    // Initial display of items
-    displayItems(1);
+    // Initialize pagination
+    renderPagination();
+    displayItems(currentPage);
   }
 
   // Function to apply fade effects to descriptions

@@ -287,6 +287,11 @@ function wtwidget_trips_block_render( $attributes ) {
 					<span class="selected-count" id="selected-count" style="display: none;">0 selected</span>
 					<span class="dropdown-arrow" id="dropdown-arrow">▲</span>
 				</button>
+
+				<!-- Clear All Filters Button -->
+				<button type="button" class="clear-all-filters" data-block-id="<?php echo esc_attr( $block_id ); ?>" style="display: none;">
+					Clear All Filters
+				</button>
 			</div>
 			<!-- Custom Location Dropdown -->
 			<div class="location-dropdown">

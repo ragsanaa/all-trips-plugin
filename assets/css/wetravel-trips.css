@@ -597,6 +597,31 @@ a {
   color: #666;
 }
 
+/* Clear All Filters button styles */
+.clear-all-filters {
+  padding: 14px 20px;
+  background: #f8f9fa;
+  color: #6c757d;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  outline: none;
+  white-space: nowrap;
+}
+
+.clear-all-filters:hover {
+  background: #e9ecef;
+  color: #495057;
+  border-color: #adb5bd;
+}
+
+.clear-all-filters:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(108, 117, 125, 0.1);
+}
+
 /* Custom Location Dropdown */
 .location-dropdown {
   min-width: 300px;
@@ -770,6 +795,12 @@ a {
 
   .search-input-wrapper {
     width: 100%;
+  }
+
+  .clear-all-filters {
+    width: 100%;
+    box-sizing: border-box;
+    text-align: center;
   }
 }
 

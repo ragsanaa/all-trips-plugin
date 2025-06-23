@@ -59,6 +59,9 @@
       selectedText.text("Multiple locations");
       selectedCount.text(locations.length + " selected").show();
     }
+
+    // Update clear button visibility
+    updateClearButton(blockId);
   }
 
   // Filter locations in dropdown
@@ -81,79 +84,66 @@
       .toLowerCase();
     const selectedLocs = state.selectedLocations[blockId] || [];
 
+    // First, remove any existing filtered class and show all items
+    container.find(".trip-item").removeClass("filtered").show();
+
+    // Apply filters
     container.find(".trip-item").each(function () {
       const tripItem = $(this);
       const title = tripItem.find("h3").text().toLowerCase();
       const location = tripItem.find(".trip-location").text().toLowerCase();
 
       const matchesSearch = !searchText || title.includes(searchText);
-      //  ||
-      // location.includes(searchText);
       const matchesLocation =
         selectedLocs.length === 0 ||
         selectedLocs.some((loc) => location.includes(loc.toLowerCase()));
 
-      tripItem.toggleClass("filtered", !(matchesSearch && matchesLocation));
+      if (!(matchesSearch && matchesLocation)) {
+        tripItem.addClass("filtered").hide();
+      }
     });
 
-    updatePagination(blockId);
-  }
-
-  // Update pagination after filtering
-  function updatePagination(blockId) {
-    const container = $(`#trips-container-${blockId}`);
-    const paginationContainer = $(`#pagination-${blockId}`);
-    const itemsPerPage = parseInt(container.data("items-per-page")) || 10;
-    const visibleItems = container.find(".trip-item:not(.filtered)");
-    const totalVisibleItems = visibleItems.length;
-
     // Handle no results
+    const visibleItems = container.find(".trip-item:not(.filtered)");
     const noTripsMsg = container.find(".no-trips");
-    if (totalVisibleItems === 0) {
+
+    if (visibleItems.length === 0) {
       if (noTripsMsg.length === 0) {
         container.append(
           '<div class="no-trips">No trips found matching your criteria</div>'
         );
       }
       noTripsMsg.show();
-      paginationContainer.hide();
-      return;
-    }
-
-    noTripsMsg.hide();
-
-    // Update pagination if needed
-    if (totalVisibleItems > itemsPerPage) {
-      const totalPages = Math.ceil(totalVisibleItems / itemsPerPage);
-      const paginationHTML = Array.from({ length: totalPages }, (_, i) => {
-        const pageNum = i + 1;
-        return `<span class="page-number ${
-          pageNum === 1 ? "active" : ""
-        }" data-page="${pageNum}">${pageNum}</span>`;
-      }).join("");
-
-      paginationContainer.find(".pagination-controls").html(paginationHTML);
-      paginationContainer.show();
-
-      // Show first page items
-      visibleItems.each(function (index) {
-        $(this)
-          .toggleClass("visible-item", index < itemsPerPage)
-          .toggleClass("hidden-item", index >= itemsPerPage);
-      });
+      // Hide pagination when no results
+      $(`#pagination-${blockId}`).hide();
     } else {
-      visibleItems.removeClass("hidden-item").addClass("visible-item");
-      paginationContainer.hide();
+      noTripsMsg.hide();
+      // Show pagination if it exists and there are visible items
+      const paginationContainer = $(`#pagination-${blockId}`);
+      if (paginationContainer.length > 0) {
+        paginationContainer.show();
+      }
     }
+
+    // Trigger a custom event to notify pagination system about the filter change
+    container.trigger("tripsFiltered", {
+      visibleCount: visibleItems.length,
+      totalCount: container.find(".trip-item").length,
+    });
   }
 
   // Update clear button visibility
   function updateClearButton(blockId) {
     const searchInput = $(`#search-filter-${blockId} .search-input`);
     const clearBtn = $(`#search-filter-${blockId} .search-clear-btn`);
+    const clearAllBtn = $(`#search-filter-${blockId} .clear-all-filters`);
     const hasValue = searchInput.val().trim().length > 0;
+    const hasLocationFilters =
+      (state.selectedLocations[blockId] || []).length > 0;
+    const hasAnyFilters = hasValue || hasLocationFilters;
 
     clearBtn.toggle(hasValue);
+    clearAllBtn.toggle(hasAnyFilters);
   }
 
   // Clear search input
@@ -163,6 +153,43 @@
     updateClearButton(blockId);
     filterTrips(blockId);
     searchInput.focus();
+  }
+
+  // Clear all filters
+  function clearAllFilters(blockId) {
+    const container = $(`#trips-container-${blockId}`);
+
+    // Clear search input
+    $(`#search-filter-${blockId} .search-input`).val("");
+
+    // Clear location selections
+    state.selectedLocations[blockId] = [];
+    $(`#search-filter-${blockId} .location-item .checkmark`)
+      .removeClass("checked")
+      .html("");
+    $(`#search-filter-${blockId} .location-item`).removeClass("selected");
+
+    // Reset dropdown text
+    updateSelectedText(blockId);
+
+    // Show all items
+    container.find(".trip-item").removeClass("filtered").show();
+    container.find(".no-trips").hide();
+
+    // Show pagination if it exists
+    const paginationContainer = $(`#pagination-${blockId}`);
+    if (paginationContainer.length > 0) {
+      paginationContainer.show();
+    }
+
+    // Update clear button
+    updateClearButton(blockId);
+
+    // Trigger filter event
+    container.trigger("tripsFiltered", {
+      visibleCount: container.find(".trip-item").length,
+      totalCount: container.find(".trip-item").length,
+    });
   }
 
   // Event handlers
@@ -180,6 +207,14 @@
       e.stopPropagation();
       const blockId = $(this).data("block-id");
       clearSearchInput(blockId);
+    });
+
+    // Clear all filters button handler
+    $(document).on("click", ".clear-all-filters", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      const blockId = $(this).data("block-id");
+      clearAllFilters(blockId);
     });
 
     // Location button handler
