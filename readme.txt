@@ -169,6 +169,7 @@ The `[wetravel_trips]` shortcode accepts the following parameters:
 * `date_start` - Start date for filtering trips (format: YYYY-MM-DD)
 * `date_end` - End date for filtering trips (format: YYYY-MM-DD)
 * `search_visibility` - Toggle search bar visibility: true (1) or false(0) (default: false). This is not available for carousel display type.
+* `border_radius` - Border radius for the widget design (default: 0)
 
 Basic usage with a saved design:
 `[wetravel_trips widget="my-custom-design"]`

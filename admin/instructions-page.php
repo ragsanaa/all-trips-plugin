@@ -193,6 +193,11 @@ function wetravel_trips_instructions_page() {
 									<td>Toggle search bar visibility: true (1) or false (0)</td>
 									<td>false</td>
 								</tr>
+								<tr>
+									<td><code>border_radius</code></td>
+									<td>Border radius for the widget design (default: 0)</td>
+									<td>0</td>
+								</tr>
 							</tbody>
 						</table>
 
