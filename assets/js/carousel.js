@@ -26,7 +26,6 @@
         init: false,
         spaceBetween: 20,
         slidesPerView: 1,
-        loop: true,
         watchOverflow: true,
         watchSlidesProgress: true,
         slidesOffsetBefore: 0,

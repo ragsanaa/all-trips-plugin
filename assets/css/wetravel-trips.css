@@ -275,6 +275,7 @@ a {
 .wetravel-trips-container.carousel-view .swiper {
   flex: 1;
   width: 100%;
+  padding: 0px 15px 30px;
 }
 
 .wetravel-trips-container.carousel-view .swiper-wrapper {
