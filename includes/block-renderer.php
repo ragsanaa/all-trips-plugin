@@ -58,21 +58,39 @@ function wtwidget_trips_block_render( $attributes ) {
 			}
 		}
 
-		// Apply design settings, keeping block attributes as fallbacks.
+		// Apply design settings ONLY if block attributes are not set (empty/null).
+		// This ensures user changes in the editor take precedence over design settings.
 		if ( $design ) {
-			$display_type = isset( $design['displayType'] ) ? $design['displayType'] : $display_type;
-			$button_type  = isset( $design['buttonType'] ) ? $design['buttonType'] : $button_type;
-			$button_color = isset( $design['buttonColor'] ) ? $design['buttonColor'] : $button_color;
-			$search_visibility = isset( $design['searchVisibility'] ) ? $design['searchVisibility'] : $search_visibility;
-			$border_radius = isset( $design['borderRadius'] ) ? intval( $design['borderRadius'] ) : $border_radius;
-			$items_per_slide = isset( $design['itemsPerSlide'] ) ? intval( $design['itemsPerSlide'] ) : $items_per_slide;
-			$items_per_row = isset( $design['itemsPerRow'] ) ? intval( $design['itemsPerRow'] ) : $items_per_row;
-			$items_per_page = isset( $design['itemsPerPage'] ) ? intval( $design['itemsPerPage'] ) : $items_per_page;
+			// Only apply design settings if the corresponding block attribute is not set
+			if ( empty( $attributes['displayType'] ) && isset( $design['displayType'] ) ) {
+				$display_type = $design['displayType'];
+			}
+			if ( empty( $attributes['buttonType'] ) && isset( $design['buttonType'] ) ) {
+				$button_type = $design['buttonType'];
+			}
+			if ( empty( $attributes['buttonColor'] ) && isset( $design['buttonColor'] ) ) {
+				$button_color = $design['buttonColor'];
+			}
+			if ( ! isset( $attributes['searchVisibility'] ) && isset( $design['searchVisibility'] ) ) {
+				$search_visibility = $design['searchVisibility'];
+			}
+			if ( empty( $attributes['borderRadius'] ) && isset( $design['borderRadius'] ) ) {
+				$border_radius = intval( $design['borderRadius'] );
+			}
+			if ( empty( $attributes['itemsPerSlide'] ) && isset( $design['itemsPerSlide'] ) ) {
+				$items_per_slide = intval( $design['itemsPerSlide'] );
+			}
+			if ( empty( $attributes['itemsPerRow'] ) && isset( $design['itemsPerRow'] ) ) {
+				$items_per_row = intval( $design['itemsPerRow'] );
+			}
+			if ( empty( $attributes['itemsPerPage'] ) && isset( $design['itemsPerPage'] ) ) {
+				$items_per_page = intval( $design['itemsPerPage'] );
+			}
 			// If the design has custom CSS, we'll add it later.
 			$custom_css_design = isset( $design['customCSS'] ) ? $design['customCSS'] : '';
 
-			// Check for buttonText in design.
-			if ( ! empty( $design['buttonText'] ) ) {
+			// Check for buttonText in design - only if not set in block attributes
+			if ( empty( $attributes['buttonText'] ) && ! empty( $design['buttonText'] ) ) {
 				$button_text = $design['buttonText'];
 			}
 		}
@@ -82,8 +100,8 @@ function wtwidget_trips_block_render( $attributes ) {
 	$default_button_text = 'book_now' === $button_type ? 'Book Now' : 'View Trip';
 	$button_text         = ! empty( $attributes['buttonText'] ) ? $attributes['buttonText'] : $default_button_text;
 
-	// If design has buttonText, override the default.
-	if ( ! empty( $selected_design_id ) && isset( $designs[ $selected_design_id ]['buttonText'] ) ) {
+	// If design has buttonText and block attribute is not set, use design buttonText.
+	if ( ! empty( $selected_design_id ) && empty( $attributes['buttonText'] ) && isset( $designs[ $selected_design_id ]['buttonText'] ) ) {
 		$button_text = $designs[ $selected_design_id ]['buttonText'];
 	}
 
@@ -94,6 +112,7 @@ function wtwidget_trips_block_render( $attributes ) {
 	$nonce = wp_create_nonce( 'wetravel_trips_nonce' );
 
 	// Get trip_type, date_start and date_end from attributes or design.
+	// Prioritize block attributes over design settings.
 	$trip_type  = ! empty( $attributes['tripType'] ) ? $attributes['tripType'] : ( ! empty( $design['tripType'] ) ? $design['tripType'] : 'all' );
 	$date_start = ! empty( $attributes['dateStart'] ) ? $attributes['dateStart'] : ( ! empty( $design['dateRangeStart'] ) ? $design['dateRangeStart'] : '' );
 	$date_end   = ! empty( $attributes['dateEnd'] ) ? $attributes['dateEnd'] : ( ! empty( $design['dateRangeEnd'] ) ? $design['dateRangeEnd'] : '' );
