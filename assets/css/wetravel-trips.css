@@ -625,6 +625,7 @@ a {
 /* Custom Location Dropdown */
 .location-dropdown {
   min-width: 300px;
+  position: relative;
 }
 
 .location-button {
