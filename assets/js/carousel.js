@@ -45,7 +45,6 @@
           480: {
             slidesPerView: 1,
             spaceBetween: 10,
-            navigation: { },
           },
           // when window width is >= 640px
           640: {

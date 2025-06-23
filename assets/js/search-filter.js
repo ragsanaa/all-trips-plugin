@@ -86,11 +86,9 @@
       const title = tripItem.find("h3").text().toLowerCase();
       const location = tripItem.find(".trip-location").text().toLowerCase();
 
-      const matchesSearch =
-        !searchText ||
-        title.includes(searchText)
-        //  ||
-        // location.includes(searchText);
+      const matchesSearch = !searchText || title.includes(searchText);
+      //  ||
+      // location.includes(searchText);
       const matchesLocation =
         selectedLocs.length === 0 ||
         selectedLocs.some((loc) => location.includes(loc.toLowerCase()));
@@ -149,11 +147,39 @@
     }
   }
 
+  // Update clear button visibility
+  function updateClearButton(blockId) {
+    const searchInput = $(`#search-filter-${blockId} .search-input`);
+    const clearBtn = $(`#search-filter-${blockId} .search-clear-btn`);
+    const hasValue = searchInput.val().trim().length > 0;
+
+    clearBtn.toggle(hasValue);
+  }
+
+  // Clear search input
+  function clearSearchInput(blockId) {
+    const searchInput = $(`#search-filter-${blockId} .search-input`);
+    searchInput.val("");
+    updateClearButton(blockId);
+    filterTrips(blockId);
+    searchInput.focus();
+  }
+
   // Event handlers
   $(document).ready(function () {
     // Search input handler
     $(document).on("input", ".search-input", function () {
-      filterTrips($(this).data("block-id"));
+      const blockId = $(this).data("block-id");
+      updateClearButton(blockId);
+      filterTrips(blockId);
+    });
+
+    // Clear button handler
+    $(document).on("click", ".search-clear-btn", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      const blockId = $(this).data("block-id");
+      clearSearchInput(blockId);
     });
 
     // Location button handler
@@ -197,7 +223,19 @@
 
     // Initialize filters when trips are loaded
     $(document).on("tripsRendered", ".wetravel-trips-container", function () {
-      filterTrips($(this).attr("id").replace("trips-container-", ""));
+      const blockId = $(this).attr("id").replace("trips-container-", "");
+      filterTrips(blockId);
+      updateClearButton(blockId);
+    });
+
+    // Initialize clear button state on page load
+    $(document).ready(function () {
+      $(".search-input").each(function () {
+        const blockId = $(this).data("block-id");
+        if (blockId) {
+          updateClearButton(blockId);
+        }
+      });
     });
   });
 })(jQuery);
