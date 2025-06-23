@@ -3,7 +3,7 @@ Contributors: wtragsana
 Tags: travel, widget, multi-day, booking, wetravel
 Requires at least: 5.0
 Tested up to: 6.8
-Stable tag: 1.1
+Stable tag: 1.2
 Requires PHP: 7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -27,7 +27,7 @@ The WeTravel Widgets plugin allows you to customize WeTravel's embedded widgets 
 * **Design Reusability** - Save your designs with unique keywords for easy reference
 
 The plugin connects directly to the WeTravel API to ensure your trip information is always up-to-date. When you update trip details, prices, or availability on WeTravel, changes will automatically reflect on your website.
-Perfect for travel agencies, tour operators, and any business using WeTravel who wants to customize their widget appearance to match their brand.
+Perfect for travel agencies, tour operators, and any business using WeTravel that wants to customize their widget appearance to match their brand.
 
 == External Services ==
 
@@ -145,6 +145,18 @@ This is perfect for creating region-specific trip displays.
 * Bug Fixes
   - Fixed broken trip button functionality
 
+= 1.2 =
+* Bug Fixes
+  - Fixed broken location dropdown functionality
+  - Fixed broken carousel design
+  - Fixed broken pagination functionality for filtered data
+
+* New Changes
+  - Changed generated shortcode format
+  - Modified widget design slightly
+  - Added detailed instructions tab in admin dashboard
+  - Added border radius customization for widget design
+
 == Upgrade Notice ==
 
 = 1.0 =
@@ -152,6 +164,9 @@ Initial release of the WeTravel Widgets plugin. Customize your WeTravel widgets 
 
 = 1.1 =
 Improved search bar functionality and widget design options. Broken trip button functionality has been fixed.
+
+= 1.2 =
+Added detailed instructions for using the plugin. Changed generated shortcode format. Modified widget design slightly.
 
 == Shortcode Parameters ==
 
