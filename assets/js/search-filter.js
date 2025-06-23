@@ -239,12 +239,22 @@
 
     // Close dropdown when clicking outside
     $(document).on("click", function (event) {
-      $(".dropdown-menu.open").each(function () {
-        const container = $(this).closest(".location-dropdown");
-        const blockId = container.find(".location-button").data("block-id");
+      // Check all open dropdowns
+      Object.keys(state.isDropdownOpen).forEach(function (blockId) {
+        if (state.isDropdownOpen[blockId]) {
+          const dropdownContainer = $(
+            `#search-filter-${blockId} .location-dropdown`
+          );
+          const locationButton = $(
+            `#search-filter-${blockId} .location-button`
+          );
 
-        if (!container[0].contains(event.target)) {
-          if (state.isDropdownOpen[blockId]) {
+          // Check if the click target is outside the dropdown container and not on the location button
+          if (
+            dropdownContainer.length &&
+            !dropdownContainer[0].contains(event.target) &&
+            !locationButton[0].contains(event.target)
+          ) {
             toggleDropdown(blockId);
           }
         }
