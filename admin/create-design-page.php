@@ -323,10 +323,10 @@ function wtwidget_trip_create_design_page() {
 						</div>
 
 						<!-- Hidden fields for shortcode generation - values will be set from global settings -->
-						<input type="hidden" id="items_per_slide" name="items_per_slide" value="<?php echo isset( $design['itemsPerSlide'] ) ? esc_attr( $design['itemsPerSlide'] ) : get_option('wetravel_trips_items_per_slide', 3); ?>">
-						<input type="hidden" id="items_per_row" name="items_per_row" value="<?php echo isset( $design['itemsPerRow'] ) ? esc_attr( $design['itemsPerRow'] ) : get_option('wetravel_trips_items_per_row', 3); ?>">
-						<input type="hidden" id="items_per_page" name="items_per_page" value="<?php echo isset( $design['itemsPerPage'] ) ? esc_attr( $design['itemsPerPage'] ) : get_option('wetravel_trips_items_per_page', 10); ?>">
-						<input type="hidden" id="border_radius" name="border_radius" value="<?php echo isset( $design['borderRadius'] ) ? esc_attr( $design['borderRadius'] ) : get_option('wetravel_trips_border_radius', 6); ?>">
+						<input type="hidden" id="items_per_slide" name="items_per_slide" value="<?php echo isset( $design['itemsPerSlide'] ) ? esc_attr( $design['itemsPerSlide'] ) : esc_attr(get_option('wetravel_trips_items_per_slide', 3)); ?>">
+						<input type="hidden" id="items_per_row" name="items_per_row" value="<?php echo isset( $design['itemsPerRow'] ) ? esc_attr( $design['itemsPerRow'] ) : esc_attr(get_option('wetravel_trips_items_per_row', 3)); ?>">
+						<input type="hidden" id="items_per_page" name="items_per_page" value="<?php echo isset( $design['itemsPerPage'] ) ? esc_attr( $design['itemsPerPage'] ) : esc_attr(get_option('wetravel_trips_items_per_page', 10)); ?>">
+						<input type="hidden" id="border_radius" name="border_radius" value="<?php echo isset( $design['borderRadius'] ) ? esc_attr( $design['borderRadius'] ) : esc_attr(get_option('wetravel_trips_border_radius', 6)); ?>">
 
 						<div class="wetravel-trips-form-actions">
 							<input type="submit" name="save_design" class="button button-primary" value="Save Widget">

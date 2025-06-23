@@ -3,7 +3,7 @@
  * Plugin Name: WeTravel Widgets
  * Plugin URI:  https://github.com/ragsanaa/all-trips-plugin
  * Description: A plugin to display WeTravel widgets on your WordPress site.
- * Version:     1.1
+ * Version:     1.2
  * Author:      WeTravel
  * Author URI:  https://github.com/wetravel-com
  * License:     GPLv2 or later
