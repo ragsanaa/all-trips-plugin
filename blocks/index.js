@@ -66,6 +66,10 @@
         type: "boolean",
         default: false,
       },
+      borderRadius: {
+        type: "number",
+        default: 6,
+      },
       // Removed loadMoreText attribute as it's no longer needed
     },
 
@@ -82,6 +86,7 @@
         itemsPerRow,
         itemsPerSlide,
         searchVisibility,
+        borderRadius,
       } = attributes;
 
       // Set default values from PHP settings on first load only
@@ -113,6 +118,8 @@
           updatedAttributes.itemsPerSlide = parseInt(settings.itemsPerSlide);
         if (attributes.searchVisibility === false && settings.searchVisibility)
           updatedAttributes.searchVisibility = settings.searchVisibility;
+        if (attributes.borderRadius === 6 && settings.borderRadius)
+          updatedAttributes.borderRadius = parseInt(settings.borderRadius);
 
         // Properly load designs
         if (settings.designs) {
@@ -148,127 +155,54 @@
 
       // Generate pagination controls
       const renderPagination = () => {
-        // Create a sample pagination UI
-        const paginationStyle = {
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          margin: "20px 0",
-          flexWrap: "wrap",
-        };
-
-        const pageItemStyle = {
-          margin: "0 3px",
-        };
-
-        const pageLinkStyle = {
-          display: "inline-block",
-          padding: "8px 12px",
-          color: "#333",
-          border: "1px solid #ddd",
-          borderRadius: "4px",
-          textDecoration: "none",
-          cursor: "pointer",
-        };
-
-        const activePageStyle = {
-          ...pageLinkStyle,
-          backgroundColor: buttonColor,
-          color: "white",
-          borderColor: buttonColor,
-        };
-
-        const disabledPageStyle = {
-          ...pageLinkStyle,
-          color: "#999",
-          pointerEvents: "none",
-          cursor: "default",
-        };
-
         // Create sample pagination elements
         return createElement(
           "div",
-          { style: paginationStyle, className: "wetravel-trips-pagination" },
+          { className: "wetravel-trips-pagination" },
           createElement(
             "div",
-            { style: pageItemStyle, className: "page-item" },
-            createElement(
-              "span",
-              { style: pageLinkStyle, className: "page-link" },
-              "«"
-            )
+            { className: "page-item" },
+            createElement("span", { className: "page-link" }, "«")
           ),
           createElement(
             "div",
-            { style: pageItemStyle, className: "page-item" },
-            createElement(
-              "span",
-              { style: pageLinkStyle, className: "page-link" },
-              "‹"
-            )
+            { className: "page-item" },
+            createElement("span", { className: "page-link" }, "‹")
           ),
           createElement(
             "div",
-            { style: pageItemStyle, className: "page-item active" },
-            createElement(
-              "span",
-              { style: activePageStyle, className: "page-link" },
-              "1"
-            )
+            { className: "page-item active" },
+            createElement("span", { className: "page-link" }, "1")
           ),
           createElement(
             "div",
-            { style: pageItemStyle, className: "page-item" },
-            createElement(
-              "span",
-              { style: pageLinkStyle, className: "page-link" },
-              "2"
-            )
+            { className: "page-item" },
+            createElement("span", { className: "page-link" }, "2")
           ),
           createElement(
             "div",
-            { style: pageItemStyle, className: "page-item" },
-            createElement(
-              "span",
-              { style: pageLinkStyle, className: "page-link" },
-              "3"
-            )
+            { className: "page-item" },
+            createElement("span", { className: "page-link" }, "3")
           ),
           createElement(
             "div",
-            { style: pageItemStyle, className: "page-item disabled" },
-            createElement(
-              "span",
-              { style: disabledPageStyle, className: "page-link" },
-              "..."
-            )
+            { className: "page-item disabled" },
+            createElement("span", { className: "page-link" }, "...")
           ),
           createElement(
             "div",
-            { style: pageItemStyle, className: "page-item" },
-            createElement(
-              "span",
-              { style: pageLinkStyle, className: "page-link" },
-              "10"
-            )
+            { className: "page-item" },
+            createElement("span", { className: "page-link" }, "10")
           ),
           createElement(
             "div",
-            { style: pageItemStyle, className: "page-item" },
-            createElement(
-              "span",
-              { style: pageLinkStyle, className: "page-link" },
-              "›"
-            )
+            { className: "page-item" },
+            createElement("span", { className: "page-link" }, "›")
           ),
           createElement(
             "div",
-            { style: pageItemStyle, className: "page-item" },
-            createElement(
-              "span",
-              { style: pageLinkStyle, className: "page-link" },
-              "»"
-            )
+            { className: "page-item" },
+            createElement("span", { className: "page-link" }, "»")
           )
         );
       };
@@ -281,6 +215,11 @@
             ? designs[selectedDesignID]
             : { name: "Default" };
 
+        // Get locations from the selected design
+        const designLocations = currentDesign.locations || [];
+        const tripLocation =
+          designLocations.length > 0 ? designLocations[0] : "All Locations";
+
         // Preview container styles
         const containerStyle = {
           border: "1px dashed #ccc",
@@ -292,77 +231,37 @@
         const containerWithCSSVars = {
           ...containerStyle,
           "--button-color": buttonColor,
+          "--border-radius": borderRadius + "px",
         };
 
         // Create search bar component
         const renderSearchBar = () => {
-          const searchContainerStyle = {
-            margin: "0 20px 20px 20px",
-            display: "flex",
-            gap: "10px",
-            alignItems: "stretch",
-          };
-
-          const searchInputStyle = {
-            flex: 1,
-            padding: "12px 15px",
-            borderRadius: "6px",
-            border: "1px solid #cbd5e1",
-            fontSize: "16px",
-            outline: "none",
-            height: "48px",
-          };
-
-          const searchButtonStyle = {
-            ...buttonStyle,
-            padding: "12px 20px",
-            minWidth: "180px",
-            height: "48px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          };
+          // Get button text based on selected locations
+          let buttonText = "Select locations";
+          if (designLocations.length === 1) {
+            buttonText = designLocations[0];
+          } else if (designLocations.length > 1) {
+            buttonText = `${designLocations.length} locations selected`;
+          }
 
           return createElement(
             "div",
             {
               className: "wetravel-search-container",
-              style: searchContainerStyle,
             },
             createElement("input", {
               type: "text",
               placeholder: "Search trips by name...",
-              style: searchInputStyle,
               className: "wetravel-search-input",
             }),
             createElement(
               "button",
-              { style: searchButtonStyle, className: "wetravel-search-button" },
-              "Select Location ▲"
+              {
+                className: "trip-button wetravel-search-button",
+              },
+              `${buttonText} ▲`
             )
           );
-        };
-
-        // Create common button styles based on current button color
-        const buttonStyle = {
-          backgroundColor: buttonColor,
-          color: "white",
-          padding: "8px 16px",
-          borderRadius: "6px",
-          display: "inline-block",
-          cursor: "pointer",
-          fontSize: "16px",
-          border: `1px solid ${buttonColor}`,
-          textDecoration: "none",
-          fontWeight: 500,
-          textAlign: "center",
-        };
-
-        // Button style for grid and carousel views
-        const outlineButtonStyle = {
-          ...buttonStyle,
-          backgroundColor: "transparent",
-          color: buttonColor,
         };
 
         // Create trip items
@@ -370,21 +269,17 @@
         for (let i = 0; i < 3; i++) {
           // Common trip elements
           const tripTitle = `Sample Trip ${i + 1}`;
-          const tripDescription =
-            "Experience the journey of a lifetime with our specially curated adventure package that combines exploration, relaxation, and cultural immersion.";
-          const tripDuration = "7 days";
-          const tripLocation = "Bali, Indonesia";
-          const tripPrice = "$1,299";
 
-          // Image placeholder styles
-          const imagePlaceholderStyle = {
-            backgroundColor: "#eee",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "#888",
-            borderRadius: "4px",
-          };
+          // Different descriptions for each trip
+          const tripDescriptions = [
+            "Experience the journey of a lifetime with our specially curated adventure package that combines exploration, relaxation, and cultural immersion. Discover hidden gems, taste local cuisine, and create unforgettable memories with expert guides leading the way through breathtaking landscapes and historic sites.",
+            "Embark on an extraordinary expedition that takes you off the beaten path to discover authentic experiences. From sunrise yoga sessions to sunset beach dinners, every moment is crafted to provide the perfect balance of adventure and luxury in stunning natural surroundings.",
+            "Join us for an immersive cultural journey that connects you with local communities and traditions. Learn traditional crafts, participate in cooking classes, and explore ancient ruins while staying in carefully selected accommodations that blend comfort with authentic local charm.",
+          ];
+
+          const tripDescription = tripDescriptions[i] || tripDescriptions[0];
+          const tripDuration = "7 days";
+          const tripDates = "Dec 15-22, 2024";
 
           // Create trip item based on display type
           if (displayType === "vertical") {
@@ -400,7 +295,7 @@
                     gap: "16px",
                     border: "1px solid #cbd5e1",
                     padding: "16px",
-                    borderRadius: "6px",
+                    borderRadius: borderRadius + "px",
                     backgroundColor: "#fff",
                     boxShadow: "0px 4px 4px 0px rgba(174, 174, 174, 0.25)",
                     marginBottom: "16px",
@@ -412,7 +307,6 @@
                   {
                     className: "trip-image",
                     style: {
-                      ...imagePlaceholderStyle,
                       minHeight: "200px",
                     },
                   },
@@ -429,41 +323,31 @@
                     },
                   },
                   createElement(
-                    "h3",
-                    { style: { marginTop: 0, marginBottom: "8px" } },
-                    tripTitle
-                  ),
-                  createElement(
                     "div",
-                    {
-                      className: "trip-description",
-                      style: {
-                        color: "#475569",
-                        maxHeight: "100px",
-                        overflow: "hidden",
+                    { className: "trip-title-desc" },
+                    createElement(
+                      "h3",
+                      { style: { marginTop: 0, marginBottom: "8px" } },
+                      tripTitle
+                    ),
+                    createElement(
+                      "div",
+                      {
+                        className: "trip-description",
+                        // style: tripDescriptionStyle,
                       },
-                    },
-                    tripDescription
+                      tripDescription
+                    )
                   ),
                   createElement(
                     "div",
                     {
                       className: "trip-loc-duration",
-                      style: {
-                        display: "flex",
-                        gap: "8px",
-                        marginTop: "12px",
-                      },
                     },
                     createElement(
                       "div",
                       {
                         className: "trip-tag",
-                        style: {
-                          borderRadius: "16px",
-                          border: "1px solid #cbd5e1",
-                          padding: "4px 8px",
-                        },
                       },
                       tripDuration
                     ),
@@ -471,11 +355,6 @@
                       "div",
                       {
                         className: "trip-tag",
-                        style: {
-                          borderRadius: "16px",
-                          border: "1px solid #cbd5e1",
-                          padding: "4px 8px",
-                        },
                       },
                       tripLocation
                     )
@@ -503,17 +382,16 @@
                     createElement(
                       "span",
                       { style: { fontSize: "20px", fontWeight: 600 } },
-                      tripPrice
+                      "$1,299"
                     )
                   ),
                   createElement(
                     "a",
                     {
                       className: "trip-button",
-                      style: buttonStyle,
                       href: "#",
                     },
-                    buttonText
+                    "Book Now"
                   )
                 )
               )
@@ -531,7 +409,7 @@
                     gap: "16px",
                     border: "1px solid #cbd5e1",
                     padding: "16px",
-                    borderRadius: "6px",
+                    borderRadius: borderRadius + "px",
                     backgroundColor: "#fff",
                     boxShadow: "0px 4px 4px 0px rgba(174, 174, 174, 0.25)",
                   },
@@ -542,11 +420,18 @@
                   {
                     className: "trip-image",
                     style: {
-                      ...imagePlaceholderStyle,
                       height: "180px",
                     },
                   },
-                  "Trip Image"
+                  "Trip Image",
+                  // Add date overlay for grid view
+                  createElement(
+                    "div",
+                    {
+                      className: "trip-date-overlay trip-tag",
+                    },
+                    tripDates
+                  )
                 ),
                 createElement(
                   "div",
@@ -571,11 +456,6 @@
                       "div",
                       {
                         className: "trip-description",
-                        style: {
-                          color: "#475569",
-                          maxHeight: "100px",
-                          overflow: "hidden",
-                        },
                       },
                       tripDescription
                     )
@@ -584,33 +464,11 @@
                     "div",
                     {
                       className: "trip-loc-duration",
-                      style: {
-                        display: "flex",
-                        gap: "8px",
-                        flexWrap: "wrap",
-                      },
                     },
                     createElement(
                       "div",
                       {
                         className: "trip-tag",
-                        style: {
-                          borderRadius: "16px",
-                          border: "1px solid #cbd5e1",
-                          padding: "4px 8px",
-                        },
-                      },
-                      tripDuration
-                    ),
-                    createElement(
-                      "div",
-                      {
-                        className: "trip-tag",
-                        style: {
-                          borderRadius: "16px",
-                          border: "1px solid #cbd5e1",
-                          padding: "4px 8px",
-                        },
                       },
                       tripLocation
                     )
@@ -638,17 +496,16 @@
                       createElement(
                         "span",
                         { style: { fontSize: "20px", fontWeight: 600 } },
-                        tripPrice
+                        "$1,299"
                       )
                     ),
                     createElement(
                       "a",
                       {
-                        className: "trip-button",
-                        style: outlineButtonStyle,
+                        className: "trip-button outline",
                         href: "#",
                       },
-                      buttonText
+                      "Book Now"
                     )
                   )
                 )
@@ -667,11 +524,11 @@
                     gap: "16px",
                     border: "1px solid #cbd5e1",
                     padding: "16px",
-                    borderRadius: "6px",
+                    borderRadius: borderRadius + "px",
                     backgroundColor: "#fff",
                     boxShadow: "0px 4px 4px 0px rgba(174, 174, 174, 0.25)",
                     width: "280px",
-                    flexShrink: 0,
+                    flexShrink: 1,
                   },
                   key: i,
                 },
@@ -680,11 +537,18 @@
                   {
                     className: "trip-image",
                     style: {
-                      ...imagePlaceholderStyle,
                       height: "180px",
                     },
                   },
-                  "Trip Image"
+                  "Trip Image",
+                  // Add date overlay for carousel view
+                  createElement(
+                    "div",
+                    {
+                      className: "trip-date-overlay trip-tag",
+                    },
+                    tripDates
+                  )
                 ),
                 createElement(
                   "div",
@@ -709,11 +573,7 @@
                       "div",
                       {
                         className: "trip-description",
-                        style: {
-                          color: "#475569",
-                          maxHeight: "100px",
-                          overflow: "hidden",
-                        },
+                        // style: tripDescriptionStyle,
                       },
                       tripDescription
                     )
@@ -732,33 +592,11 @@
                       "div",
                       {
                         className: "trip-loc-duration",
-                        style: {
-                          display: "flex",
-                          gap: "8px",
-                          flexWrap: "wrap",
-                        },
                       },
                       createElement(
                         "div",
                         {
                           className: "trip-tag",
-                          style: {
-                            borderRadius: "16px",
-                            border: "1px solid #cbd5e1",
-                            padding: "4px 8px",
-                          },
-                        },
-                        tripDuration
-                      ),
-                      createElement(
-                        "div",
-                        {
-                          className: "trip-tag",
-                          style: {
-                            borderRadius: "16px",
-                            border: "1px solid #cbd5e1",
-                            padding: "4px 8px",
-                          },
                         },
                         tripLocation
                       )
@@ -783,7 +621,7 @@
                         createElement(
                           "span",
                           { style: { fontSize: "20px", fontWeight: 600 } },
-                          tripPrice
+                          "$1,299"
                         )
                       )
                     )
@@ -898,20 +736,6 @@
                     "div",
                     {
                       className: "swiper-button-next",
-                      style: {
-                        position: "absolute",
-                        top: "50%",
-                        right: "10px",
-                        transform: "translateY(-50%)",
-                        width: "40px",
-                        height: "40px",
-                        backgroundColor: buttonColor,
-                        borderRadius: "50%",
-                        color: "#fff",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      },
                     },
                     "›"
                   ),
@@ -919,20 +743,6 @@
                     "div",
                     {
                       className: "swiper-button-prev",
-                      style: {
-                        position: "absolute",
-                        top: "50%",
-                        left: "10px",
-                        transform: "translateY(-50%)",
-                        width: "40px",
-                        height: "40px",
-                        backgroundColor: buttonColor,
-                        borderRadius: "50%",
-                        color: "#fff",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      },
                     },
                     "‹"
                   )
@@ -941,13 +751,6 @@
                   "div",
                   {
                     className: "swiper-pagination",
-                    style: {
-                      textAlign: "center",
-                      margin: "20px 0",
-                      display: "flex",
-                      justifyContent: "center",
-                      gap: "5px",
-                    },
                   },
                   createElement("span", {
                     style: {
@@ -1049,7 +852,14 @@
                 onChange: (value) => setAttributes({ itemsPerSlide: value }),
                 min: 1,
                 max: 4,
-              })
+              }),
+            createElement(RangeControl, {
+              label: "Border Radius",
+              value: attributes.borderRadius,
+              onChange: (value) => setAttributes({ borderRadius: value }),
+              min: 1,
+              max: 100,
+            })
           )
         )
       );

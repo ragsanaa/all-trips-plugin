@@ -105,6 +105,14 @@ add_action( 'wp_enqueue_scripts', 'wtwidget_enqueue_frontend_scripts' );
 
 /**  Enqueue scripts for block. */
 function wtwidget_enqueue_block_assets() {
+	// Register and enqueue block editor stylesheet.
+	wp_register_style(
+		'wetravel-trips-editor-style',
+		WETRAVEL_WIDGETS_PLUGIN_URL . 'blocks/editor.css',
+		array(),
+		filemtime( WETRAVEL_WIDGETS_PLUGIN_DIR . 'blocks/editor.css' )
+	);
+
 	// Enqueue block editor script.
 	wp_enqueue_script(
 		'wetravel-trips-block',
@@ -148,6 +156,7 @@ function wtwidget_register_block() {
 		'wetravel-trips/block',
 		array(
 			'editor_script'   => 'wetravel-trips-block',
+			'editor_style'    => 'wetravel-trips-editor-style',
 			'render_callback' => 'wtwidget_trips_block_render',
 			'attributes'      => array(
 				'designs'          => array(
@@ -209,6 +218,10 @@ function wtwidget_register_block() {
 				'searchVisibility' => array(
 					'type'    => 'boolean',
 					'default' => false,
+				),
+				'borderRadius'     => array(
+					'type'    => 'number',
+					'default' => 6,
 				),
 			),
 		)

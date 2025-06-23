@@ -5,9 +5,12 @@
  * @package WordPress
  */
 
+// Exit if accessed directly.
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
+
+require_once dirname(__FILE__, 2) . '/includes/functions.php';
 
 /** Render Widget Library Page */
 function wetravel_trips_design_library_page() {
@@ -81,7 +84,7 @@ function wetravel_trips_design_library_page() {
 								<div class="wetravel-trips-design-actions">
 									<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=wetravel-trips-create-design&edit=' . esc_attr( $design_id ) ), 'wetravel_trips_edit_nonce' ) ); ?>" class="button button-small">Edit</a>
 									<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=wetravel-trips-design-library&delete_design=' . esc_attr( $design_id ) ), 'wetravel_trips_delete_nonce' ) ); ?>" class="button button-small" onclick="return confirm('Are you sure you want to delete this design?')">Delete</a>
-									<button class="button button-small wetravel-trips-copy-shortcode" data-shortcode='[wetravel_trips widget="<?php echo esc_attr( empty( $design['keyword'] ) ? $design_id : $design['keyword'] ); ?>"]'>Copy Shortcode</button>
+									<button class="button button-small wetravel-trips-copy-shortcode" data-shortcode='<?php echo esc_attr(wtwidget_generate_shortcode_with_params($design, $design_id)); ?>'>Copy Shortcode</button>
 								</div>
 							</div>
 						</div>

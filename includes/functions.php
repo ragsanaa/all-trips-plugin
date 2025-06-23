@@ -246,3 +246,42 @@ function wtwidget_check_widget_usage() {
 
 	return $usage;
 }
+
+/**
+ * Generate shortcode with appropriate parameters based on display type
+ *
+ * @param array $design Design data
+ * @param string $design_id Design ID
+ * @return string Generated shortcode
+ */
+function wtwidget_generate_shortcode_with_params($design, $design_id) {
+	$widget_identifier = !empty($design['keyword']) ? $design['keyword'] : $design_id;
+	$shortcode = '[wetravel_trips widget="' . esc_attr($widget_identifier) . '"';
+
+	// Add display type specific parameters
+	$display_type = isset($design['displayType']) ? $design['displayType'] : 'vertical';
+
+	// Always include border radius with fallback to global setting
+	$border_radius = isset($design['borderRadius']) ? $design['borderRadius'] : get_option('wetravel_trips_border_radius', 6);
+	$shortcode .= ' border_radius="' . intval($border_radius) . '"';
+
+	// Add display type specific parameters with fallbacks
+	if ($display_type === 'carousel') {
+		// Carousel: items_per_slide, border_radius
+		$items_per_slide = isset($design['itemsPerSlide']) ? $design['itemsPerSlide'] : get_option('wetravel_trips_items_per_slide', 3);
+		$shortcode .= ' items_per_slide="' . intval($items_per_slide) . '"';
+	} elseif ($display_type === 'grid') {
+		// Grid: items_per_row, items_per_page, border_radius
+		$items_per_row = isset($design['itemsPerRow']) ? $design['itemsPerRow'] : get_option('wetravel_trips_items_per_row', 3);
+		$items_per_page = isset($design['itemsPerPage']) ? $design['itemsPerPage'] : get_option('wetravel_trips_items_per_page', 10);
+		$shortcode .= ' items_per_row="' . intval($items_per_row) . '"';
+		$shortcode .= ' items_per_page="' . intval($items_per_page) . '"';
+	} else {
+		// Vertical: items_per_page, border_radius
+		$items_per_page = isset($design['itemsPerPage']) ? $design['itemsPerPage'] : get_option('wetravel_trips_items_per_page', 10);
+		$shortcode .= ' items_per_page="' . intval($items_per_page) . '"';
+	}
+
+	$shortcode .= ']';
+	return $shortcode;
+}

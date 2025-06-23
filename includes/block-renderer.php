@@ -38,6 +38,7 @@ function wtwidget_trips_block_render( $attributes ) {
 	$items_per_slide        = intval( $attributes['itemsPerSlide'] ?? get_option( 'wetravel_trips_items_per_slide', 3 ) );
 	$load_more_text         = $attributes['loadMoreText'] ?? get_option( 'wetravel_trips_load_more_text', 'Load More' );
 	$search_visibility      = $attributes['searchVisibility'] ?? get_option( 'wetravel_trips_search_visibility', false );
+	$border_radius          = intval( $attributes['borderRadius'] ?? get_option( 'wetravel_trips_border_radius', 6 ) );
 
 	// Override with design settings if a design is selected.
 	if ( ! empty( $selected_design_id ) ) {
@@ -63,6 +64,10 @@ function wtwidget_trips_block_render( $attributes ) {
 			$button_type  = isset( $design['buttonType'] ) ? $design['buttonType'] : $button_type;
 			$button_color = isset( $design['buttonColor'] ) ? $design['buttonColor'] : $button_color;
 			$search_visibility = isset( $design['searchVisibility'] ) ? $design['searchVisibility'] : $search_visibility;
+			$border_radius = isset( $design['borderRadius'] ) ? intval( $design['borderRadius'] ) : $border_radius;
+			$items_per_slide = isset( $design['itemsPerSlide'] ) ? intval( $design['itemsPerSlide'] ) : $items_per_slide;
+			$items_per_row = isset( $design['itemsPerRow'] ) ? intval( $design['itemsPerRow'] ) : $items_per_row;
+			$items_per_page = isset( $design['itemsPerPage'] ) ? intval( $design['itemsPerPage'] ) : $items_per_page;
 			// If the design has custom CSS, we'll add it later.
 			$custom_css_design = isset( $design['customCSS'] ) ? $design['customCSS'] : '';
 
@@ -207,10 +212,11 @@ function wtwidget_trips_block_render( $attributes ) {
 	$items_per_row = absint($items_per_row); // Convert to positive integer
 
 	$custom_css = sprintf(
-		'#trips-container-%1$s { --button-color: %2$s; --items-per-row: %3$d; }',
+		'#trips-container-%1$s { --button-color: %2$s; --items-per-row: %3$d; --border-radius: %4$dpx; }',
 		esc_attr($block_id),
 		$button_color,
-		$items_per_row
+		$items_per_row,
+		$border_radius
 	);
 
 	// Add design-specific custom CSS if available.
@@ -246,12 +252,15 @@ function wtwidget_trips_block_render( $attributes ) {
 		<div class="wetravel-trips-search-filter" id="search-filter-<?php echo esc_attr( $block_id ); ?>"
 			style="--button-color: <?php echo esc_attr( $button_color ); ?>; --button-color-rgb: <?php echo esc_attr(wtwidget_hex_to_rgb($button_color)); ?>;">
 			<div class="search-filter-container">
-				<!-- Search input with icon -->
-				<input type="text"
-						class="search-input"
-						placeholder="Search trips by name..."
-						data-block-id="<?php echo esc_attr( $block_id ); ?>"
-					/>
+				<!-- Search input with clear button -->
+				<div class="search-input-wrapper">
+					<input type="text"
+							class="search-input"
+							placeholder="Search trips by name..."
+							data-block-id="<?php echo esc_attr( $block_id ); ?>"
+						/>
+					<button type="button" class="search-clear-btn" data-block-id="<?php echo esc_attr( $block_id ); ?>" style="display: none;">×</button>
+				</div>
 
 				<!-- Location Filter -->
 				<button type="button" class="location-button" data-block-id="<?php echo esc_attr( $block_id ); ?>">
@@ -566,11 +575,27 @@ function wtwidget_render_trip_item( $trip, $options, $visibility_class = '' ) {
 			$trip['title'],
 			array(
 				'class' => 'trip-image-thumbnail',
-				'width' => 400, // Set appropriate size
-				'height' => 300 // Set appropriate size
+				'width' => 400, // Set appropriate size.
+				'height' => 300 // Set appropriate size.
 			)
 		);
-		$html .= '<div class="trip-image">' . $trip_image . '</div>';
+
+		// Add date overlay for carousel and grid display types.
+		if ( in_array( $options['displayType'], array( 'carousel', 'grid' ) ) ) {
+			$date_overlay = '';
+			if ( ! $trip['all_year'] ) {
+				$date_overlay = '<div class="trip-date-overlay trip-tag">' . esc_html( $trip['start_end_dates'] ) . '</div>';
+			} elseif ( ! empty( $trip['custom_duration'] ) ) {
+				$date_overlay = sprintf(
+					'<div class="trip-date-overlay trip-tag">%s days</div>',
+					esc_html( $trip['custom_duration'] )
+				);
+			}
+
+			$html .= '<div class="trip-image">' . $trip_image . $date_overlay . '</div>';
+		} else {
+			$html .= '<div class="trip-image">' . $trip_image . '</div>';
+		}
 	} else {
 		$html .= '<div class="no-image-placeholder"><span>No Image Available</span></div>';
 	}
@@ -582,7 +607,9 @@ function wtwidget_render_trip_item( $trip, $options, $visibility_class = '' ) {
 
 	// Description.
 	if ( ! empty( $trip['full_description'] ) ) {
-		$html .= '<div class="trip-description">' . wp_kses_post( $trip['full_description'] ) . '</div>';
+    // Remove emojis from description to prevent layout issues.
+    $clean_description = wtwidget_remove_emojis_comprehensive($trip['full_description']);
+    $html .= '<div class="trip-description">' . wp_kses_post( $clean_description ) . '</div>';
 	}
 	$html .= '</div>'; // Close trip-title-desc.
 
@@ -593,13 +620,15 @@ function wtwidget_render_trip_item( $trip, $options, $visibility_class = '' ) {
 	// Date or duration.
 	$html .= '<div class="trip-loc-duration">';
 
-	if ( ! $trip['all_year'] ) {
-		$html .= '<div class="trip-date trip-tag">' . esc_html( $trip['start_end_dates'] ) . '</div>';
-	} elseif ( ! empty( $trip['custom_duration'] ) ) {
-		$html .= sprintf(
-			'<div class="trip-duration trip-tag">%s days</div>',
-			esc_html( $trip['custom_duration'] )
-		);
+	if ( 'vertical' === $options['displayType'] ) {
+		if ( ! $trip['all_year'] ) {
+			$html .= '<div class="trip-date trip-tag">' . esc_html( $trip['start_end_dates'] ) . '</div>';
+		} elseif ( ! empty( $trip['custom_duration'] ) ) {
+			$html .= sprintf(
+				'<div class="trip-duration trip-tag">%s days</div>',
+				esc_html( $trip['custom_duration'] )
+			);
+		}
 	}
 	$html .= '<div class="trip-location trip-tag">' . esc_html( $trip['location'] ) . '</div>';
 	$html .= '</div>'; // Close trip-loc-duration.
@@ -665,6 +694,58 @@ function wtwidget_render_trip_item( $trip, $options, $visibility_class = '' ) {
 	$html .= '</div>'; // Close trip-item.
 
 	return $html;
+}
+
+/**
+ * More comprehensive emoji removal function
+ * This handles even more edge cases and complex emoji sequences
+ */
+function wtwidget_remove_emojis_comprehensive($text) {
+    if (empty($text)) {
+        return $text;
+    }
+
+    // Remove all emoji and symbol characters.
+    $patterns = array(
+        '/[\x{1F600}-\x{1F64F}]/u',     // Emoticons.
+        '/[\x{1F300}-\x{1F5FF}]/u',     // Misc Symbols and Pictographs.
+        '/[\x{1F680}-\x{1F6FF}]/u',     // Transport and Map Symbols.
+        '/[\x{1F1E0}-\x{1F1FF}]/u',     // Regional country flags.
+        '/[\x{2600}-\x{26FF}]/u',       // Misc symbols.
+        '/[\x{2700}-\x{27BF}]/u',       // Dingbats.
+        '/[\x{1F900}-\x{1F9FF}]/u',     // Supplemental Symbols and Pictographs.
+        '/[\x{1FA70}-\x{1FAFF}]/u',     // Symbols and Pictographs Extended-A.
+        '/[\x{FE00}-\x{FE0F}]/u',       // Variation Selectors.
+        '/[\x{200D}]/u',                // Zero Width Joiner.
+        '/[\x{20E3}]/u',                // Combining Enclosing Keycap.
+        '/[\x{E0020}-\x{E007F}]/u',     // Tags.
+        '/[\x{1F004}]/u',               // Mahjong Tile Red Dragon.
+        '/[\x{1F0CF}]/u',               // Playing Card Black Joker.
+        '/[\x{1F18E}]/u',               // Negative Squared AB.
+        '/[\x{3030}]/u',                // Wavy Dash.
+        '/[\x{303D}]/u',                // Part Alternation Mark.
+        '/[\x{3297}]/u',                // Circled Ideograph Congratulation.
+        '/[\x{3299}]/u',                // Circled Ideograph Secret.
+        '/[\x{203C}]/u',                // Double Exclamation Mark.
+        '/[\x{2049}]/u',                // Exclamation Question Mark.
+        '/[\x{25AA}-\x{25AB}]/u',       // Black/White Small Square.
+        '/[\x{25B6}]/u',                // Black Right-Pointing Triangle.
+        '/[\x{25C0}]/u',                // Black Left-Pointing Triangle.
+        '/[\x{25FB}-\x{25FE}]/u',       // Various squares.
+        '/[\x{2B50}]/u',                // White Medium Star ⭐.
+        '/[\x{2B55}]/u',                // Heavy Large Circle.
+    );
+
+    // Remove all emoji and symbol characters.
+    foreach ($patterns as $pattern) {
+        $text = preg_replace($pattern, '', $text);
+    }
+
+    // Clean up extra spaces and trim.
+    $text = preg_replace('/\s+/', ' ', $text);
+    $text = trim($text);
+
+    return $text;
 }
 
 /**

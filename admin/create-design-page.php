@@ -5,9 +5,12 @@
  * @package WordPress
  */
 
+// Exit if accessed directly.
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
+
+require_once dirname(__FILE__, 2) . '/includes/functions.php';
 
 /**
  * Handle form submission for widget creation/editing
@@ -80,6 +83,10 @@ function wtwidget_handle_form_submission() {
 		'modified'       => time(),
 		'locations'      => isset($_POST['trip_location']) ? array_map('sanitize_text_field', wp_unslash($_POST['trip_location'])) : array(),
 		'searchVisibility' => isset($_POST['search_visibility']) ? (bool) $_POST['search_visibility'] : false,
+		'itemsPerSlide'  => isset($_POST['items_per_slide']) ? intval($_POST['items_per_slide']) : get_option('wetravel_trips_items_per_slide', 3),
+		'itemsPerRow'    => isset($_POST['items_per_row']) ? intval($_POST['items_per_row']) : get_option('wetravel_trips_items_per_row', 3),
+		'itemsPerPage'   => isset($_POST['items_per_page']) ? intval($_POST['items_per_page']) : get_option('wetravel_trips_items_per_page', 10),
+		'borderRadius'   => isset($_POST['border_radius']) ? intval($_POST['border_radius']) : get_option('wetravel_trips_border_radius', 6),
 	);
 
 	// Generate a new ID if we're not editing
@@ -123,6 +130,10 @@ function wtwidget_trip_create_design_page() {
 		'dateRangeStart' => '',
 		'dateRangeEnd'   => '',
 		'searchVisibility' => false,
+		'itemsPerSlide'  => get_option('wetravel_trips_items_per_slide', 3),
+		'itemsPerRow'    => get_option('wetravel_trips_items_per_row', 3),
+		'itemsPerPage'   => get_option('wetravel_trips_items_per_page', 10),
+		'borderRadius'   => get_option('wetravel_trips_border_radius', 6),
 		'created'        => time(),
 	);
 
@@ -155,7 +166,7 @@ function wtwidget_trip_create_design_page() {
 
 			if ( isset( $designs[$design_id] ) ) {
 				$design = $designs[$design_id];
-				$shortcode = '[wetravel_trips widget="' . ( ! empty( $design['keyword'] ) ? $design['keyword'] : $design_id ) . '"]';
+				$shortcode = wtwidget_generate_shortcode_with_params($design, $design_id);
 			}
 		}
 	}
@@ -311,6 +322,12 @@ function wtwidget_trip_create_design_page() {
 							<p class="description">This is not available for carousel display type.</p>
 						</div>
 
+						<!-- Hidden fields for shortcode generation - values will be set from global settings -->
+						<input type="hidden" id="items_per_slide" name="items_per_slide" value="<?php echo isset( $design['itemsPerSlide'] ) ? esc_attr( $design['itemsPerSlide'] ) : get_option('wetravel_trips_items_per_slide', 3); ?>">
+						<input type="hidden" id="items_per_row" name="items_per_row" value="<?php echo isset( $design['itemsPerRow'] ) ? esc_attr( $design['itemsPerRow'] ) : get_option('wetravel_trips_items_per_row', 3); ?>">
+						<input type="hidden" id="items_per_page" name="items_per_page" value="<?php echo isset( $design['itemsPerPage'] ) ? esc_attr( $design['itemsPerPage'] ) : get_option('wetravel_trips_items_per_page', 10); ?>">
+						<input type="hidden" id="border_radius" name="border_radius" value="<?php echo isset( $design['borderRadius'] ) ? esc_attr( $design['borderRadius'] ) : get_option('wetravel_trips_border_radius', 6); ?>">
+
 						<div class="wetravel-trips-form-actions">
 							<input type="submit" name="save_design" class="button button-primary" value="Save Widget">
 							<a href="?page=wetravel-trips-design-library" class="button button-secondary">Cancel</a>
@@ -334,9 +351,9 @@ function wtwidget_trip_create_design_page() {
 						<h4>Generated Shortcode</h4>
 						<div class="shortcode-preview">
 							<?php if ( $editing ) : ?>
-								<code>[wetravel_trips widget="<?php echo ! empty( $design['keyword'] ) ? esc_attr( $design['keyword'] ) : esc_attr( $design_id ); ?>"]</code>
+								<code><?php echo esc_html(wtwidget_generate_shortcode_with_params($design, $design_id)); ?></code>
 								<button class="button button-small wetravel-trips-copy-shortcode"
-										data-shortcode='[wetravel_trips widget="<?php echo ! empty( $design['keyword'] ) ? esc_attr( $design['keyword'] ) : esc_attr( $design_id ); ?>"]'>Copy</button>
+										data-shortcode='<?php echo esc_attr(wtwidget_generate_shortcode_with_params($design, $design_id)); ?>'>Copy</button>
 							<?php else : ?>
 								<p>Shortcode will be generated after saving.</p>
 							<?php endif; ?>

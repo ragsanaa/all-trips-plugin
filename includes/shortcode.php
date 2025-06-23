@@ -39,6 +39,7 @@ function wtwidget_trips_shortcode( $atts ) {
 		'date_start'             => '',
 		'date_end'               => '',
 		'search_visibility'      => get_option( 'wetravel_trips_search_visibility', false ),
+		'border_radius'          => get_option( 'wetravel_trips_border_radius', 6 ),
 	);
 
 	// First, get the design if specified
@@ -86,6 +87,11 @@ function wtwidget_trips_shortcode( $atts ) {
 			if (!empty($design['searchVisibility'])) {
 				$default_atts['search_visibility'] = $design['searchVisibility'];
 			}
+			// Fix: Use shortcode attributes as fallback before global options
+			$default_atts['items_per_slide'] = isset($design['itemsPerSlide']) ? $design['itemsPerSlide'] : $default_atts['items_per_slide'];
+			$default_atts['items_per_row'] = isset($design['itemsPerRow']) ? $design['itemsPerRow'] : $default_atts['items_per_row'];
+			$default_atts['items_per_page'] = isset($design['itemsPerPage']) ? $design['itemsPerPage'] : $default_atts['items_per_page'];
+			$default_atts['border_radius'] = isset($design['borderRadius']) ? $design['borderRadius'] : $default_atts['border_radius'];
 		}
 	}
 
@@ -109,6 +115,7 @@ function wtwidget_trips_shortcode( $atts ) {
 		'dateStart'      => $atts['date_start'],
 		'dateEnd'        => $atts['date_end'],
 		'searchVisibility' => $atts['search_visibility'],
+		'borderRadius'   => $atts['border_radius'],
 	);
 
 	// Add the selected design ID if a widget was specified
