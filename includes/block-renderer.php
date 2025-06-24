@@ -571,9 +571,9 @@ function wtwidget_render_trip_item( $trip, $options, $visibility_class = '' ) {
 	$html       = '';
 	$button_url = wtwidget_get_button_url( $trip, $options );
 
-	if ( 'vertical' === $options['displayType'] ) {
+	if ( 'vertical' === $options['displayType'] || ('grid' === $options['displayType'] && 'trip_link' === $options['buttonType'])) {
 		$html .= '<div class="trip-item ' . esc_attr( $visibility_class ) . '">';
-	} elseif ( 'grid' === $options['displayType'] ) {
+	} elseif ( 'book_now' === $options['buttonType'] && ('grid' === $options['displayType'] || 'carousel' === $options['displayType']) ) {
 		$html .= sprintf(
 			'<div class="trip-item wtrvl-checkout_button %s" data-env="%s" data-version="v0.3" data-uid="%s" data-uuid="%s" href="%s" style="cursor: pointer;">',
 			esc_attr( $visibility_class ),
@@ -582,14 +582,15 @@ function wtwidget_render_trip_item( $trip, $options, $visibility_class = '' ) {
 			esc_attr( $trip['uuid'] ),
 			esc_url( $button_url )
 		);
-	} elseif ( 'carousel' === $options['displayType'] ) {
+	} elseif ( 'carousel' === $options['displayType'] && 'trip_link' === $options['buttonType'] ) {
 		$html .= sprintf(
-			'<div class="trip-item wtrvl-checkout_button" data-env="%s" data-version="v0.3" data-uid="%s" data-uuid="%s" href="%s" style="cursor: pointer;">',
-			esc_attr( $options['env'] ),
-			esc_attr( $options['wetravelUserID'] ),
-			esc_attr( $trip['uuid'] ),
+			'<div class="trip-item %s" target="_blank" href="%s" style="cursor: pointer;">',
+			esc_attr( $visibility_class ),
 			esc_url( $button_url )
 		);
+	} else {
+		// Fallback for any other cases
+		$html .= '<div class="trip-item ' . esc_attr( $visibility_class ) . '">';
 	}
 
 	// Image.

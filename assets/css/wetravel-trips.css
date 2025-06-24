@@ -350,6 +350,10 @@ a {
   pointer-events: auto;
 }
 
+.wetravel-trips-container.grid-view .trip-item a {
+  pointer-events: auto;
+}
+
 /* Pagination Styles */
 .wetravel-trips-pagination {
   display: flex;
