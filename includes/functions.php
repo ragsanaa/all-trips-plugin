@@ -62,7 +62,7 @@ function wtwidget_save_embed_code() {
 		update_option( 'wetravel_trips_user_id', $extracted_values['wetravel_trips_user_id'] );
 
 		// Save the timestamp of the last update.
-		update_option( 'wetravel_trips_last_saved', wp_date( 'F j, Y \a\t g:i a' ) );
+		update_option( 'wetravel_trips_last_saved', date( 'F j, Y \a\t g:i a' ) );
 
 		// Redirect to prevent resubmission.
 		wp_safe_redirect( add_query_arg( 'saved', 'true', admin_url( 'admin.php?page=wetravel-trips-settings' ) ) );
@@ -258,26 +258,25 @@ function wtwidget_generate_shortcode_with_params($design, $design_id) {
 	$widget_identifier = !empty($design['keyword']) ? $design['keyword'] : $design_id;
 	$shortcode = '[wetravel_trips widget="' . esc_attr($widget_identifier) . '"';
 
-	// Add display type specific parameters
+	// Add all relevant attributes from the current design
 	$display_type = isset($design['displayType']) ? $design['displayType'] : 'vertical';
 
 	// Always include border radius with fallback to global setting
 	$border_radius = isset($design['borderRadius']) ? $design['borderRadius'] : get_option('wetravel_trips_border_radius', 6);
 	$shortcode .= ' border_radius="' . intval($border_radius) . '"';
 
-	// Add display type specific parameters with fallbacks
 	if ($display_type === 'carousel') {
-		// Carousel: items_per_slide, border_radius
+		// Carousel: items_per_slide
 		$items_per_slide = isset($design['itemsPerSlide']) ? $design['itemsPerSlide'] : get_option('wetravel_trips_items_per_slide', 3);
 		$shortcode .= ' items_per_slide="' . intval($items_per_slide) . '"';
 	} elseif ($display_type === 'grid') {
-		// Grid: items_per_row, items_per_page, border_radius
+		// Grid: items_per_row, items_per_page
 		$items_per_row = isset($design['itemsPerRow']) ? $design['itemsPerRow'] : get_option('wetravel_trips_items_per_row', 3);
 		$items_per_page = isset($design['itemsPerPage']) ? $design['itemsPerPage'] : get_option('wetravel_trips_items_per_page', 10);
 		$shortcode .= ' items_per_row="' . intval($items_per_row) . '"';
 		$shortcode .= ' items_per_page="' . intval($items_per_page) . '"';
 	} else {
-		// Vertical: items_per_page, border_radius
+		// Vertical: items_per_page
 		$items_per_page = isset($design['itemsPerPage']) ? $design['itemsPerPage'] : get_option('wetravel_trips_items_per_page', 10);
 		$shortcode .= ' items_per_page="' . intval($items_per_page) . '"';
 	}

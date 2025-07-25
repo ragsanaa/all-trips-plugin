@@ -12,33 +12,41 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once dirname(__FILE__, 2) . '/includes/functions.php';
 
-/** Render Widget Library Page */
-function wetravel_trips_design_library_page() {
-	// Handle design deletion.
-	if ( isset( $_GET['delete_design'] ) && ! empty( $_GET['delete_design'] ) ) {
-		// Only check nonce when deleting.
-		if ( ! isset( $_GET['_wpnonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'wetravel_trips_delete_nonce' ) ) {
-			wp_die( 'Security check failed' );
-		}
-
-		$design_id = sanitize_text_field( wp_unslash( $_GET['delete_design'] ) );
-		$designs   = get_option( 'wetravel_trips_designs', array() );
-
-		if ( isset( $designs[ $design_id ] ) ) {
-			unset( $designs[ $design_id ] );
-			update_option( 'wetravel_trips_designs', $designs );
-			$delete_message = 'Widget deleted successfully.';
-		}
+/**
+ * Handle design deletion action
+ */
+function wetravel_trips_handle_design_deletion() {
+	// Only run on our admin page
+	if ( ! isset( $_GET['page'] ) || $_GET['page'] !== 'wetravel-trips-design-library' ) {
+		return;
 	}
 
-	// Get all saved designs.
-	$designs = get_option( 'wetravel_trips_designs', array() );
+	// Check if deletion is requested
+	if ( ! isset( $_GET['delete_design'] ) || empty( $_GET['delete_design'] ) ) {
+		return;
+	}
 
-	// Redirect to settings page if there are no widget designs
-	if ( empty( $designs ) ) {
-		wp_safe_redirect( admin_url( 'admin.php?page=wetravel-trips-settings' ) );
+	// Verify nonce
+	if ( ! isset( $_GET['_wpnonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'wetravel_trips_delete_nonce' ) ) {
+		wp_die( 'Security check failed' );
+	}
+
+	$design_id = sanitize_text_field( wp_unslash( $_GET['delete_design'] ) );
+	$designs   = get_option( 'wetravel_trips_designs', array() );
+
+	if ( isset( $designs[ $design_id ] ) ) {
+		unset( $designs[ $design_id ] );
+		update_option( 'wetravel_trips_designs', $designs );
+		wp_safe_redirect( add_query_arg( 'deleted', 'true', admin_url( 'admin.php?page=wetravel-trips-design-library' ) ) );
 		exit;
 	}
+}
+add_action( 'admin_init', 'wetravel_trips_handle_design_deletion' );
+
+/** Render Widget Library Page */
+function wetravel_trips_design_library_page() {
+	// Get all saved designs.
+	$designs = get_option( 'wetravel_trips_designs', array() );
 
 	?>
 	<div class="wrap">
@@ -51,9 +59,9 @@ function wetravel_trips_design_library_page() {
 			<a href="?page=wetravel-trips-create-design" class="nav-tab">Create Widget</a>
 		</div>
 
-		<?php if ( isset( $delete_message ) ) : ?>
+		<?php if ( isset( $_GET['deleted'] ) && 'true' === $_GET['deleted'] ) : ?>
 			<div class="notice notice-success is-dismissible">
-				<p><?php echo esc_html( $delete_message ); ?></p>
+				<p>Widget deleted successfully.</p>
 			</div>
 		<?php endif; ?>
 
