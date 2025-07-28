@@ -62,10 +62,17 @@ function wtwidget_save_embed_code() {
 		update_option( 'wetravel_trips_user_id', $extracted_values['wetravel_trips_user_id'] );
 
 		// Save the timestamp of the last update.
-		update_option( 'wetravel_trips_last_saved', date( 'F j, Y \a\t g:i a' ) );
+		update_option( 'wetravel_trips_last_saved', gmdate( 'F j, Y \a\t g:i a' ) );
 
 		// Redirect to prevent resubmission.
-		wp_safe_redirect( add_query_arg( 'saved', 'true', admin_url( 'admin.php?page=wetravel-trips-settings' ) ) );
+		$redirect_url = add_query_arg(
+			array(
+				'saved' => 'true',
+				'display_nonce' => wp_create_nonce( 'wetravel_display_message' )
+			),
+			admin_url( 'admin.php?page=wetravel-trips-settings' )
+		);
+		wp_safe_redirect( $redirect_url );
 		exit;
 	}
 }

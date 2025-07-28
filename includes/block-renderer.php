@@ -258,7 +258,7 @@ function wtwidget_trips_block_render( $attributes ) {
 	?>
 	<!-- Dynamic styles for WordPress version compatibility -->
 	<style type="text/css">
-		<?php echo wp_strip_all_tags( $custom_css ); ?>
+		<?php echo esc_html( $custom_css ); ?>
 	</style>
 	<div class="wp-block-wetravel-trips-block">
 		<!-- Initial loading state - show by default -->
