@@ -229,7 +229,9 @@ function wtwidget_trips_block_render( $attributes ) {
 	// Only add dynamic CSS that depends on block attributes.
 	$button_color = safecss_filter_attr($button_color);
 	$items_per_row = absint($items_per_row); // Convert to positive integer
+	$border_radius = absint($border_radius); // Convert to positive integer
 
+	// Use direct CSS instead of CSS custom properties for better compatibility with older WordPress versions
 	$custom_css = sprintf(
 		'#trips-container-%1$s { --button-color: %2$s; --items-per-row: %3$d; --border-radius: %4$dpx; }',
 		esc_attr($block_id),
@@ -252,11 +254,12 @@ function wtwidget_trips_block_render( $attributes ) {
 
 	wp_enqueue_style( 'wetravel-trips-styles' );
 
-	// Output custom styles.
-	wp_add_inline_style( 'wetravel-trips-styles', $custom_css );
-
 	ob_start();
 	?>
+	<!-- Dynamic styles for WordPress version compatibility -->
+	<style type="text/css">
+		<?php echo esc_html( $custom_css ); ?>
+	</style>
 	<div class="wp-block-wetravel-trips-block">
 		<!-- Initial loading state - show by default -->
 		<div class="wetravel-trips-loading" id="loading-<?php echo esc_attr( $block_id ); ?>">

@@ -1,9 +1,9 @@
 === WeTravel Widgets ===
 Contributors: wtragsana
 Tags: travel, widget, multi-day, booking, wetravel
-Requires at least: 5.0
+Requires at least: 5.2
 Tested up to: 6.8
-Stable tag: 1.2.1
+Stable tag: 1.2.2
 Requires PHP: 7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -158,8 +158,15 @@ This is perfect for creating region-specific trip displays.
   - Added border radius customization for widget design
 
 = 1.2.1 =
-*Bug Fixes
+* Bug Fixes
   - Fixed broken trip button functionality for trip_link button type
+
+= 1.2.2 =
+* Bug Fixes
+  - Fixed version compatibility issue with older WordPress versions
+
+* New Changes
+  - Redirected to create widget page when creating a new widget design
 
 == Upgrade Notice ==
 

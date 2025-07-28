@@ -294,7 +294,7 @@ function wtwidget_get_trip_locations(array $trips): array {
     // Extract all locations using array_column and filter out empty ones
     $locations = array_filter(
         array_column($trips, 'location'),
-        function(mixed $location): bool {
+        function($location) {
             return !empty($location) && is_string($location);
         }
     );

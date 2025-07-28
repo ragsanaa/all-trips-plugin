@@ -12,33 +12,54 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once dirname(__FILE__, 2) . '/includes/functions.php';
 
-/** Render Widget Library Page */
-function wetravel_trips_design_library_page() {
-	// Handle design deletion.
-	if ( isset( $_GET['delete_design'] ) && ! empty( $_GET['delete_design'] ) ) {
-		// Only check nonce when deleting.
-		if ( ! isset( $_GET['_wpnonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'wetravel_trips_delete_nonce' ) ) {
-			wp_die( 'Security check failed' );
-		}
-
-		$design_id = sanitize_text_field( wp_unslash( $_GET['delete_design'] ) );
-		$designs   = get_option( 'wetravel_trips_designs', array() );
-
-		if ( isset( $designs[ $design_id ] ) ) {
-			unset( $designs[ $design_id ] );
-			update_option( 'wetravel_trips_designs', $designs );
-			$delete_message = 'Widget deleted successfully.';
-		}
+/**
+ * Handle design deletion action
+ */
+function wetravel_trips_handle_design_deletion() {
+	// Only process if we have deletion parameters that indicate a deletion request
+	if ( ! isset( $_GET['delete_design'] ) || ! isset( $_GET['_wpnonce'] ) ) {
+		return;
 	}
 
-	// Get all saved designs.
-	$designs = get_option( 'wetravel_trips_designs', array() );
+	// Verify nonce first before processing any data
+	if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'wetravel_trips_delete_nonce' ) ) {
+		return; // Silently return if nonce verification fails
+	}
 
-	// Redirect to settings page if there are no widget designs
-	if ( empty( $designs ) ) {
-		wp_safe_redirect( admin_url( 'admin.php?page=wetravel-trips-settings' ) );
+	// Now safely check the sanitized GET parameters
+	$page = isset( $_GET['page'] ) ? sanitize_text_field( wp_unslash( $_GET['page'] ) ) : '';
+	if ( $page !== 'wetravel-trips-design-library' ) {
+		return;
+	}
+
+	$delete_design = sanitize_text_field( wp_unslash( $_GET['delete_design'] ) );
+	if ( empty( $delete_design ) ) {
+		return;
+	}
+
+	$design_id = $delete_design;
+	$designs   = get_option( 'wetravel_trips_designs', array() );
+
+	if ( isset( $designs[ $design_id ] ) ) {
+		unset( $designs[ $design_id ] );
+		update_option( 'wetravel_trips_designs', $designs );
+		$redirect_url = add_query_arg(
+			array(
+				'deleted' => 'true',
+				'deleted_nonce' => wp_create_nonce( 'wetravel_deleted_message' )
+			),
+			admin_url( 'admin.php?page=wetravel-trips-design-library' )
+		);
+		wp_safe_redirect( $redirect_url );
 		exit;
 	}
+}
+add_action( 'admin_init', 'wetravel_trips_handle_design_deletion' );
+
+/** Render Widget Library Page */
+function wetravel_trips_design_library_page() {
+	// Get all saved designs.
+	$designs = get_option( 'wetravel_trips_designs', array() );
 
 	?>
 	<div class="wrap">
@@ -51,9 +72,13 @@ function wetravel_trips_design_library_page() {
 			<a href="?page=wetravel-trips-create-design" class="nav-tab">Create Widget</a>
 		</div>
 
-		<?php if ( isset( $delete_message ) ) : ?>
+		<?php
+		// Check for successful deletion with nonce verification
+		$deleted_param = isset( $_GET['deleted'] ) ? sanitize_text_field( wp_unslash( $_GET['deleted'] ) ) : '';
+		$deleted_nonce = isset( $_GET['deleted_nonce'] ) ? sanitize_text_field( wp_unslash( $_GET['deleted_nonce'] ) ) : '';
+		if ( $deleted_param === 'true' && wp_verify_nonce( $deleted_nonce, 'wetravel_deleted_message' ) ) : ?>
 			<div class="notice notice-success is-dismissible">
-				<p><?php echo esc_html( $delete_message ); ?></p>
+				<p>Widget deleted successfully.</p>
 			</div>
 		<?php endif; ?>
 

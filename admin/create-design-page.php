@@ -13,9 +13,33 @@ if ( ! defined( 'ABSPATH' ) ) {
 require_once dirname(__FILE__, 2) . '/includes/functions.php';
 
 /**
- * Handle form submission for widget creation/editing
+ * Handle form submission for widget creation/editing during admin_init
  */
-function wtwidget_handle_form_submission() {
+function wtwidget_handle_design_form_submission() {
+	// Only process if we have POST data that indicates a form submission
+	if ( ! isset( $_POST['save_design'] ) || ! isset( $_POST['wetravel_trips_design_nonce'] ) ) {
+		return;
+	}
+
+	// Verify nonce first before processing any data
+	if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wetravel_trips_design_nonce'] ) ), 'wetravel_trips_design_action' ) ) {
+		return; // Silently return if nonce verification fails
+	}
+
+	// Now safely check the sanitized GET parameter
+	$page = isset( $_GET['page'] ) ? sanitize_text_field( wp_unslash( $_GET['page'] ) ) : '';
+	if ( $page !== 'wetravel-trips-create-design' ) {
+		return;
+	}
+
+	wtwidget_process_form_submission();
+}
+add_action( 'admin_init', 'wtwidget_handle_design_form_submission' );
+
+/**
+ * Process the actual form submission
+ */
+function wtwidget_process_form_submission() {
 	// Verify user capabilities
 	if ( ! current_user_can( 'manage_options' ) ) {
 		wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'wetravel-widgets' ) );
@@ -52,10 +76,27 @@ function wtwidget_handle_form_submission() {
 	}
 
 	if ( $keyword_error ) {
-		return array(
-			'success' => false,
-			'message' => 'This keyword is already in use. Please choose a unique keyword.'
+		$redirect_url = add_query_arg(
+			array(
+				'page'        => 'wetravel-trips-create-design',
+				'error'       => 'keyword_exists',
+				'error_nonce' => wp_create_nonce( 'wetravel_error_message' )
+			),
+			admin_url( 'admin.php' )
 		);
+
+		if ( $editing ) {
+			$redirect_url = add_query_arg(
+				array(
+					'edit'     => $design_id,
+					'_wpnonce' => wp_create_nonce( 'wetravel_trips_edit_nonce' ),
+				),
+				$redirect_url
+			);
+		}
+
+		wp_safe_redirect( $redirect_url );
+		exit;
 	}
 
 	// Get date range values if trip type is one-time
@@ -97,15 +138,26 @@ function wtwidget_handle_form_submission() {
 	$designs[$design_id] = $new_design;
 	update_option( 'wetravel_trips_designs', $designs );
 
-	$redirect_url = add_query_arg(
-		array(
-			'page'     => 'wetravel-trips-create-design',
-			'edit'     => $design_id,
-			'updated'  => '1',
-			'_wpnonce' => wp_create_nonce( 'wetravel_trips_edit_nonce' ),
-		),
-		admin_url( 'admin.php' )
-	);
+	// If editing, redirect back to edit the same widget
+	if ( $editing ) {
+		$redirect_args = array(
+			'page'          => 'wetravel-trips-create-design',
+			'updated'       => '1',
+			'edit'          => $design_id,
+			'_wpnonce'      => wp_create_nonce( 'wetravel_trips_edit_nonce' ),
+			'updated_nonce' => wp_create_nonce( 'wetravel_updated_message' ),
+		);
+		$redirect_url = add_query_arg( $redirect_args, admin_url( 'admin.php' ) );
+	} else {
+		// If creating new widget, redirect to fresh create page with success message
+		$redirect_args = array(
+			'page'          => 'wetravel-trips-create-design',
+			'updated'       => '1',
+			'created'       => 'success',
+			'updated_nonce' => wp_create_nonce( 'wetravel_updated_message' ),
+		);
+		$redirect_url = add_query_arg( $redirect_args, admin_url( 'admin.php' ) );
+	}
 
 	wp_safe_redirect( $redirect_url );
 	exit;
@@ -142,20 +194,21 @@ function wtwidget_trip_create_design_page() {
 	$success_message = '';
 	$error_message = '';
 
-	// Handle form submission
-	if ( isset( $_POST['save_design'] ) ) {
-		$result = wtwidget_handle_form_submission();
-		if ( isset( $result['success'] ) && ! $result['success'] ) {
-			$error_message = $result['message'];
-		}
+	// Check for error messages with nonce verification
+	$error_param = isset( $_GET['error'] ) ? sanitize_text_field( wp_unslash( $_GET['error'] ) ) : '';
+	$error_nonce = isset( $_GET['error_nonce'] ) ? sanitize_text_field( wp_unslash( $_GET['error_nonce'] ) ) : '';
+	if ( $error_param === 'keyword_exists' && wp_verify_nonce( $error_nonce, 'wetravel_error_message' ) ) {
+		$error_message = 'This keyword is already in use. Please choose a unique keyword.';
 	}
 
-	// Check for successful update
-	if ( isset( $_GET['updated'] ) && '1' === $_GET['updated'] ) {
-		$success_message = 'Widget updated successfully.';
+	// Check for successful update or creation with nonce verification
+	$updated_param = isset( $_GET['updated'] ) ? sanitize_text_field( wp_unslash( $_GET['updated'] ) ) : '';
+	$updated_nonce = isset( $_GET['updated_nonce'] ) ? sanitize_text_field( wp_unslash( $_GET['updated_nonce'] ) ) : '';
+	if ( $updated_param === '1' && wp_verify_nonce( $updated_nonce, 'wetravel_updated_message' ) ) {
+		$edit_param = isset( $_GET['edit'] ) ? sanitize_text_field( wp_unslash( $_GET['edit'] ) ) : '';
+		if ( ! empty( $edit_param ) ) {
+			$success_message = 'Widget updated successfully.';
 
-		// If we're in edit mode, generate the shortcode
-		if ( isset( $_GET['edit'] ) && ! empty( $_GET['edit'] ) ) {
 			// Verify edit nonce
 			if ( ! isset( $_GET['_wpnonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'wetravel_trips_edit_nonce' ) ) {
 				wp_die( esc_html__( 'Invalid nonce verification', 'wetravel-widgets' ) );
@@ -167,6 +220,12 @@ function wtwidget_trip_create_design_page() {
 			if ( isset( $designs[$design_id] ) ) {
 				$design = $designs[$design_id];
 				$shortcode = wtwidget_generate_shortcode_with_params($design, $design_id);
+			}
+		} else {
+			$created_param = isset( $_GET['created'] ) ? sanitize_text_field( wp_unslash( $_GET['created'] ) ) : '';
+			if ( $created_param === 'success' ) {
+				$success_message = 'Widget created successfully.';
+				// No need to load any specific design data since we want a fresh create form
 			}
 		}
 	}
@@ -246,30 +305,42 @@ function wtwidget_trip_create_design_page() {
 								$env = get_option('wetravel_trips_env', 'https://pre.wetravel.to');
 								$slug = get_option('wetravel_trips_slug', '');
 
-								// Get trips data (we only need basic data for locations)
-								$api_url = wtwidget_build_api_url($env, $slug, array(
-									'trip_type' => isset($design['tripType']) ? $design['tripType'] : 'all'
-								));
-								$trips = wtwidget_get_trips_data($api_url);
-
 								// Get unique locations
 								$locations = array();
-								if (is_array($trips)) {
-									$locations = wtwidget_get_trip_locations($trips);
+
+								// Only try to fetch locations if slug is configured
+								if (!empty($slug) && function_exists('wtwidget_build_api_url') && function_exists('wtwidget_get_trips_data') && function_exists('wtwidget_get_trip_locations')) {
+									try {
+										// Get trips data (we only need basic data for locations)
+										$api_url = wtwidget_build_api_url($env, $slug, array(
+											'trip_type' => isset($design['tripType']) ? $design['tripType'] : 'all'
+										));
+										$trips = wtwidget_get_trips_data($api_url);
+
+										if (is_array($trips)) {
+											$locations = wtwidget_get_trip_locations($trips);
+										}
+									} catch (Exception $e) {
+										$locations = array();
+									}
 								}
 
 								// Get selected locations from design
 								$selected_locations = isset($design['locations']) ? (array)$design['locations'] : array();
 							?>
 							<select id="trip_location" name="trip_location[]" multiple="multiple" class="wetravel-select2">
-								<?php foreach ($locations as $location) : ?>
-									<option value="<?php echo esc_attr($location); ?>"
-										<?php selected(in_array($location, $selected_locations), true); ?>>
-										<?php echo esc_html($location); ?>
-									</option>
-								<?php endforeach; ?>
+								<?php if (empty($locations)) : ?>
+									<option value="" disabled>Configure WeTravel settings first to load locations</option>
+								<?php else : ?>
+									<?php foreach ($locations as $location) : ?>
+										<option value="<?php echo esc_attr($location); ?>"
+											<?php selected(in_array($location, $selected_locations), true); ?>>
+											<?php echo esc_html($location); ?>
+										</option>
+									<?php endforeach; ?>
+								<?php endif; ?>
 							</select>
-							<p class="description">Select one or more locations. Leave empty to show all locations.</p>
+							<p class="description"><?php echo empty($locations) ? 'Please configure your WeTravel embed code in Settings first.' : 'Select one or more locations. Leave empty to show all locations.'; ?></p>
 						</div>
 
 						<div class="wetravel-trips-form-field">
@@ -378,6 +449,22 @@ function wtwidget_trip_create_design_page() {
 		filemtime(plugin_dir_path(dirname(__FILE__)) . 'assets/js/select2.min.js'),
 		true
 	);
+
+	// Enqueue admin scripts
+	wp_enqueue_script(
+		'wetravel-trips-admin-scripts',
+		plugins_url('js/admin-scripts.js', __FILE__),
+		array('jquery', 'select2'),
+		filemtime(plugin_dir_path(__FILE__) . 'js/admin-scripts.js'),
+		true
+	);
+
+	// Localize script for AJAX - pass data to admin-scripts.js
+	wp_localize_script('wetravel-trips-admin-scripts', 'wetravel_ajax', array(
+		'ajaxurl' => admin_url('admin-ajax.php'),
+		'nonce' => wp_create_nonce('wetravel_trips_nonce'),
+		'design_id' => $design_id
+	));
 
 	// Initialize Select2
 	?>

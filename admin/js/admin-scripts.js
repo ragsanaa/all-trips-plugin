@@ -628,18 +628,10 @@
       updatePreview();
     });
 
-    // Create a nonce field in the form
-    var nonceField = $("<input>").attr({
-      type: "hidden",
-      name: "wetravel_trips_nonce",
-      value: '<?php echo wp_create_nonce("wetravel_trips_nonce"); ?>',
-    });
-    $("form").append(nonceField);
-
-    // Keyword uniqueness checker
+    // Real-time keyword uniqueness checker
     var checkKeywordTimeout;
     $("#design_keyword").on("keyup blur", function () {
-      var keyword = $(this).val();
+      var keyword = $(this).val().trim();
       clearTimeout(checkKeywordTimeout);
 
       // Clear any existing validation messages
@@ -650,27 +642,33 @@
         // Add a small delay to prevent too many requests
         checkKeywordTimeout = setTimeout(function () {
           $.ajax({
-            url: ajaxurl,
+            url: wetravel_ajax.ajaxurl,
             type: "POST",
             data: {
               action: "check_keyword_unique",
               keyword: keyword,
-              design_id: "<?php echo esc_js($design_id); ?>",
-              nonce: '<?php echo wp_create_nonce("wetravel_trips_nonce"); ?>',
+              design_id: wetravel_ajax.design_id || "",
+              nonce: wetravel_ajax.nonce
             },
             success: function (response) {
-              if (!response.unique) {
-                // Display validation message
-                $(
-                  '<p id="keyword-validation-message" class="validation-error" style="color:red;">This keyword is already in use. Please choose a unique keyword.</p>'
-                ).insertAfter("#design_keyword");
-              } else {
-                // Show success message
-                $(
-                  '<p id="keyword-validation-message" class="validation-success" style="color:green;">Keyword is available!</p>'
-                ).insertAfter("#design_keyword");
+              if (response && typeof response.unique !== 'undefined') {
+                if (!response.unique) {
+                  // Display validation message
+                  $('<p id="keyword-validation-message" class="validation-error" style="color:red; margin-top: 5px; font-size: 12px;">⚠️ This keyword is already in use. Please choose a unique keyword.</p>')
+                    .insertAfter("#design_keyword");
+                } else {
+                  // Show success message
+                  $('<p id="keyword-validation-message" class="validation-success" style="color:green; margin-top: 5px; font-size: 12px;">✓ Keyword is available!</p>')
+                    .insertAfter("#design_keyword");
+                }
               }
             },
+            error: function(xhr, status, error) {
+              console.log('Keyword check error:', error);
+              // Optionally show an error message to user
+              $('<p id="keyword-validation-message" class="validation-error" style="color:orange; margin-top: 5px; font-size: 12px;">⚠️ Could not verify keyword uniqueness. Please try again.</p>')
+                .insertAfter("#design_keyword");
+            }
           });
         }, 500);
       }
