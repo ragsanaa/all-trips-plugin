@@ -1,0 +1,368 @@
+/**
+ * WeTravel Plugin Deactivation Form Styles
+ */
+
+/* Modal Overlay */
+.wetravel-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 100000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Prevent body scroll when modal is open */
+body.wetravel-modal-open {
+  overflow: hidden;
+}
+
+/* Modal Content */
+.wetravel-modal-content {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  max-width: 70%;
+  width: 60%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+/* Modal Header */
+.wetravel-modal-header {
+  padding: 24px 24px 16px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.wetravel-modal-header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  line-height: 1.4;
+}
+
+/* Modal Body */
+.wetravel-modal-body {
+  padding: 24px;
+}
+
+/* Feedback Options */
+.wetravel-feedback-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 24px;
+  justify-content: center;
+}
+
+.wetravel-feedback-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 8px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: #fff;
+  width: 100px;
+  height: 80px;
+  text-align: center;
+}
+
+.wetravel-feedback-option:hover {
+  border-color: #4285f4;
+  background-color: #f8f9ff;
+}
+
+.wetravel-feedback-option input[type="radio"] {
+  display: none;
+}
+
+.wetravel-feedback-option
+  input[type="radio"]:checked
+  + .wetravel-option-icon
+  + .wetravel-option-text {
+  color: #4285f4;
+  font-weight: 600;
+}
+
+.wetravel-feedback-option input[type="radio"]:checked ~ * {
+  color: #4285f4;
+}
+
+.wetravel-feedback-option:has(input[type="radio"]:checked) {
+  border-color: #4285f4;
+  background-color: #f0f4ff;
+}
+
+.wetravel-option-icon {
+  font-size: 28px;
+  margin-bottom: 6px;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: inline-block;
+}
+
+/* Dashicons specific styling */
+.wetravel-option-icon.dashicons {
+  line-height: 1;
+  font-family: dashicons;
+  text-decoration: inherit;
+  font-weight: normal;
+  font-style: normal;
+  vertical-align: top;
+  text-align: center;
+  transition: color 0.2s ease;
+}
+
+.wetravel-option-text {
+  font-size: 13px;
+  color: #666;
+  line-height: 1.2;
+  transition: all 0.2s ease;
+  margin-top: 6px;
+  word-wrap: break-word;
+  font-weight: 500;
+}
+
+/* Text Area Container */
+.wetravel-feedback-text-container {
+  margin-bottom: 20px;
+}
+
+#wetravel-feedback-text {
+  width: 100%;
+  min-height: 100px;
+  padding: 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 14px;
+  line-height: 1.4;
+  resize: vertical;
+  transition: border-color 0.2s ease;
+  box-sizing: border-box;
+}
+
+#wetravel-feedback-text:focus {
+  outline: none;
+  border-color: #4285f4;
+  box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.1);
+}
+
+#wetravel-feedback-text::placeholder {
+  color: #999;
+}
+
+/* Data Sharing Notice */
+.wetravel-data-sharing-notice {
+  padding: 16px;
+  background-color: #f5f5f5;
+  border-radius: 6px;
+  margin-bottom: 16px;
+}
+
+.wetravel-data-sharing-notice p {
+  margin: 0;
+  font-size: 13px;
+  color: #666;
+  line-height: 1.4;
+}
+
+.wetravel-data-sharing-notice a {
+  color: #4285f4;
+  text-decoration: none;
+}
+
+.wetravel-data-sharing-notice a:hover {
+  text-decoration: underline;
+}
+
+/* Modal Footer */
+.wetravel-modal-footer {
+  padding: 16px 24px 24px;
+  border-top: 1px solid #e0e0e0;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.wetravel-modal-footer .wetravel-btn-group-left {
+  display: flex;
+  gap: 12px;
+}
+
+.wetravel-modal-footer .wetravel-btn-group-right {
+  display: flex;
+  gap: 12px;
+}
+
+/* Buttons */
+.wetravel-btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 120px;
+  text-align: center;
+}
+
+.wetravel-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.wetravel-btn-primary {
+  background-color: #4285f4;
+  color: #fff;
+}
+
+.wetravel-btn-primary:hover:not(:disabled) {
+  background-color: #3367d6;
+}
+
+.wetravel-btn-secondary {
+  background-color: #f8f9fa;
+  color: #5f6368;
+  border: 1px solid #dadce0;
+}
+
+.wetravel-btn-secondary:hover:not(:disabled) {
+  background-color: #f1f3f4;
+  border-color: #c4c7ca;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .wetravel-feedback-options {
+    justify-content: center;
+  }
+
+  .wetravel-feedback-option {
+    width: 110px;
+    height: 90px;
+  }
+
+  .wetravel-option-icon {
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+  }
+
+  .wetravel-option-text {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 768px) {
+  .wetravel-modal-content {
+    width: 98%;
+    margin: 10px;
+  }
+
+  .wetravel-feedback-options {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .wetravel-feedback-option {
+    width: 100px;
+    height: 85px;
+  }
+
+  .wetravel-option-icon {
+    font-size: 22px;
+    width: 22px;
+    height: 22px;
+  }
+
+  .wetravel-option-text {
+    font-size: 12px;
+  }
+
+  .wetravel-modal-footer {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .wetravel-btn-group-left,
+  .wetravel-btn-group-right {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .wetravel-btn {
+    flex: 1;
+    min-width: 120px;
+  }
+
+  .wetravel-modal-header h2 {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .wetravel-modal-header,
+  .wetravel-modal-body {
+    padding: 16px;
+  }
+
+  .wetravel-modal-footer {
+    padding: 12px 16px 16px;
+  }
+
+  .wetravel-feedback-option {
+    width: 90px;
+    height: 75px;
+    padding: 6px;
+  }
+
+  .wetravel-option-icon {
+    font-size: 18px;
+    margin-bottom: 4px;
+    width: 18px;
+    height: 18px;
+  }
+
+  .wetravel-option-text {
+    font-size: 11px;
+    line-height: 1.1;
+  }
+}
+
+/* Animation for modal */
+.wetravel-modal {
+  opacity: 0;
+  animation: wetravelFadeIn 0.3s ease forwards;
+}
+
+@keyframes wetravelFadeIn {
+  to {
+    opacity: 1;
+  }
+}
+
+/* Focus styles for accessibility */
+.wetravel-feedback-option:focus-within {
+  outline: 2px solid #4285f4;
+  outline-offset: 2px;
+}
+
+.wetravel-btn:focus {
+  outline: 2px solid #4285f4;
+  outline-offset: 2px;
+}

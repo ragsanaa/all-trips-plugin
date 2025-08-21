@@ -27,6 +27,9 @@ $options = array(
 	'wetravel_trips_embed_code',
 	'wetravel_trips_last_saved',
 	'wetravel_trips_search_visibility',
+	'wetravel_consent_given',
+	'wetravel_consent_timestamp',
+	'wetravel_consent_type',
 );
 
 foreach ( $options as $option ) {

@@ -355,6 +355,26 @@ function wetravel_trips_instructions_page() {
 							<li><a href="https://www.wetravel.com/privacy" target="_blank">WeTravel Privacy Policy</a></li>
 						</ul>
 
+						<h2>Consent Management</h2>
+
+													<?php
+							// Add consent management section if user has made a consent decision
+							$consent_given = get_option( 'wetravel_consent_given' );
+							if ( $consent_given !== 0 ) : ?>
+								<?php
+									$button_text = $consent_given ? 'Opt Out' : 'Opt In';
+									$button_url = $consent_given ?
+										admin_url( 'admin.php?page=wetravel-consent&action=opt_out&return_page=wetravel-trips-instructions&return_tab=privacy-requirements' ) :
+										admin_url( 'admin.php?page=wetravel-consent&action=opt_in&return_page=wetravel-trips-instructions&return_tab=privacy-requirements' );
+									$description = $consent_given ? 'You\'ve opted in to receive important updates about WeTravel Widgets. You can opt out anytime.' : 'You\'ve opted out of receiving updates. You can opt back in anytime.';
+								?>
+								<div>
+									<span class="dashicons dashicons-update"></span>
+									<?php echo $description; ?>
+									<a href="<?php echo $button_url; ?>"><?php echo $button_text; ?></a>
+								</div>
+							<?php endif; ?>
+
 						<h2>System Requirements</h2>
 
 						<ul>
@@ -376,19 +396,36 @@ function wetravel_trips_instructions_page() {
 				const tabButtons = document.querySelectorAll('.tab-button');
 				const tabPanes = document.querySelectorAll('.tab-pane');
 
+				// Function to switch to a specific tab
+				function switchToTab(tabName) {
+					// Remove active class from all buttons and panes
+					tabButtons.forEach(btn => btn.classList.remove('active'));
+					tabPanes.forEach(pane => pane.classList.remove('active'));
+
+					// Add active class to target button and corresponding pane
+					const targetButton = document.querySelector('[data-tab="' + tabName + '"]');
+					const targetPane = document.getElementById(tabName);
+
+					if (targetButton && targetPane) {
+						targetButton.classList.add('active');
+						targetPane.classList.add('active');
+					}
+				}
+
+				// Add click event listeners to tab buttons
 				tabButtons.forEach(button => {
 					button.addEventListener('click', function() {
 						const targetTab = this.getAttribute('data-tab');
-
-						// Remove active class from all buttons and panes
-						tabButtons.forEach(btn => btn.classList.remove('active'));
-						tabPanes.forEach(pane => pane.classList.remove('active'));
-
-						// Add active class to clicked button and corresponding pane
-						this.classList.add('active');
-						document.getElementById(targetTab).classList.add('active');
+						switchToTab(targetTab);
 					});
 				});
+
+				// Check if there's a tab parameter in the URL and switch to it
+				const urlParams = new URLSearchParams(window.location.search);
+				const tabParam = urlParams.get('tab');
+				if (tabParam) {
+					switchToTab(tabParam);
+				}
 			});
 		</script>
 	</div>

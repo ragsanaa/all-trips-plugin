@@ -40,6 +40,7 @@ function wtwidget_trips_shortcode( $atts ) {
 		'date_end'               => '',
 		'search_visibility'      => get_option( 'wetravel_trips_search_visibility', false ),
 		'border_radius'          => get_option( 'wetravel_trips_border_radius', 6 ),
+		'widget_type'            => get_option( 'wetravel_trips_widget_type', 'all-trips' ),
 	);
 
 	// First, get the design if specified
@@ -116,6 +117,8 @@ function wtwidget_trips_shortcode( $atts ) {
 		'dateEnd'        => $atts['date_end'],
 		'searchVisibility' => $atts['search_visibility'],
 		'borderRadius'   => $atts['border_radius'],
+		'integrationType' => 'shortcode',
+		'widgetType'     => $atts['widget_type'],
 	);
 
 	// Add the selected design ID if a widget was specified

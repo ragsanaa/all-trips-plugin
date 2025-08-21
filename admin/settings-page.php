@@ -93,6 +93,31 @@ function wetravel_trips_settings_page() {
 	<div class="wrap">
 		<h1>WeTravel Widgets Plugin - Settings</h1>
 
+		<?php
+		// Display consent message if user just completed consent
+		$consent_param = isset( $_GET['consent'] ) ? sanitize_text_field( wp_unslash( $_GET['consent'] ) ) : '';
+
+		if ( $consent_param === 'allowed' ) : ?>
+			<div class="notice notice-success is-dismissible" id="wetravel-consent-notice">
+				<p>
+					<strong>Thank you!</strong> You've opted in to receive important updates about WeTravel Widgets.
+					We'll keep you informed about security updates, new features, and helpful content.
+				</p>
+				<button type="button" class="notice-dismiss" onclick="dismissConsentNotice()">
+					<span class="screen-reader-text">Dismiss this notice.</span>
+				</button>
+			</div>
+		<?php elseif ( $consent_param === 'skipped' ) : ?>
+			<div class="notice notice-info is-dismissible" id="wetravel-consent-notice">
+				<p>
+					<strong>Consent skipped.</strong> You can always opt in later through the plugin settings if you change your mind.
+				</p>
+				<button type="button" class="notice-dismiss" onclick="dismissConsentNotice()">
+					<span class="screen-reader-text">Dismiss this notice.</span>
+				</button>
+			</div>
+		<?php endif; ?>
+
 		<div class="nav-tab-wrapper">
 			<a href="?page=wetravel-trips-instructions" class="nav-tab">Instructions</a>
 			<a href="?page=wetravel-trips-settings" class="nav-tab nav-tab-active">Settings</a>
@@ -292,7 +317,7 @@ add_action( 'admin_menu', 'wetravel_trips_add_admin_menu' );
  * @param string $hook Get all trips hook.
  */
 function wetravel_trips_admin_enqueue_scripts( $hook ) {
-	if ( strpos( $hook, 'wetravel-trips' ) !== false ) {
+	if ( strpos( $hook, 'wetravel-trips' ) !== false || strpos( $hook, 'wetravel-consent' ) !== false ) {
 		wp_enqueue_style( 'wp-color-picker' );
 		wp_enqueue_script( 'wp-color-picker' );
 		wp_enqueue_style( 'wetravel-trips-admin-styles', WETRAVEL_WIDGETS_PLUGIN_URL . 'admin/css/admin-styles.css', array(), filemtime( WETRAVEL_WIDGETS_PLUGIN_DIR . 'admin/css/admin-styles.css' ) );
@@ -300,4 +325,23 @@ function wetravel_trips_admin_enqueue_scripts( $hook ) {
 	}
 }
 add_action( 'admin_enqueue_scripts', 'wetravel_trips_admin_enqueue_scripts' );
+
+/**
+ * Add JavaScript for consent notice dismissal
+ */
+function wetravel_consent_notice_script() {
+    if ( isset( $_GET['page'] ) && $_GET['page'] === 'wetravel-trips-settings' ) {
+        ?>
+        <script type="text/javascript">
+        function dismissConsentNotice() {
+            var notice = document.getElementById('wetravel-consent-notice');
+            if (notice) {
+                notice.style.display = 'none';
+            }
+        }
+        </script>
+        <?php
+    }
+}
+add_action( 'admin_footer', 'wetravel_consent_notice_script' );
 ?>

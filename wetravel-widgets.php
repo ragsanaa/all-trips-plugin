@@ -48,8 +48,32 @@ if ( ! defined( 'WETRAVEL_WIDGETS_PLUGIN_FILE' ) ) {
 define( 'WETRAVEL_WIDGETS_PLUGIN_DIR', plugin_dir_path( WETRAVEL_WIDGETS_PLUGIN_FILE ) );
 define( 'WETRAVEL_WIDGETS_PLUGIN_URL', plugin_dir_url( WETRAVEL_WIDGETS_PLUGIN_FILE ) );
 
+// Define plugin version constant for tracking
+if ( ! defined( 'WETRAVEL_PLUGIN_VERSION' ) ) {
+	$plugin_data = get_plugin_data( WP_PLUGIN_DIR . '/wetravel-widgets/wetravel-widgets.php' );
+	define( 'WETRAVEL_PLUGIN_VERSION', $plugin_data['Version'] );
+}
+
+// Define plugin name and slug constants
+if ( ! defined( 'WETRAVEL_PLUGIN_NAME' ) ) {
+	define( 'WETRAVEL_PLUGIN_NAME', 'WeTravel Widgets' );
+}
+if ( ! defined( 'WETRAVEL_PLUGIN_SLUG' ) ) {
+	define( 'WETRAVEL_PLUGIN_SLUG', 'wetravel-widgets' );
+}
+
+// TODO: Remove this after testing and talk to platform team
+// Define WeTravel Internal API Key constant if not already defined
+// You can set this in wp-config.php: define('WETRAVEL_INTERNAL_API_KEY', 'your-api-key-here');
+if ( ! defined( 'WETRAVEL_INTERNAL_API_KEY' ) && getenv( 'INTERNAL_API_KEY' ) ) {
+	define( 'WETRAVEL_INTERNAL_API_KEY', getenv( 'INTERNAL_API_KEY' ) );
+}
+
 // Include admin settings page.
 require_once WETRAVEL_WIDGETS_PLUGIN_DIR . 'admin/settings-page.php';
+
+// Include consent page.
+require_once WETRAVEL_WIDGETS_PLUGIN_DIR . 'admin/consent-page.php';
 
 // In wetravel-widgets.php, add this line to include the fetch-trips.php file.
 // Add this after the other require_once statements near the top of the file.
@@ -151,7 +175,6 @@ function wtwidget_register_block() {
 		return;
 	}
 
-	// In wetravel-widgets.php, update the register_block_type attributes.
 	register_block_type(
 		'wetravel-trips/block',
 		array(
@@ -223,6 +246,14 @@ function wtwidget_register_block() {
 					'type'    => 'number',
 					'default' => 6,
 				),
+				'integrationType' => array(
+					'type'    => 'string',
+					'default' => 'block',
+				),
+				'widgetType'      => array(
+					'type'    => 'string',
+					'default' => 'all-trips',
+				),
 			),
 		)
 	);
@@ -243,6 +274,15 @@ require_once WETRAVEL_WIDGETS_PLUGIN_DIR . 'admin/create-design-page.php';
 
 // Include admin instructions page.
 require_once WETRAVEL_WIDGETS_PLUGIN_DIR . 'admin/instructions-page.php';
+
+// Include tracking functionality.
+require_once WETRAVEL_WIDGETS_PLUGIN_DIR . 'includes/tracking.php';
+
+// Include tracking admin page.
+require_once WETRAVEL_WIDGETS_PLUGIN_DIR . 'admin/tracking-settings-page.php';
+
+// Include deactivation form.
+require_once WETRAVEL_WIDGETS_PLUGIN_DIR . 'admin/deactivation-form.php';
 
 /**  Register shortcode. */
 function wtwidget_register_shortcode() {
@@ -302,11 +342,29 @@ function wtwidget_activation() {
 		'wetravel_trips_env' => 'https://pre.wetravel.to',
 		'wetravel_trips_load_more_text' => 'Load More',
 		'wetravel_trips_search_visibility' => false,
+		'wetravel_tracking_enabled' => false,
 	);
 
 	foreach ($default_settings as $key => $value) {
 		if (get_option($key) === false) {
 			add_option($key, $value);
+		}
+	}
+
+	// Set activation flag to show consent notice
+	set_transient( 'wetravel_activation_consent_notice', true, 60 * 60 * 24 * 7 ); // 1 week
+
+	// Trigger plugin activation action for tracking
+	do_action( 'wetravel_plugin_activated' );
+
+	// Track activation state with forced plugin state
+	if ( function_exists( 'wetravel_track_user_state' ) ) {
+		$wt_user_id = get_option( 'wetravel_trips_user_id', '' );
+		$wt_user_slug = get_option( 'wetravel_trips_slug', '' );
+
+		if ( $wt_user_id && $wt_user_slug ) {
+			// Force plugin state to true for activation tracking
+			wetravel_track_user_state( $wt_user_id, $wt_user_slug, true );
 		}
 	}
 }

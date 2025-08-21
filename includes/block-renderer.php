@@ -39,6 +39,8 @@ function wtwidget_trips_block_render( $attributes ) {
 	$load_more_text         = $attributes['loadMoreText'] ?? get_option( 'wetravel_trips_load_more_text', 'Load More' );
 	$search_visibility      = $attributes['searchVisibility'] ?? get_option( 'wetravel_trips_search_visibility', false );
 	$border_radius          = intval( $attributes['borderRadius'] ?? get_option( 'wetravel_trips_border_radius', 6 ) );
+	$integration_type       = $attributes['integrationType'] ?? 'block';
+	$widget_type            = $attributes['widgetType'] ?? get_option( 'wetravel_trips_widget_type', 'all-trips' );
 
 	// Override with design settings if a design is selected.
 	if ( ! empty( $selected_design_id ) ) {
@@ -347,7 +349,10 @@ function wtwidget_trips_block_render( $attributes ) {
 			<?php endif; ?>
 			data-trip-type="<?php echo esc_attr( $trip_type ); ?>"
 			data-date-start="<?php echo esc_attr( $date_start ); ?>"
-			data-date-end="<?php echo esc_attr( $date_end ); ?>">
+			data-date-end="<?php echo esc_attr( $date_end ); ?>"
+			data-wetravel-widget-type="<?php echo esc_attr( $widget_type ); ?>"
+			data-integration-type="<?php echo esc_attr( $integration_type ); ?>"
+			>
 			<?php
 				$allowed_html_tags = array(
 					'div' => array(
@@ -356,6 +361,7 @@ function wtwidget_trips_block_render( $attributes ) {
 							'data-version' => true,
 							'data-uid' => true,
 							'data-uuid' => true,
+							'data-trip-uuid' => true,
 							'href' => true,
 							'style' => true,
 					),
@@ -385,6 +391,7 @@ function wtwidget_trips_block_render( $attributes ) {
 						'style' => true,
 						'href' => true,
 						'target' => true,
+						'data-trip-uuid' => true,
 					),
 				);
 			?>
@@ -535,6 +542,12 @@ function wtwidget_trips_block_render( $attributes ) {
 		filemtime( plugin_dir_path( dirname( __FILE__ ) ) . 'assets/js/trips-loader.js' ), true );
 	wp_add_inline_script( 'wetravel-trips-loading', $inline_script );
 	wp_enqueue_script( 'wetravel-trips-loading' );
+
+	// Track widget view if tracking is enabled
+	if ( function_exists( 'wetravel_track_widget_view' ) ) {
+		wetravel_track_widget_view( $block_id, $display_type );
+	}
+
 	return ob_get_clean();
 }
 
@@ -575,7 +588,7 @@ function wtwidget_render_trip_item( $trip, $options, $visibility_class = '' ) {
 	$button_url = wtwidget_get_button_url( $trip, $options );
 
 	if ( 'vertical' === $options['displayType'] || ('grid' === $options['displayType'] && 'trip_link' === $options['buttonType'])) {
-		$html .= '<div class="trip-item ' . esc_attr( $visibility_class ) . '">';
+		$html .= '<div class="trip-item ' . esc_attr( $visibility_class ) . '" data-trip-uuid="' . esc_attr( $trip['uuid'] ) . '">';
 	} elseif ( 'book_now' === $options['buttonType'] && ('grid' === $options['displayType'] || 'carousel' === $options['displayType']) ) {
 		$html .= sprintf(
 			'<div class="trip-item wtrvl-checkout_button %s" data-env="%s" data-version="v0.3" data-uid="%s" data-uuid="%s" href="%s" style="cursor: pointer;">',
@@ -587,13 +600,14 @@ function wtwidget_render_trip_item( $trip, $options, $visibility_class = '' ) {
 		);
 	} elseif ( 'carousel' === $options['displayType'] && 'trip_link' === $options['buttonType'] ) {
 		$html .= sprintf(
-			'<div class="trip-item %s" target="_blank" href="%s" style="cursor: pointer;">',
+			'<div class="trip-item %s" data-trip-uuid="%s" target="_blank" href="%s" style="cursor: pointer;">',
 			esc_attr( $visibility_class ),
+			esc_attr( $trip['uuid'] ),
 			esc_url( $button_url )
 		);
 	} else {
 		// Fallback for any other cases
-		$html .= '<div class="trip-item ' . esc_attr( $visibility_class ) . '">';
+		$html .= '<div class="trip-item ' . esc_attr( $visibility_class ) . '" data-trip-uuid="' . esc_attr( $trip['uuid'] ) . '">';
 	}
 
 	// Image.
@@ -706,8 +720,9 @@ function wtwidget_render_trip_item( $trip, $options, $visibility_class = '' ) {
 			);
 		} else {
 			$html .= sprintf(
-				'<a href="%s" class="trip-button" target="_blank" style="%s">%s</a>',
+				'<a href="%s" class="trip-button" data-trip-uuid="%s" target="_blank" style="%s">%s</a>',
 				esc_url( $button_url ),
+				esc_attr( $trip['uuid'] ),
 				$button_style,
 				esc_html( $options['buttonText'] )
 			);
