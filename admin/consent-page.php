@@ -30,18 +30,36 @@ function wetravel_handle_consent() {
         // Remove the activation consent notice
         delete_transient( 'wetravel_activation_consent_notice' );
 
+        // Track user state with original data since consent was allowed
+        if ( function_exists( 'wetravel_track_user_state' ) ) {
+            $wt_user_id = get_option( 'wetravel_trips_user_id', '' );
+            $wt_user_slug = get_option( 'wetravel_trips_slug', '' );
+
+            // Track user state - bypass consent check for initial consent decision
+            wetravel_track_plugin_state( 'allowed_consent' );
+        }
+
         // Redirect to settings page with success message
         wp_safe_redirect( admin_url( 'admin.php?page=wetravel-trips-settings&consent=allowed' ) );
         exit;
 
     } elseif ( $action === 'skip' ) {
         // User skipped consent
-        update_option( 'wetravel_consent_given', false );
+        update_option( 'wetravel_consent_given', 0 );
         update_option( 'wetravel_consent_timestamp', current_time( 'timestamp' ) );
         update_option( 'wetravel_consent_type', 'skipped' );
 
         // Remove the activation consent notice
         delete_transient( 'wetravel_activation_consent_notice' );
+
+        // Track user state with anonymous data since consent was skipped
+        if ( function_exists( 'wetravel_track_user_state' ) ) {
+            $wt_user_id = get_option( 'wetravel_trips_user_id', '' );
+            $wt_user_slug = get_option( 'wetravel_trips_slug', '' );
+
+            // Track user state - bypass consent check for initial consent decision
+            wetravel_track_plugin_state( 'skipped_consent' );
+        }
 
         // Redirect to settings page with skip message
         wp_safe_redirect( admin_url( 'admin.php?page=wetravel-trips-settings&consent=skipped' ) );
@@ -182,6 +200,16 @@ function wetravel_handle_consent_actions() {
         update_option( 'wetravel_consent_timestamp', current_time( 'timestamp' ) );
         update_option( 'wetravel_consent_type', 'allowed' );
 
+        // Track user state with full data since consent was given
+        if ( function_exists( 'wetravel_track_user_state' ) ) {
+            $wt_user_id = get_option( 'wetravel_trips_user_id', '' );
+            $wt_user_slug = get_option( 'wetravel_trips_slug', '' );
+
+            // Track user state - bypass consent check for consent update
+            wetravel_track_user_state( $wt_user_id, $wt_user_slug, true, false, array(), true );
+            wetravel_track_plugin_state( 'allowed_consent' );
+        }
+
         // Build redirect URL with return page and tab
         $redirect_url = admin_url( 'admin.php?page=' . $return_page . '&consent=updated&status=allowed' );
         if ( ! empty( $return_tab ) ) {
@@ -193,9 +221,19 @@ function wetravel_handle_consent_actions() {
 
     } elseif ( $action === 'opt_out' ) {
         // User wants to opt out
-        update_option( 'wetravel_consent_given', false );
+        update_option( 'wetravel_consent_given', 0 );
         update_option( 'wetravel_consent_timestamp', current_time( 'timestamp' ) );
         update_option( 'wetravel_consent_type', 'opted_out' );
+
+        // Track user state with anonymous data since consent was revoked
+        if ( function_exists( 'wetravel_track_user_state' ) ) {
+            $wt_user_id = get_option( 'wetravel_trips_user_id', '' );
+            $wt_user_slug = get_option( 'wetravel_trips_slug', '' );
+
+            // Track user state - bypass consent check for consent update
+            wetravel_track_user_state( $wt_user_id, $wt_user_slug, true, true, array(), true );
+            wetravel_track_plugin_state( 'skipped_consent' );
+        }
 
         // Build redirect URL with return page and tab
         $redirect_url = admin_url( 'admin.php?page=' . $return_page . '&consent=updated&status=opted_out' );
@@ -219,7 +257,7 @@ function wetravel_add_plugin_action_links( $links, $file ) {
 
         if ( $consent_given === false ) {
             // User hasn't given consent - show Opt-in link
-            $opt_in_link = '<a href="' . admin_url( 'admin.php?page=wetravel-trips-settings' ) . '">Opt-in</a>';
+            $opt_in_link = '<a href="' . admin_url( 'admin.php?page=wetravel-consent' ) . '">Opt-in</a>';
             array_unshift( $links, $opt_in_link );
         }
     }
@@ -228,3 +266,15 @@ function wetravel_add_plugin_action_links( $links, $file ) {
 }
 add_filter( 'plugin_action_links', 'wetravel_add_plugin_action_links', 10, 2 );
 
+/**
+ * Handle dismissing the consent notice
+ */
+function wetravel_handle_dismiss_consent_notice() {
+	if ( ! wp_verify_nonce( $_POST['nonce'], 'wetravel_dismiss_notice' ) ) {
+		wp_die( 'Security check failed' );
+	}
+
+	delete_transient( 'wetravel_activation_consent_notice' );
+	wp_send_json_success();
+}
+add_action( 'wp_ajax_wetravel_dismiss_consent_notice', 'wetravel_handle_dismiss_consent_notice' );

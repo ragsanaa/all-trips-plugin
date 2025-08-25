@@ -180,8 +180,8 @@ class WeTravel_Deactivation_Form {
         set_transient( 'wetravel_deactivation_reason', $feedback_reason, HOUR_IN_SECONDS );
         set_transient( 'wetravel_deactivation_reason_details', $feedback_text, HOUR_IN_SECONDS );
 
-        // Try to send feedback to WeTravel if tracking is enabled
-        if ( get_option( 'wetravel_tracking_enabled', false ) ) {
+        // Try to send feedback to WeTravel if consent was given
+        if ( get_option( 'wetravel_consent_given', false ) ) {
             // Track user state with deactivation details
             $this->track_deactivation_state( $feedback_reason, $feedback_text );
         }
@@ -202,15 +202,23 @@ class WeTravel_Deactivation_Form {
         $wt_user_id = get_option( 'wetravel_trips_user_id', '' );
         $wt_user_slug = get_option( 'wetravel_trips_slug', '' );
 
-        if ( empty( $wt_user_id ) || empty( $wt_user_slug ) ) {
-            return;
-        }
-
-        // Store additional deactivation details for the tracking system
+        // Check consent status to determine tracking approach
+        $consent_given = get_option( 'wetravel_consent_given', false );
         $wp_user_id = get_current_user_id();
 
-        // Track user state with deactivation reason included and force plugin state to false
-        wetravel_track_user_state( $wt_user_id, $wt_user_slug, false );
+        // Prepare deactivation data
+        $deactivation_data = array(
+            'deactivation_reason' => $deactivation_reason,
+            'deactivation_reason_details' => $deactivation_reason_details
+        );
+
+        if ( $consent_given ) {
+			// User gave consent - track with full user data + deactivation details
+			wetravel_track_user_state( $wt_user_id, $wt_user_slug, false, false, $deactivation_data, true );
+		} else {
+			// User skipped consent - track with anonymous data + deactivation details
+			wetravel_track_user_state( $wt_user_id, $wt_user_slug, false, true, $deactivation_data, true );
+		}
     }
 }
 
