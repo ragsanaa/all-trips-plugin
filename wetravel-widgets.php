@@ -278,9 +278,6 @@ require_once WETRAVEL_WIDGETS_PLUGIN_DIR . 'admin/instructions-page.php';
 // Include tracking functionality.
 require_once WETRAVEL_WIDGETS_PLUGIN_DIR . 'includes/tracking.php';
 
-// Include tracking admin page.
-require_once WETRAVEL_WIDGETS_PLUGIN_DIR . 'admin/tracking-settings-page.php';
-
 // Include deactivation form.
 require_once WETRAVEL_WIDGETS_PLUGIN_DIR . 'admin/deactivation-form.php';
 
@@ -342,7 +339,6 @@ function wtwidget_activation() {
 		'wetravel_trips_env' => 'https://pre.wetravel.to',
 		'wetravel_trips_load_more_text' => 'Load More',
 		'wetravel_trips_search_visibility' => false,
-		'wetravel_tracking_enabled' => false,
 	);
 
 	foreach ($default_settings as $key => $value) {
@@ -356,17 +352,6 @@ function wtwidget_activation() {
 
 	// Trigger plugin activation action for tracking
 	do_action( 'wetravel_plugin_activated' );
-
-	// Track activation state with forced plugin state
-	if ( function_exists( 'wetravel_track_user_state' ) ) {
-		$wt_user_id = get_option( 'wetravel_trips_user_id', '' );
-		$wt_user_slug = get_option( 'wetravel_trips_slug', '' );
-
-		if ( $wt_user_id && $wt_user_slug ) {
-			// Force plugin state to true for activation tracking
-			wetravel_track_user_state( $wt_user_id, $wt_user_slug, true );
-		}
-	}
 }
 register_activation_hook( __FILE__, 'wtwidget_activation' );
 
@@ -374,6 +359,32 @@ register_activation_hook( __FILE__, 'wtwidget_activation' );
 function wtwidget_deactivation() {
 	// Clean up transients
 	wtwidget_clear_transients();
+
+	// Track deactivation state
+	if ( function_exists( 'wetravel_track_user_state' ) ) {
+		$wt_user_id = get_option( 'wetravel_trips_user_id', '' );
+		$wt_user_slug = get_option( 'wetravel_trips_slug', '' );
+		$consent_given = get_option( 'wetravel_consent_given', false );
+
+		// Get deactivation reason if available
+		$deactivation_reason = get_transient( 'wetravel_deactivation_reason' ) ?: 'unspecified';
+		$deactivation_reason_details = get_transient( 'wetravel_deactivation_reason_details' ) ?: '';
+
+		// Prepare deactivation data
+		$deactivation_data = array(
+			'deactivation_reason' => $deactivation_reason,
+			'deactivation_reason_details' => $deactivation_reason_details
+		);
+
+		// Track based on consent status - bypass consent check for deactivation
+		if ( $consent_given ) {
+			// User gave consent - track with full user data
+			wetravel_track_user_state( $wt_user_id, $wt_user_slug, false, false, $deactivation_data, true );
+		} else {
+			// User skipped consent - track with anonymous data
+			wetravel_track_user_state( $wt_user_id, $wt_user_slug, false, true, $deactivation_data, true );
+		}
+	}
 }
 register_deactivation_hook( __FILE__, 'wtwidget_deactivation' );
 
@@ -392,6 +403,9 @@ function wtwidget_uninstall() {
 		'wetravel_trips_button_type',
 		'wetravel_trips_load_more_text',
 		'wetravel_trips_search_visibility',
+		'wetravel_consent_given',
+		'wetravel_consent_timestamp',
+		'wetravel_consent_type',
 	);
 
 	foreach ($options as $option) {
