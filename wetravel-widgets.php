@@ -250,7 +250,7 @@ function wtwidget_register_block() {
 					'type'    => 'string',
 					'default' => 'block',
 				),
-				'widgetType'      => array(
+				'wtWidgetType'      => array(
 					'type'    => 'string',
 					'default' => 'all-trips',
 				),

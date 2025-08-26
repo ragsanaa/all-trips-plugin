@@ -162,17 +162,22 @@ function wetravel_force_consent_redirect() {
 add_action( 'admin_init', 'wetravel_force_consent_redirect' );
 
 /**
- * Add consent page to admin menu (hidden)
+ * Add consent page to admin menu as submenu
  */
 function wetravel_add_consent_page() {
-    add_submenu_page(
-        null, // Hidden from menu
-        'WeTravel Widgets Consent',
-        'WeTravel Widgets Consent',
-        'manage_options',
-        'wetravel-consent',
-        'wetravel_consent_page'
-    );
+    $consent_given = get_option( 'wetravel_consent_given', 'unknown' );
+
+    if ( $consent_given === 'unknown' ) {
+        // Show as visible submenu item when consent not given
+        add_submenu_page(
+            'wetravel-trips-main', // Parent menu slug
+            'Setup Consent',
+            'Setup Consent',
+            'manage_options',
+            'wetravel-consent',
+            'wetravel_consent_page'
+        );
+    }
 }
 add_action( 'admin_menu', 'wetravel_add_consent_page' );
 

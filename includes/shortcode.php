@@ -88,6 +88,10 @@ function wtwidget_trips_shortcode( $atts ) {
 			if (!empty($design['searchVisibility'])) {
 				$default_atts['search_visibility'] = $design['searchVisibility'];
 			}
+			if (!empty($design['wtWidgetType'])) {
+				$default_atts['widget_type'] = $design['wtWidgetType'];
+			}
+
 			// Fix: Use shortcode attributes as fallback before global options
 			$default_atts['items_per_slide'] = isset($design['itemsPerSlide']) ? $design['itemsPerSlide'] : $default_atts['items_per_slide'];
 			$default_atts['items_per_row'] = isset($design['itemsPerRow']) ? $design['itemsPerRow'] : $default_atts['items_per_row'];
@@ -111,14 +115,13 @@ function wtwidget_trips_shortcode( $atts ) {
 		'itemsPerPage'   => intval($atts['items_per_page']),
 		'itemsPerRow'    => intval($atts['items_per_row']),
 		'itemsPerSlide'  => intval($atts['items_per_slide']),
-		'loadMoreText'   => $atts['load_more_text'],
 		'tripType'       => $atts['trip_type'],
 		'dateStart'      => $atts['date_start'],
 		'dateEnd'        => $atts['date_end'],
 		'searchVisibility' => $atts['search_visibility'],
 		'borderRadius'   => $atts['border_radius'],
 		'integrationType' => 'shortcode',
-		'widgetType'     => $atts['widget_type'],
+		'wtWidgetType'     => $atts['widget_type'],
 	);
 
 	// Add the selected design ID if a widget was specified
@@ -160,6 +163,7 @@ function wtwidget_register_trips_ajax_handlers() {
 			$trip_type  = isset( $_POST['tripType'] ) ? sanitize_text_field( wp_unslash( $_POST['tripType'] ) ) : 'all';
 			$date_start = isset( $_POST['dateStart'] ) ? sanitize_text_field( wp_unslash( $_POST['dateStart'] ) ) : '';
 			$date_end   = isset( $_POST['dateEnd'] ) ? sanitize_text_field( wp_unslash( $_POST['dateEnd'] ) ) : '';
+			$widget_type = isset( $_POST['wtWidgetType'] ) ? sanitize_text_field( wp_unslash( $_POST['wtWidgetType'] ) ) : 'all-trips';
 
 			// Build API URL with parameters
 			$api_url = wtwidget_build_api_url($env, $slug, array(

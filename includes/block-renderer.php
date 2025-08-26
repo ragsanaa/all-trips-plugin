@@ -36,11 +36,10 @@ function wtwidget_trips_block_render( $attributes ) {
 	$items_per_page         = intval( $attributes['itemsPerPage'] ?? get_option( 'wetravel_trips_items_per_page', 10 ) );
 	$items_per_row          = intval( $attributes['itemsPerRow'] ?? get_option( 'wetravel_trips_items_per_row', 3 ) );
 	$items_per_slide        = intval( $attributes['itemsPerSlide'] ?? get_option( 'wetravel_trips_items_per_slide', 3 ) );
-	$load_more_text         = $attributes['loadMoreText'] ?? get_option( 'wetravel_trips_load_more_text', 'Load More' );
 	$search_visibility      = $attributes['searchVisibility'] ?? get_option( 'wetravel_trips_search_visibility', false );
 	$border_radius          = intval( $attributes['borderRadius'] ?? get_option( 'wetravel_trips_border_radius', 6 ) );
 	$integration_type       = $attributes['integrationType'] ?? 'block';
-	$widget_type            = $attributes['widgetType'] ?? get_option( 'wetravel_trips_widget_type', 'all-trips' );
+	$widget_type            = $attributes['wtWidgetType'] ?? get_option( 'wetravel_trips_widget_type', 'all-trips' );
 
 	// Override with design settings if a design is selected.
 	if ( ! empty( $selected_design_id ) ) {
@@ -87,6 +86,9 @@ function wtwidget_trips_block_render( $attributes ) {
 			}
 			if ( empty( $attributes['itemsPerPage'] ) && isset( $design['itemsPerPage'] ) ) {
 				$items_per_page = intval( $design['itemsPerPage'] );
+			}
+			if ( empty( $attributes['wtWidgetType'] ) && isset( $design['wtWidgetType'] ) ) {
+				$widget_type = $design['wtWidgetType'];
 			}
 			// If the design has custom CSS, we'll add it later.
 			$custom_css_design = isset( $design['customCSS'] ) ? $design['customCSS'] : '';

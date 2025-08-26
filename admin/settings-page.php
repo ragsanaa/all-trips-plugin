@@ -53,7 +53,8 @@ function wetravel_trips_handle_reset_embed() {
 		return;
 	}
 
-	// Check for widget usage
+	// Clear cache and check for widget usage to ensure fresh results
+	wtwidget_clear_usage_cache();
 	$widget_usage = wtwidget_check_widget_usage();
 
 	// Check if widgets are in use
@@ -76,6 +77,13 @@ function wetravel_trips_handle_reset_embed() {
 	delete_option( 'wetravel_trips_env' );
 	delete_option( 'wetravel_trips_user_id' );
 
+	$has_consent = get_option( 'wetravel_consent_given', false );
+	if ( $has_consent && function_exists( 'wetravel_track_user_state' ) ) {
+		$wt_user_id = get_option( 'wetravel_trips_user_id', '' );
+		$wt_user_slug = get_option( 'wetravel_trips_slug', '' );
+		wetravel_track_user_state( $wt_user_id, $wt_user_slug, true, false, array() );
+	}
+
 	wp_safe_redirect( admin_url( 'admin.php?page=wetravel-trips-settings' ) );
 	exit;
 }
@@ -87,7 +95,8 @@ function wetravel_trips_settings_page() {
 	$last_saved     = get_option( 'wetravel_trips_last_saved', '' );
 	$has_embed_code = ! empty( $embed_code );
 
-	// Check for widget usage
+	// Clear cache and check for widget usage to ensure fresh results
+	wtwidget_clear_usage_cache();
 	$widget_usage = wtwidget_check_widget_usage();
 	?>
 	<div class="wrap">
@@ -220,6 +229,8 @@ function wetravel_trips_settings_page() {
 						</div>
 					</form>
 				<?php endif; ?>
+				<button class="button button-secondary" onclick="checkPluginState()">Check Plugin State</button>
+				<div id="plugin-state-result" style="margin-top: 10px; display: none;"></div>
 			</div>
 		</div>
 	</div>
@@ -327,7 +338,7 @@ function wetravel_trips_admin_enqueue_scripts( $hook ) {
 add_action( 'admin_enqueue_scripts', 'wetravel_trips_admin_enqueue_scripts' );
 
 /**
- * Add JavaScript for consent notice dismissal
+ * Add JavaScript for consent notice dismissal and plugin state checking
  */
 function wetravel_consent_notice_script() {
     if ( isset( $_GET['page'] ) && $_GET['page'] === 'wetravel-trips-settings' ) {
@@ -338,6 +349,41 @@ function wetravel_consent_notice_script() {
             if (notice) {
                 notice.style.display = 'none';
             }
+        }
+
+		// TODO: Remove this after testing
+        function checkPluginState() {
+            var resultDiv = document.getElementById('plugin-state-result');
+            var button = document.querySelector('button[onclick="checkPluginState()"]');
+
+            // Show loading state
+            button.disabled = true;
+            button.textContent = 'Checking...';
+            resultDiv.innerHTML = '<p>Loading widget counts...</p>';
+            resultDiv.style.display = 'block';
+
+            // Make AJAX request
+            jQuery.post(ajaxurl, {
+                action: 'wetravel_get_active_widget_counts'
+            }, function(response) {
+                if (response.success) {
+                    var counts = response.data.counts;
+                    var html = '<div style="background: #f0f0f1; border: 1px solid #ccd0d4; padding: 10px; margin: 10px 0;">';
+                    html += '<h4>Active Widget Counts:</h4>';
+                    html += '<pre style="font-size: 12px; overflow: auto;">' + JSON.stringify(counts, null, 2) + '</pre>';
+                    html += '<p><small>Timestamp: ' + response.data.timestamp + '</small></p>';
+                    html += '</div>';
+                    resultDiv.innerHTML = html;
+                } else {
+                    resultDiv.innerHTML = '<div class="notice notice-error"><p>Error: ' + (response.data || 'Unknown error') + '</p></div>';
+                }
+            }).fail(function() {
+                resultDiv.innerHTML = '<div class="notice notice-error"><p>AJAX request failed</p></div>';
+            }).always(function() {
+                // Reset button state
+                button.disabled = false;
+                button.textContent = 'Check Plugin State';
+            });
         }
         </script>
         <?php

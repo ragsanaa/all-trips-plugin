@@ -43,6 +43,16 @@ function wetravel_trips_handle_design_deletion() {
 	if ( isset( $designs[ $design_id ] ) ) {
 		unset( $designs[ $design_id ] );
 		update_option( 'wetravel_trips_designs', $designs );
+
+		// Track widget deletion with WeTravel user state tracking
+		$has_consent = get_option( 'wetravel_consent_given', false );
+		if ( $has_consent && function_exists( 'wetravel_track_user_state' ) ) {
+			$wt_user_id = get_option( 'wetravel_trips_user_id', '' );
+			$wt_user_slug = get_option( 'wetravel_trips_slug', '' );
+
+			wetravel_track_user_state( $wt_user_id, $wt_user_slug, true, false, array() );
+		}
+
 		$redirect_url = add_query_arg(
 			array(
 				'deleted' => 'true',
