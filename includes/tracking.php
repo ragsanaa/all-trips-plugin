@@ -805,28 +805,3 @@ function wetravel_track_plugin_state($action_type){
 	$audit_api = wetravel_get_audit_api();
 	return $audit_api->track_plugin_state( $action_type, true );
 }
-
-/**
- * AJAX handler to get active widget counts for testing
- */
-// TODO: Remove this after testing
-function wetravel_ajax_get_active_widget_counts() {
-	// Check user permissions
-	if ( ! current_user_can( 'manage_options' ) ) {
-		wp_die( 'You do not have sufficient permissions to access this page.' );
-	}
-
-	// Verify nonce if you want extra security (optional for testing)
-	// check_ajax_referer( 'wetravel_admin_nonce', 'nonce' );
-
-	$counts = wetravel_get_active_widget_counts();
-
-	wp_send_json_success( array(
-		'message' => 'Widget counts retrieved successfully',
-		'counts' => $counts,
-		'timestamp' => current_time( 'mysql' )
-	) );
-}
-
-// Register AJAX handlers
-add_action( 'wp_ajax_wetravel_get_active_widget_counts', 'wetravel_ajax_get_active_widget_counts' );

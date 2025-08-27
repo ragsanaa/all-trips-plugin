@@ -75,7 +75,7 @@ function wtwidget_save_embed_code() {
 				'saved' => 'true',
 				'display_nonce' => wp_create_nonce( 'wetravel_display_message' )
 			),
-			admin_url( 'admin.php?page=wetravel-trips-settings' )
+			admin_url( 'admin.php?page=wetravel-trips-setup' )
 		);
 		wp_safe_redirect( $redirect_url );
 		exit;
@@ -238,20 +238,25 @@ function wtwidget_check_widget_usage() {
 		$block_results = $wpdb->get_results($block_query);
 
 		if (!empty($block_results)) {
-			$usage['has_usage'] = true;
 			foreach ($block_results as $post) {
-				$edit_url = get_edit_post_link($post->ID);
-				// For FSE templates, use site editor URL
-				if ($post->post_type === 'wp_template' || $post->post_type === 'wp_template_part') {
-					$edit_url = admin_url('site-editor.php?postId=' . $post->ID . '&postType=' . $post->post_type);
-				}
+				// Check if this is actual widget usage or just design storage
+				$is_actual_usage = wtwidget_is_actual_widget_usage($post->post_content, $post->post_type);
 
-				$usage['blocks'][] = array(
-					'id' => $post->ID,
-					'title' => !empty($post->post_title) ? $post->post_title : 'Template: ' . $post->ID,
-					'type' => $post->post_type,
-					'edit_url' => $edit_url
-				);
+				if ($is_actual_usage) {
+					$usage['has_usage'] = true;
+					$edit_url = get_edit_post_link($post->ID);
+					// For FSE templates, use site editor URL
+					if ($post->post_type === 'wp_template' || $post->post_type === 'wp_template_part') {
+						$edit_url = admin_url('site-editor.php?postId=' . $post->ID . '&postType=' . $post->post_type);
+					}
+
+					$usage['blocks'][] = array(
+						'id' => $post->ID,
+						'title' => !empty($post->post_title) ? $post->post_title : 'Template: ' . $post->ID,
+						'type' => $post->post_type,
+						'edit_url' => $edit_url
+					);
+				}
 			}
 		}
 
@@ -300,6 +305,69 @@ function wtwidget_check_widget_usage() {
 	}
 
 	return $usage;
+}
+
+/**
+ * Determine if block content represents actual widget usage vs design storage
+ *
+ * @param string $content Post content to check
+ * @param string $post_type Type of post being checked
+ * @return bool True if actual widget usage, false if just design storage
+ */
+function wtwidget_is_actual_widget_usage($content, $post_type) {
+	// Extract all WeTravel block instances from content
+	if (preg_match_all('/<!-- wp:wetravel-trips\/block\s+({.*?})\s*(?:\/-->|-->)/s', $content, $matches)) {
+		foreach ($matches[1] as $json_str) {
+			// Clean up the JSON string
+			$json_str = trim($json_str);
+
+			// Try to decode the JSON attributes
+			$attributes = json_decode($json_str, true);
+
+			if (is_array($attributes)) {
+				// Check for design storage indicators
+				$has_designs_object = isset($attributes['designs']) && is_array($attributes['designs']);
+				$designs_count = $has_designs_object ? count($attributes['designs']) : 0;
+
+				// Check for actual widget configuration - these indicate active widget usage
+				$has_widget_config = (
+					isset($attributes['widget']) || // Has widget identifier
+					isset($attributes['selectedDesign']) || // Has selected design
+					isset($attributes['displayType']) || // Has display configuration
+					isset($attributes['itemsPerPage']) || // Has pagination
+					isset($attributes['itemsPerRow']) || // Has grid configuration
+					isset($attributes['itemsPerSlide']) // Has carousel configuration
+				);
+
+				// For template parts, be more strict about what constitutes design storage
+				if ($post_type === 'wp_template_part' || $post_type === 'wp_template') {
+					// If it has designs object but no widget config, it's likely design storage
+					if ($has_designs_object && !$has_widget_config) {
+						continue; // Skip this block, it's design storage
+					}
+				}
+
+				// If we find any block that looks like actual usage, return true
+				if ($has_widget_config) {
+					return true;
+				}
+
+				// For non-template posts, any block without designs object is likely usage
+				if (!($post_type === 'wp_template_part' || $post_type === 'wp_template') && !$has_designs_object) {
+					return true;
+				}
+			} else {
+				// If we can't parse JSON but block exists, check for design storage patterns
+				if (($post_type === 'wp_template_part' || $post_type === 'wp_template') &&
+					strpos($json_str, '"designs":{') !== false) {
+					continue; // Skip what appears to be design storage
+				}
+				return true; // Conservative: assume it's usage if we can't determine otherwise
+			}
+		}
+	}
+
+	return false; // No actual widget usage found
 }
 
 /**

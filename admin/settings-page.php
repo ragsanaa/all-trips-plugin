@@ -1,6 +1,6 @@
 <?php
 /**
- * Admin settings page for WeTravel Widgets Plugin
+ * Admin setup page for WeTravel Widgets Plugin
  *
  * @package WordPress
  */
@@ -45,7 +45,7 @@ function wetravel_trips_handle_reset_embed() {
 	$page = sanitize_text_field( wp_unslash( $_GET['page'] ) );
 	$reset_embed = sanitize_text_field( wp_unslash( $_GET['reset_embed'] ) );
 
-	if ( $page !== 'wetravel-trips-settings' ) {
+	if ( $page !== 'wetravel-trips-setup' ) {
 		return;
 	}
 
@@ -64,7 +64,7 @@ function wetravel_trips_handle_reset_embed() {
 				'error' => 'widgets_in_use',
 				'error_nonce' => wp_create_nonce( 'wetravel_error_message' )
 			),
-			admin_url( 'admin.php?page=wetravel-trips-settings' )
+			admin_url( 'admin.php?page=wetravel-trips-setup' )
 		);
 		wp_safe_redirect( $error_redirect_url );
 		exit;
@@ -84,13 +84,13 @@ function wetravel_trips_handle_reset_embed() {
 		wetravel_track_user_state( $wt_user_id, $wt_user_slug, true, false, array() );
 	}
 
-	wp_safe_redirect( admin_url( 'admin.php?page=wetravel-trips-settings' ) );
+	wp_safe_redirect( admin_url( 'admin.php?page=wetravel-trips-setup' ) );
 	exit;
 }
 add_action( 'admin_init', 'wetravel_trips_handle_reset_embed' );
 
 /** Render Setting page */
-function wetravel_trips_settings_page() {
+function wetravel_trips_setup_page() {
 	$embed_code     = get_option( 'wetravel_trips_embed_code', '' );
 	$last_saved     = get_option( 'wetravel_trips_last_saved', '' );
 	$has_embed_code = ! empty( $embed_code );
@@ -100,7 +100,7 @@ function wetravel_trips_settings_page() {
 	$widget_usage = wtwidget_check_widget_usage();
 	?>
 	<div class="wrap">
-		<h1>WeTravel Widgets Plugin - Settings</h1>
+		<h1>WeTravel Widgets Plugin - Setup</h1>
 
 		<?php
 		// Display consent message if user just completed consent
@@ -129,12 +129,12 @@ function wetravel_trips_settings_page() {
 
 		<div class="nav-tab-wrapper">
 			<a href="?page=wetravel-trips-instructions" class="nav-tab">Instructions</a>
-			<a href="?page=wetravel-trips-settings" class="nav-tab nav-tab-active">Settings</a>
+			<a href="?page=wetravel-trips-setup" class="nav-tab nav-tab-active">Setup</a>
 			<a href="?page=wetravel-trips-design-library" class="nav-tab">Widget Library</a>
 			<a href="?page=wetravel-trips-create-design" class="nav-tab">Create Widget</a>
 		</div>
 
-		<div class="wetravel-trips-settings-container">
+		<div class="wetravel-trips-setup-container">
 			<h2>WeTravel Embed Code</h2>
 			<p>Configure your WeTravel integration by pasting your <b>All Trips</b> embed code below.</p>
 			<?php
@@ -196,41 +196,24 @@ function wetravel_trips_settings_page() {
 							<p><strong>Environment:</strong> <?php echo esc_html( get_option( 'wetravel_trips_env', '' ) ); ?></p>
 							<p><strong>WeTravel User ID:</strong> <?php echo esc_html( get_option( 'wetravel_trips_user_id', '' ) ); ?></p>
 						</div>
-						<?php if (!$widget_usage['has_usage']) : ?>
-							<?php
-							// Create a reset link with a proper nonce.
-							$reset_url = wp_nonce_url(
-								admin_url( 'admin.php?page=wetravel-trips-settings&reset_embed=true' ),
-								'wetravel_trips_reset_nonce',
-								'_wpnonce'
-							);
-							?>
-							<a href="<?php echo esc_url( $reset_url ); ?>" class="button button-secondary">Re-enter Embed Code</a>
-						<?php else : ?>
-							<p class="description">
-								<span class="dashicons dashicons-info"></span>
-								Cannot re-enter embed code while WeTravel widgets are in use. Please remove all widgets from your content first.
-							</p>
-						<?php endif; ?>
 					</div>
-				<?php else : ?>
-					<form method="post" action="options.php" class="wetravel-trips-embed-form">
-						<?php
-						settings_fields( 'wetravel_trips_options' );
-						do_settings_sections( 'wetravel_trips_options' );
-						wp_nonce_field('wetravel_trips_settings_nonce', 'wetravel_trips_settings_nonce');
-						?>
-						<div class="wetravel-trips-embed-input-container">
-							<textarea id="wetravel_trips_embed_code" name="wetravel_trips_embed_code" class="large-text code" rows="4" placeholder='Paste your WeTravel "All Trips" embed script here...'><?php echo esc_textarea( $embed_code ); ?></textarea>
-							<p class="description"><?php esc_html_e('The plugin will extract the necessary details automatically.', 'wetravel-widgets'); ?></p>
-						</div>
-						<div class="wetravel-trips-embed-button-container">
-							<?php submit_button(); ?>
-						</div>
-					</form>
 				<?php endif; ?>
-				<button class="button button-secondary" onclick="checkPluginState()">Check Plugin State</button>
-				<div id="plugin-state-result" style="margin-top: 10px; display: none;"></div>
+
+				<!-- Always show the form to embed new all trips widget code -->
+				<form method="post" action="options.php" class="wetravel-trips-embed-form">
+					<?php
+					settings_fields( 'wetravel_trips_options' );
+					do_settings_sections( 'wetravel_trips_options' );
+					wp_nonce_field('wetravel_trips_settings_nonce', 'wetravel_trips_settings_nonce');
+					?>
+					<div class="wetravel-trips-embed-input-container">
+						<textarea id="wetravel_trips_embed_code" name="wetravel_trips_embed_code" rows="4" placeholder='Paste your WeTravel "All Trips" embed script here...'></textarea>
+						<p class="description"><?php esc_html_e('The plugin will extract the necessary details automatically.', 'wetravel-widgets'); ?></p>
+					</div>
+					<div class="wetravel-trips-embed-button-container">
+						<?php submit_button(); ?>
+					</div>
+				</form>
 			</div>
 		</div>
 	</div>
@@ -245,7 +228,7 @@ function wetravel_trips_main_page() {
 
 	if ( empty( $embed_code ) ) {
 		// No embed code set up, redirect to settings
-		wp_safe_redirect( admin_url( 'admin.php?page=wetravel-trips-settings' ) );
+		wp_safe_redirect( admin_url( 'admin.php?page=wetravel-trips-setup' ) );
 		exit;
 	} else {
 		// Embed code exists, redirect to design library
@@ -313,11 +296,11 @@ function wetravel_trips_add_admin_menu() {
 	// Add Settings as submenu.
 	add_submenu_page(
 		'wetravel-trips-main',
-		'Settings',
-		'Settings',
+		'Setup',
+		'Setup',
 		'manage_options',
-		'wetravel-trips-settings',
-		'wetravel_trips_settings_page'
+		'wetravel-trips-setup',
+		'wetravel_trips_setup_page'
 	);
 }
 add_action( 'admin_menu', 'wetravel_trips_add_admin_menu' );
@@ -341,7 +324,7 @@ add_action( 'admin_enqueue_scripts', 'wetravel_trips_admin_enqueue_scripts' );
  * Add JavaScript for consent notice dismissal and plugin state checking
  */
 function wetravel_consent_notice_script() {
-    if ( isset( $_GET['page'] ) && $_GET['page'] === 'wetravel-trips-settings' ) {
+    if ( isset( $_GET['page'] ) && $_GET['page'] === 'wetravel-trips-setup' ) {
         ?>
         <script type="text/javascript">
         function dismissConsentNotice() {
@@ -351,40 +334,6 @@ function wetravel_consent_notice_script() {
             }
         }
 
-		// TODO: Remove this after testing
-        function checkPluginState() {
-            var resultDiv = document.getElementById('plugin-state-result');
-            var button = document.querySelector('button[onclick="checkPluginState()"]');
-
-            // Show loading state
-            button.disabled = true;
-            button.textContent = 'Checking...';
-            resultDiv.innerHTML = '<p>Loading widget counts...</p>';
-            resultDiv.style.display = 'block';
-
-            // Make AJAX request
-            jQuery.post(ajaxurl, {
-                action: 'wetravel_get_active_widget_counts'
-            }, function(response) {
-                if (response.success) {
-                    var counts = response.data.counts;
-                    var html = '<div style="background: #f0f0f1; border: 1px solid #ccd0d4; padding: 10px; margin: 10px 0;">';
-                    html += '<h4>Active Widget Counts:</h4>';
-                    html += '<pre style="font-size: 12px; overflow: auto;">' + JSON.stringify(counts, null, 2) + '</pre>';
-                    html += '<p><small>Timestamp: ' + response.data.timestamp + '</small></p>';
-                    html += '</div>';
-                    resultDiv.innerHTML = html;
-                } else {
-                    resultDiv.innerHTML = '<div class="notice notice-error"><p>Error: ' + (response.data || 'Unknown error') + '</p></div>';
-                }
-            }).fail(function() {
-                resultDiv.innerHTML = '<div class="notice notice-error"><p>AJAX request failed</p></div>';
-            }).always(function() {
-                // Reset button state
-                button.disabled = false;
-                button.textContent = 'Check Plugin State';
-            });
-        }
         </script>
         <?php
     }

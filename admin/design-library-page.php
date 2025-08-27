@@ -77,7 +77,7 @@ function wetravel_trips_design_library_page() {
 
 		<div class="nav-tab-wrapper">
 			<a href="?page=wetravel-trips-instructions" class="nav-tab">Instructions</a>
-			<a href="?page=wetravel-trips-settings" class="nav-tab">Settings</a>
+			<a href="?page=wetravel-trips-setup" class="nav-tab">Setup</a>
 			<a href="?page=wetravel-trips-design-library" class="nav-tab nav-tab-active">Widget Library</a>
 			<a href="?page=wetravel-trips-create-design" class="nav-tab">Create Widget</a>
 		</div>

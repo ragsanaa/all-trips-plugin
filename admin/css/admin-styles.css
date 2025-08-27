@@ -148,31 +148,144 @@
 
 /* Settings Page Styles */
 
-.wetravel-trips-settings-container {
+.wetravel-trips-setup-container {
   margin-top: 20px;
 }
 
-.wetravel-trips-embed-form {
-  display: flex;
-  align-items: flex-start;
+
+.wetravel-trips-embed-form-container {
   max-width: 900px;
+}
+
+.wetravel-trips-embed-form {
+  background: #fff;
+  border: 1px solid #e1e1e1;
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .wetravel-trips-embed-input-container {
-  flex: 1;
-  margin-right: 15px;
+  margin-bottom: 12px;
+}
+
+.wetravel-trips-embed-input-container textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 16px;
+  border: 2px solid #e1e1e1;
+  border-radius: 6px;
+  font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  background: #fafafa;
+  transition: all 0.2s ease;
+  resize: vertical;
+}
+
+.wetravel-trips-embed-input-container textarea:focus {
+  outline: none;
+  border-color: #0073aa;
+  background: #fff;
+  box-shadow: 0 0 0 1px #0073aa;
+}
+
+.wetravel-trips-embed-input-container textarea::placeholder {
+  color: #999;
+  font-style: italic;
+}
+
+.wetravel-trips-embed-input-container .description {
+  margin-top: 6px;
+  color: #646970;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.wetravel-trips-embed-input-container .description::before {
+  content: "💡";
+  font-size: 14px;
 }
 
 .wetravel-trips-embed-button-container {
-  padding-top: 4px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.wetravel-trips-embed-button-container .button-primary {
+  background: #0073aa;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 5px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.wetravel-trips-embed-button-container .button-primary:hover {
+  background: #005a87;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 115, 170, 0.3);
+}
+
+.wetravel-trips-embed-button-container .submit {
+  margin: 0;
+  padding: 0;
+}
+
+/* Add a form header style */
+.wetravel-trips-embed-form::before {
+  content: "📝 Embed New Code";
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1d2327;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+/* Responsive design improvements */
+@media (max-width: 768px) {
+  .wetravel-trips-setup-container {
+    margin-left: 10px;
+    margin-right: 10px;
+  }
+
+  .wetravel-trips-embed-form {
+    padding: 16px;
+  }
+
+  .wetravel-trips-embed-info {
+    padding: 16px;
+    margin-left: 10px;
+    margin-right: 10px;
+  }
+
+  .wetravel-trips-extracted-info strong {
+    min-width: auto;
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .wetravel-trips-extracted-info p {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
 }
 
 .wetravel-trips-embed-info {
-  background: #f9f9f9;
-  border: 1px solid #ddd;
-  padding: 15px 20px;
-  border-radius: 4px;
+  background: linear-gradient(135deg, #f8fff9 0%, #f0f8f0 100%);
+  border: 1px solid #d4e8d5;
+  border-left: 4px solid #46b450;
+  padding: 20px 24px;
+  border-radius: 8px;
   max-width: 900px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .wetravel-trips-embed-status {
@@ -190,13 +303,29 @@
 .wetravel-trips-extracted-info {
   background: #fff;
   border: 1px solid #e5e5e5;
-  padding: 10px 15px;
+  padding: 16px 20px;
   margin-bottom: 15px;
-  border-radius: 3px;
+  border-radius: 6px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .wetravel-trips-extracted-info p {
-  margin: 5px 0;
+  margin: 8px 0;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wetravel-trips-extracted-info strong {
+  color: #1d2327;
+  font-weight: 600;
+  min-width: 140px;
+}
+
+.wetravel-trips-extracted-info p:not(:last-child) {
+  border-bottom: 1px solid #f0f0f0;
+  padding-bottom: 8px;
 }
 
 .notice ul {

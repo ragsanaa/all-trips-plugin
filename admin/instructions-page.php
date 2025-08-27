@@ -17,7 +17,7 @@ function wetravel_trips_instructions_page() {
 
 		<div class="nav-tab-wrapper" style="margin-bottom: 32px;">
 			<a href="?page=wetravel-trips-instructions" class="nav-tab nav-tab-active">Instructions</a>
-			<a href="?page=wetravel-trips-settings" class="nav-tab">Settings</a>
+			<a href="?page=wetravel-trips-setup" class="nav-tab">Setup</a>
 			<a href="?page=wetravel-trips-design-library" class="nav-tab">Widget Library</a>
 			<a href="?page=wetravel-trips-create-design" class="nav-tab">Create Widget</a>
 		</div>
@@ -45,7 +45,7 @@ function wetravel_trips_instructions_page() {
 
 						<h3>Quick Setup Guide</h3>
 						<ol>
-							<li><strong>Configure Settings:</strong> Go to <strong>WeTravel Widgets > Settings</strong> and paste your WeTravel "All Trips" embed code</li>
+							<li><strong>Configure Settings:</strong> Go to <strong>WeTravel Widgets > Setup</strong> and paste your WeTravel "All Trips" embed code</li>
 							<li><strong>Create Your First Widget:</strong> Navigate to <strong>WeTravel Widgets > Create Widget</strong> to design your custom widget</li>
 							<li><strong>Display Your Widget:</strong> Use the generated shortcode or Gutenberg block to place your widget on any page</li>
 						</ol>
@@ -61,7 +61,7 @@ function wetravel_trips_instructions_page() {
 						<p>Before creating custom widgets, you need to configure your WeTravel embed code:</p>
 
 						<ol>
-							<li>Go to <strong>WeTravel Widgets > Settings</strong></li>
+							<li>Go to <strong>WeTravel Widgets > Setup</strong></li>
 							<li>Paste your WeTravel "All Trips" embed script in the provided text area</li>
 							<li>Click "Save Changes"</li>
 							<li>The plugin will automatically extract the necessary details (slug, environment, user ID)</li>
@@ -299,7 +299,7 @@ function wetravel_trips_instructions_page() {
 
 						<h4>Widget Not Displaying</h4>
 						<ul>
-							<li>Ensure your WeTravel embed code is properly configured in Settings</li>
+							<li>Ensure your WeTravel embed code is properly configured in Setup</li>
 							<li>Check that your shortcode or block is correctly placed</li>
 							<li>Verify that your widget design is saved and active</li>
 						</ul>

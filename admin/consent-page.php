@@ -40,7 +40,7 @@ function wetravel_handle_consent() {
         }
 
         // Redirect to settings page with success message
-        wp_safe_redirect( admin_url( 'admin.php?page=wetravel-trips-settings&consent=allowed' ) );
+        wp_safe_redirect( admin_url( 'admin.php?page=wetravel-trips-setup&consent=allowed' ) );
         exit;
 
     } elseif ( $action === 'skip' ) {
@@ -62,7 +62,7 @@ function wetravel_handle_consent() {
         }
 
         // Redirect to settings page with skip message
-        wp_safe_redirect( admin_url( 'admin.php?page=wetravel-trips-settings&consent=skipped' ) );
+        wp_safe_redirect( admin_url( 'admin.php?page=wetravel-trips-setup&consent=skipped' ) );
         exit;
     }
 }
@@ -74,13 +74,13 @@ add_action( 'admin_init', 'wetravel_handle_consent' );
 function wetravel_consent_page() {
     // Check if user has already given consent
     if ( get_option( 'wetravel_consent_given' ) !== false ) {
-        wp_safe_redirect( admin_url( 'admin.php?page=wetravel-trips-settings' ) );
+        wp_safe_redirect( admin_url( 'admin.php?page=wetravel-trips-setup' ) );
         exit;
     }
 
     // Check if this is the activation consent notice
     if ( ! get_transient( 'wetravel_activation_consent_notice' ) ) {
-        wp_safe_redirect( admin_url( 'admin.php?page=wetravel-trips-settings' ) );
+        wp_safe_redirect( admin_url( 'admin.php?page=wetravel-trips-setup' ) );
         exit;
     }
 
@@ -196,7 +196,7 @@ function wetravel_handle_consent_actions() {
     $action = sanitize_text_field( $_GET['action'] );
 
     // Get return page and tab information
-    $return_page = isset( $_GET['return_page'] ) ? sanitize_text_field( $_GET['return_page'] ) : 'wetravel-trips-settings';
+    $return_page = isset( $_GET['return_page'] ) ? sanitize_text_field( $_GET['return_page'] ) : 'wetravel-trips-setup';
     $return_tab = isset( $_GET['return_tab'] ) ? sanitize_text_field( $_GET['return_tab'] ) : '';
 
     if ( $action === 'opt_in' ) {

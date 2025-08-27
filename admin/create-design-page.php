@@ -263,7 +263,7 @@ function wtwidget_trip_create_design_page() {
 
 		<div class="nav-tab-wrapper">
 			<a href="?page=wetravel-trips-instructions" class="nav-tab">Instructions</a>
-			<a href="?page=wetravel-trips-settings" class="nav-tab">Settings</a>
+			<a href="?page=wetravel-trips-setup" class="nav-tab">Setup</a>
 			<a href="?page=wetravel-trips-design-library" class="nav-tab">Widget Library</a>
 			<a href="?page=wetravel-trips-create-design" class="nav-tab nav-tab-active"><?php echo $editing ? 'Edit Widget' : 'Create Widget'; ?></a>
 		</div>
@@ -351,7 +351,7 @@ function wtwidget_trip_create_design_page() {
 									<?php endforeach; ?>
 								<?php endif; ?>
 							</select>
-							<p class="description"><?php echo empty($locations) ? 'Please configure your WeTravel embed code in Settings first.' : 'Select one or more locations. Leave empty to show all locations.'; ?></p>
+							<p class="description"><?php echo empty($locations) ? 'Please configure your WeTravel embed code in Setup first.' : 'Select one or more locations. Leave empty to show all locations.'; ?></p>
 						</div>
 
 						<div class="wetravel-trips-form-field">
