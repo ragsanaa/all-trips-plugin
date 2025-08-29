@@ -50,7 +50,8 @@ define( 'WETRAVEL_WIDGETS_PLUGIN_URL', plugin_dir_url( WETRAVEL_WIDGETS_PLUGIN_F
 
 // Define plugin version constant for tracking
 if ( ! defined( 'WETRAVEL_PLUGIN_VERSION' ) ) {
-	$plugin_data = get_plugin_data( WP_PLUGIN_DIR . '/wetravel-widgets/wetravel-widgets.php' );
+	$plugin_file = WP_PLUGIN_DIR . '/wetravel-widgets/wetravel-widgets.php';
+	$plugin_data = get_file_data( $plugin_file, [ 'Version' => 'Version' ], 'plugin' );
 	define( 'WETRAVEL_PLUGIN_VERSION', $plugin_data['Version'] );
 }
 
@@ -317,6 +318,11 @@ function wtwidget_activation() {
 		}
 	}
 
+	// Clear any previous deactivation data when reactivating
+	delete_transient( 'wetravel_deactivation_reason' );
+	delete_transient( 'wetravel_deactivation_reason_details' );
+	delete_option( 'wetravel_deactivation_feedback' );
+
 	// Initialize default plugin settings in the database
 	$default_settings = array(
 		'wetravel_trips_button_color' => '#33ae3f',
@@ -344,6 +350,11 @@ function wtwidget_activation() {
 	// Track plugin activation state
 	if ( function_exists( 'wetravel_track_plugin_state' ) ) {
 		wetravel_track_plugin_state( 'activated' );
+	}
+
+	// Update user state to reflect activation (clear deactivation reasons and update status)
+	if ( function_exists( 'wetravel_track_user_state' ) ) {
+		wetravel_track_user_state( null, null, true ); // Force plugin state to active (true)
 	}
 }
 register_activation_hook( __FILE__, 'wtwidget_activation' );
