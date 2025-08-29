@@ -154,12 +154,12 @@ class WeTravel_Deactivation_Form {
      */
     public function handle_deactivation_feedback() {
         // Verify nonce
-        if ( ! wp_verify_nonce( $_POST['nonce'], 'wetravel_deactivation_nonce' ) ) {
+        if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'wetravel_deactivation_nonce' ) ) {
             wp_die( esc_html__( 'Security check failed', 'wetravel-widgets' ) );
         }
 
-        $feedback_reason = sanitize_text_field( $_POST['feedback_reason'] ?? '' );
-        $feedback_text = sanitize_textarea_field( $_POST['feedback_text'] ?? '' );
+        $feedback_reason = sanitize_text_field( wp_unslash( $_POST['feedback_reason'] ?? '' ) );
+        $feedback_text = sanitize_textarea_field( wp_unslash( $_POST['feedback_text'] ?? '' ) );
 
         // Store feedback data
         $feedback_data = array(

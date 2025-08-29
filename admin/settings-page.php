@@ -242,8 +242,16 @@ function wetravel_trips_main_page() {
  */
 function wetravel_trips_handle_main_redirect() {
 	// Only run on our main menu page - safely check the page parameter
+	if ( ! isset( $_GET['wetravel_trips_settings_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['wetravel_trips_settings_nonce'] ) ), 'wetravel_trips_settings_nonce' ) ) {
+		return;
+	}
 	$page = isset( $_GET['page'] ) ? sanitize_text_field( wp_unslash( $_GET['page'] ) ) : '';
 	if ( $page !== 'wetravel-trips-main' ) {
+		return;
+	}
+
+	// Verify user has admin capabilities
+	if ( ! current_user_can( 'manage_options' ) ) {
 		return;
 	}
 
@@ -324,7 +332,13 @@ add_action( 'admin_enqueue_scripts', 'wetravel_trips_admin_enqueue_scripts' );
  * Add JavaScript for consent notice dismissal and plugin state checking
  */
 function wetravel_consent_notice_script() {
-    if ( isset( $_GET['page'] ) && $_GET['page'] === 'wetravel-trips-setup' ) {
+    // Only output script on our admin page for authorized users
+    if (
+        isset( $_GET['page'], $_GET['display_nonce'] ) &&
+        sanitize_text_field( wp_unslash( $_GET['page'] ) ) === 'wetravel-trips-setup' &&
+        wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['display_nonce'] ) ), 'wetravel_display_message' ) &&
+        current_user_can( 'manage_options' )
+    ) {
         ?>
         <script type="text/javascript">
         function dismissConsentNotice() {

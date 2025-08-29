@@ -15,11 +15,11 @@ function wetravel_handle_consent() {
         return;
     }
 
-    if ( ! wp_verify_nonce( $_POST['wetravel_consent_nonce'], 'wetravel_consent_action' ) ) {
+    if ( ! isset( $_POST['wetravel_consent_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wetravel_consent_nonce'] ) ), 'wetravel_consent_action' ) ) {
         wp_die( 'Security check failed' );
     }
 
-    $action = sanitize_text_field( $_POST['wetravel_consent_action'] );
+    $action = isset( $_POST['wetravel_consent_action'] ) ? sanitize_text_field( wp_unslash( $_POST['wetravel_consent_action'] ) ) : '';
 
     if ( $action === 'allow' ) {
         // User allowed consent
@@ -128,10 +128,17 @@ function wetravel_consent_page() {
 function wetravel_redirect_to_consent() {
     // Only redirect if user hasn't given consent and activation notice is active
     if ( get_option( 'wetravel_consent_given' ) === false && get_transient( 'wetravel_activation_consent_notice' ) ) {
+        // Only process for users with admin capabilities
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+
         // Check if we're not already on the consent page
-        if ( ! isset( $_GET['page'] ) || $_GET['page'] !== 'wetravel-consent' ) {
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- This is a safe redirect on admin_init, only for users with manage_options, and does not process sensitive data.
+        if ( ! isset( $_GET['page'] ) || sanitize_text_field( wp_unslash( $_GET['page'] ) ) !== 'wetravel-consent' ) {
             // Check if we're on the main plugin page
-            if ( isset( $_GET['page'] ) && strpos( $_GET['page'], 'wetravel-trips' ) === 0 ) {
+            // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- This is a safe redirect on admin_init, only for users with manage_options, and does not process sensitive data.
+            if ( isset( $_GET['page'] ) && strpos( sanitize_text_field( wp_unslash( $_GET['page'] ) ), 'wetravel-trips' ) === 0 ) {
                 wp_safe_redirect( admin_url( 'admin.php?page=wetravel-consent' ) );
                 exit;
             }
@@ -146,7 +153,9 @@ add_action( 'admin_init', 'wetravel_redirect_to_consent' );
  */
 function wetravel_force_consent_redirect() {
     // Only for testing - remove in production
-    if ( isset( $_GET['force_consent'] ) && current_user_can( 'manage_options' ) ) {
+    if ( isset( $_GET['force_consent'], $_GET['_wpnonce'] ) &&
+         current_user_can( 'manage_options' ) &&
+         wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'wetravel_force_consent_nonce' ) ) {
         set_transient( 'wetravel_activation_consent_notice', true, 60 * 60 * 24 * 7 );
         delete_option( 'wetravel_consent_given' );
         wp_safe_redirect( admin_url( 'admin.php?page=wetravel-consent' ) );
@@ -179,19 +188,24 @@ add_action( 'admin_menu', 'wetravel_add_consent_page' );
  * Handle consent actions from settings page links
  */
 function wetravel_handle_consent_actions() {
-    if ( ! isset( $_GET['page'] ) || $_GET['page'] !== 'wetravel-consent' ) {
+    if ( ! isset( $_GET['page'] ) || sanitize_text_field( wp_unslash( $_GET['page'] ) ) !== 'wetravel-consent' ) {
         return;
     }
 
-    if ( ! isset( $_GET['action'] ) ) {
+    if ( ! isset( $_GET['action'] ) || ! current_user_can( 'manage_options' ) ) {
         return;
     }
 
-    $action = sanitize_text_field( $_GET['action'] );
+    // Verify nonce for consent actions
+    if ( ! isset( $_GET['_wpnonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'wetravel_consent_action_nonce' ) ) {
+        return;
+    }
+
+    $action = isset( $_GET['action'] ) ? sanitize_text_field( wp_unslash( $_GET['action'] ) ) : '';
 
     // Get return page and tab information
-    $return_page = isset( $_GET['return_page'] ) ? sanitize_text_field( $_GET['return_page'] ) : 'wetravel-trips-setup';
-    $return_tab = isset( $_GET['return_tab'] ) ? sanitize_text_field( $_GET['return_tab'] ) : '';
+    $return_page = isset( $_GET['return_page'] ) ? sanitize_text_field( wp_unslash( $_GET['return_page'] ) ) : 'wetravel-trips-setup';
+    $return_tab = isset( $_GET['return_tab'] ) ? sanitize_text_field( wp_unslash( $_GET['return_tab'] ) ) : '';
 
     if ( $action === 'opt_in' ) {
         // User wants to opt in
@@ -269,7 +283,7 @@ add_filter( 'plugin_action_links', 'wetravel_add_plugin_action_links', 10, 2 );
  * Handle dismissing the consent notice
  */
 function wetravel_handle_dismiss_consent_notice() {
-	if ( ! wp_verify_nonce( $_POST['nonce'], 'wetravel_dismiss_notice' ) ) {
+	if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'wetravel_dismiss_notice' ) ) {
 		wp_die( 'Security check failed' );
 	}
 

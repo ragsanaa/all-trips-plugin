@@ -370,8 +370,8 @@ function wetravel_trips_instructions_page() {
 								?>
 								<div>
 									<span class="dashicons dashicons-update"></span>
-									<?php echo $description; ?>
-									<a href="<?php echo $button_url; ?>"><?php echo $button_text; ?></a>
+									<?php echo esc_html($description); ?>
+									<a href="<?php echo esc_url($button_url); ?>"><?php echo esc_html($button_text); ?></a>
 								</div>
 							<?php endif; ?>
 

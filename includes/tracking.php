@@ -74,7 +74,12 @@ class WetravelTracking {
 		}
 
 		// Skip if this is an iframe preview (Gutenberg editor)
-		if ( isset( $_GET['context'] ) && $_GET['context'] === 'edit' ) {
+		// Check for 'context' parameter and verify nonce if present
+		if (
+			isset( $_GET['context'], $_GET['_wpnonce'] ) &&
+			wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'wetravel_context_nonce' ) &&
+			sanitize_text_field( wp_unslash( $_GET['context'] ) ) === 'edit'
+		) {
 			return true;
 		}
 
@@ -133,7 +138,7 @@ class WetravelTracking {
 	 */
 	public function handle_track_event() {
 		// Verify nonce
-		if ( ! wp_verify_nonce( $_POST['nonce'], 'wetravel_tracking_nonce' ) ) {
+		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'wetravel_tracking_nonce' ) ) {
 			wp_die( 'Security check failed' );
 		}
 
@@ -142,12 +147,11 @@ class WetravelTracking {
 			wp_send_json_error( 'User has not given consent' );
 		}
 
-		$event_type = sanitize_text_field( $_POST['event_type'] );
-		$widget_id = sanitize_text_field( $_POST['widget_id'] ?? '' );
-		$event_data = $_POST['event_data'] ?? array();
-
-		// Sanitize event data
-		$event_data = $this->sanitize_event_data( $event_data );
+		$event_type = isset( $_POST['event_type'] ) ? sanitize_text_field( wp_unslash( $_POST['event_type'] ) ) : '';
+		$widget_id = isset( $_POST['widget_id'] ) ? sanitize_text_field( wp_unslash( $_POST['widget_id'] ) ) : '';
+		// Get and sanitize event data array
+		$raw_event_data = isset( $_POST['event_data'] ) ? sanitize_text_field( wp_unslash( $_POST['event_data'] ) ) : array();
+		$event_data = $this->sanitize_event_data( $raw_event_data );
 
 		// Send to external endpoint
 		$endpoint = get_option( 'wetravel_tracking_endpoint', 'http://localhost:9292/' );
@@ -189,7 +193,7 @@ class WetravelTracking {
 			'base_url' => home_url(),
 			'wt_widget_type' => $wt_widget_type,
 			'version' => WETRAVEL_PLUGIN_VERSION,
-			'full_page_url' => $event_data['page_url'] ?? $_SERVER['REQUEST_URI'] ?? '',
+			'full_page_url' => $event_data['page_url'] ?? ( isset( $_SERVER['REQUEST_URI'] ) ? esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '' ),
 			'event_type' => $event_type,
 			'layout_type' => $layout_type,
 			'button_type' => $button_type,
@@ -222,7 +226,11 @@ class WetravelTracking {
 		) );
 
 		if ( is_wp_error( $response ) ) {
-			error_log( 'WeTravel Tracking Error: ' . $response->get_error_message() );
+			// Log error only in debug mode
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG && defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				error_log( 'WeTravel Tracking Error: ' . $response->get_error_message() );
+			}
 			return false;
 		}
 
@@ -466,7 +474,7 @@ class WeTravelAuditAPI {
 		$wt_widget_type = $event_data['wt_widget_type'] ?? 'unknown';
 		$layout_type = $event_data['display_type'] ?? 'vertical';
 		$button_type = $event_data['button_type'] ?? 'book_now';
-		$page_url = $event_data['page_url'] ?? $_SERVER['REQUEST_URI'] ?? '';
+		$page_url = $event_data['page_url'] ?? ( isset( $_SERVER['REQUEST_URI'] ) ? esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '' );
 		$integration_type = $event_data['integration_type'] ?? 'block';
 
 		$data = array(
@@ -495,7 +503,7 @@ class WeTravelAuditAPI {
 		$page_url = $this->get_current_page_url();
 		return $this->track_event( $user_id, 'widget_load', array_merge( $event_data, array(
 			'page_url' => $page_url,
-			'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? '',
+			'user_agent' => isset( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ) : '',
 		) ) );
 	}
 
@@ -698,12 +706,20 @@ class WeTravelAuditAPI {
 
 			$shortcode_count = 0;
 			foreach ( $shortcode_patterns as $pattern ) {
-				$pattern_count = $wpdb->get_var( $wpdb->prepare(
-					"SELECT COUNT(DISTINCT ID) FROM {$wpdb->posts}
-					 WHERE post_status='publish'
-					 AND post_content LIKE %s",
-					'%' . $wpdb->esc_like( $pattern ) . '%'
-				) );
+				// Use caching for database queries to improve performance
+				$cache_key = 'wetravel_shortcode_count_' . md5( $pattern );
+				$pattern_count = wp_cache_get( $cache_key );
+
+				if ( false === $pattern_count ) {
+					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Necessary for content analysis with caching
+					$pattern_count = $wpdb->get_var( $wpdb->prepare(
+						"SELECT COUNT(DISTINCT ID) FROM {$wpdb->posts}
+						 WHERE post_status='publish'
+						 AND post_content LIKE %s",
+						'%' . $wpdb->esc_like( $pattern ) . '%'
+					) );
+					wp_cache_set( $cache_key, $pattern_count, '', HOUR_IN_SECONDS );
+				}
 				$shortcode_count = max( $shortcode_count, intval( $pattern_count ) );
 			}
 
@@ -721,13 +737,22 @@ class WeTravelAuditAPI {
 
 			$block_count = 0;
 			foreach ( $block_patterns as $pattern ) {
-				$pattern_count = $wpdb->get_var( $wpdb->prepare(
-					"SELECT COUNT(DISTINCT ID) FROM {$wpdb->posts}
-					 WHERE post_status='publish'
-					 AND post_content LIKE %s
-					 AND post_content LIKE '%wetravel-trips/block%'",
-					'%' . $wpdb->esc_like( $pattern ) . '%'
-				) );
+				// Use caching for database queries to improve performance
+				$cache_key = 'wetravel_block_count_' . md5( $pattern . '_block' );
+				$pattern_count = wp_cache_get( $cache_key );
+
+				if ( false === $pattern_count ) {
+					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Necessary for content analysis with caching implemented
+					$pattern_count = $wpdb->get_var( $wpdb->prepare(
+						"SELECT COUNT(DISTINCT ID) FROM {$wpdb->posts}
+						 WHERE post_status='publish'
+						 AND post_content LIKE %s
+						 AND post_content LIKE %s",
+						'%' . $wpdb->esc_like( $pattern ) . '%',
+						'%wetravel-trips/block%'
+					) );
+					wp_cache_set( $cache_key, $pattern_count, '', HOUR_IN_SECONDS );
+				}
 				$block_count = max( $block_count, intval( $pattern_count ) );
 			}
 
@@ -757,7 +782,7 @@ class WeTravelAuditAPI {
 		}
 
 		$protocol = ( isset( $_SERVER['HTTPS'] ) && $_SERVER['HTTPS'] === 'on' ) ? 'https' : 'http';
-		return $protocol . '://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+		return $protocol . '://' . sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) ) . esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) );
 	}
 }
 

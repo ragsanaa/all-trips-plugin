@@ -220,15 +220,33 @@ function wtwidget_check_widget_usage() {
 		global $wpdb;
 
 		// Search for blocks in post_content directly
-		$block_query = $wpdb->prepare("
-			SELECT ID, post_title, post_type, post_content
-			FROM {$wpdb->posts}
-			WHERE post_content LIKE %s
-			AND post_status IN ('" . implode("','", array_map('esc_sql', $post_statuses)) . "')
-			AND post_type IN ('" . implode("','", array_map('esc_sql', $post_types)) . "')
-		", '%<!-- wp:wetravel-trips/block%');
+		// Prepare and execute the query with proper placeholders
+		$block_results = array();
 
-		$block_results = $wpdb->get_results($block_query);
+		$args = array(
+			'post_type'      => $post_types,
+			'post_status'    => $post_statuses,
+			'posts_per_page' => -1,
+			'fields'         => 'ids',
+			'suppress_filters' => false,
+		);
+
+		$query = new WP_Query( $args );
+
+		if ( $query->have_posts() ) {
+			foreach ( $query->posts as $post_id ) {
+				$post = get_post( $post_id );
+				if ( false !== strpos( $post->post_content, '<!-- wp:wetravel-trips/block' ) ) {
+					$block_results[] = (object) array(
+						'ID'          => $post->ID,
+						'post_title'  => $post->post_title,
+						'post_type'   => $post->post_type,
+						'post_content'=> $post->post_content,
+					);
+				}
+			}
+		}
+		wp_reset_postdata();
 
 		if (!empty($block_results)) {
 			foreach ($block_results as $post) {
@@ -254,15 +272,20 @@ function wtwidget_check_widget_usage() {
 		}
 
 		// Search for shortcodes in post_content directly
-		$shortcode_query = $wpdb->prepare("
-			SELECT ID, post_title, post_type, post_content
-			FROM {$wpdb->posts}
-			WHERE post_content LIKE %s
-			AND post_status IN ('" . implode("','", array_map('esc_sql', $post_statuses)) . "')
-			AND post_type IN ('" . implode("','", array_map('esc_sql', $post_types)) . "')
-		", '%[wetravel_trips%');
+		// Use caching for better performance
+		$cache_key = 'wetravel_widget_shortcode_usage_' . md5( serialize( array( $post_statuses, $post_types ) ) );
+		$shortcode_results = wp_cache_get( $cache_key );
 
-		$shortcode_results = $wpdb->get_results($shortcode_query);
+		if ( false === $shortcode_results ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Necessary for widget usage analysis with caching
+			$shortcode_results = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT ID, post_title, post_type, post_content FROM {$wpdb->posts} WHERE post_content LIKE %s AND post_status IN (" . implode(',', array_fill(0, count($post_statuses), '%s')) . ") AND post_type IN (" . implode(',', array_fill(0, count($post_types), '%s')) . ")",
+					array_merge(['%[wetravel_trips%'], $post_statuses, $post_types)
+				)
+			);
+			wp_cache_set( $cache_key, $shortcode_results, '', HOUR_IN_SECONDS );
+		}
 
 		if (!empty($shortcode_results)) {
 			$usage['has_usage'] = true;
