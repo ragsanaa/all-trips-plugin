@@ -120,7 +120,7 @@ function wtwidget_process_form_submission() {
 		'tripType'       => isset( $_POST['trip_type'] ) ? sanitize_text_field( wp_unslash( $_POST['trip_type'] ) ) : '',
 		'dateRangeStart' => $date_range_start,
 		'dateRangeEnd'   => $date_range_end,
-		'wtWidgetType'     => isset( $_POST['widget_type'] ) ? sanitize_text_field( wp_unslash( $_POST['widget_type'] ) ) : 'all-trips',
+		'wtWidgetType'     => isset( $_POST['wt_widget_type'] ) ? sanitize_text_field( wp_unslash( $_POST['wt_widget_type'] ) ) : 'all-trips',
 		'created'        => $current_design['created'],
 		'modified'       => time(),
 		'locations'      => isset($_POST['trip_location']) ? array_map('sanitize_text_field', wp_unslash($_POST['trip_location'])) : array(),
@@ -397,7 +397,7 @@ function wtwidget_trip_create_design_page() {
 
 						<!-- Widget Type field - System defined, not user editable -->
 						<!-- This field is managed by the system for future button design implementations -->
-						<input type="hidden" id="widget_type" name="widget_type" value="<?php echo esc_attr( isset( $design['wtWidgetType'] ) ? $design['wtWidgetType'] : 'all-trips' ); ?>">
+						<input type="hidden" id="wt_widget_type" name="wt_widget_type" value="<?php echo esc_attr( isset( $design['wtWidgetType'] ) ? $design['wtWidgetType'] : 'all-trips' ); ?>">
 
 						<div class="wetravel-trips-form-field">
 							<label for="search_visibility">Display Search Bar</label>

@@ -166,7 +166,6 @@ class WeTravel_Deactivation_Form {
             'reason' => $feedback_reason,
             'text' => $feedback_text,
             'timestamp' => current_time( 'mysql' ),
-            'user_id' => get_current_user_id(),
             'site_url' => home_url(),
             'plugin_version' => WETRAVEL_PLUGIN_VERSION,
             'wp_version' => get_bloginfo( 'version' ),
@@ -204,7 +203,6 @@ class WeTravel_Deactivation_Form {
 
         // Check consent status to determine tracking approach
         $consent_given = get_option( 'wetravel_consent_given', false );
-        $wp_user_id = get_current_user_id();
 
         // Prepare deactivation data
         $deactivation_data = array(

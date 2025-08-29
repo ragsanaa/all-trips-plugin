@@ -32,9 +32,6 @@ function wetravel_handle_consent() {
 
         // Track user state with original data since consent was allowed
         if ( function_exists( 'wetravel_track_user_state' ) ) {
-            $wt_user_id = get_option( 'wetravel_trips_user_id', '' );
-            $wt_user_slug = get_option( 'wetravel_trips_slug', '' );
-
             // Track user state - bypass consent check for initial consent decision
             wetravel_track_plugin_state( 'allowed_consent' );
         }
@@ -54,9 +51,6 @@ function wetravel_handle_consent() {
 
         // Track user state with anonymous data since consent was skipped
         if ( function_exists( 'wetravel_track_user_state' ) ) {
-            $wt_user_id = get_option( 'wetravel_trips_user_id', '' );
-            $wt_user_slug = get_option( 'wetravel_trips_slug', '' );
-
             // Track user state - bypass consent check for initial consent decision
             wetravel_track_plugin_state( 'skipped_consent' );
         }

@@ -65,8 +65,8 @@ if ( ! defined( 'WETRAVEL_PLUGIN_SLUG' ) ) {
 // TODO: Remove this after testing and talk to platform team
 // Define WeTravel Internal API Key constant if not already defined
 // You can set this in wp-config.php: define('WETRAVEL_INTERNAL_API_KEY', 'your-api-key-here');
-if ( ! defined( 'WETRAVEL_INTERNAL_API_KEY' ) && getenv( 'INTERNAL_API_KEY' ) ) {
-	define( 'WETRAVEL_INTERNAL_API_KEY', getenv( 'INTERNAL_API_KEY' ) );
+if ( ! defined( 'WETRAVEL_INTERNAL_API_KEY' ) ) {
+	define( 'WETRAVEL_INTERNAL_API_KEY', 'test_key' );
 }
 
 // Include admin settings page.
@@ -74,9 +74,6 @@ require_once WETRAVEL_WIDGETS_PLUGIN_DIR . 'admin/settings-page.php';
 
 // Include consent page.
 require_once WETRAVEL_WIDGETS_PLUGIN_DIR . 'admin/consent-page.php';
-
-// In wetravel-widgets.php, add this line to include the fetch-trips.php file.
-// Add this after the other require_once statements near the top of the file.
 
 // Include fetch trips functionality.
 require_once WETRAVEL_WIDGETS_PLUGIN_DIR . 'includes/fetch-trips.php';
@@ -93,9 +90,6 @@ function wtwidget_enqueue_frontend_scripts() {
 		array(),
 		filemtime( WETRAVEL_WIDGETS_PLUGIN_DIR . 'assets/css/wetravel-trips.css' )
 	);
-
-	// Enqueue main stylesheet.
-	wp_enqueue_style( 'wetravel-trips-styles' );
 
 	wp_add_inline_style(
 		'wetravel-trips-styles',
@@ -281,12 +275,6 @@ require_once WETRAVEL_WIDGETS_PLUGIN_DIR . 'includes/tracking.php';
 // Include deactivation form.
 require_once WETRAVEL_WIDGETS_PLUGIN_DIR . 'admin/deactivation-form.php';
 
-/**  Register shortcode. */
-function wtwidget_register_shortcode() {
-	add_shortcode( 'wetravel_trips', 'wtwidget_trips_shortcode' );
-}
-add_action( 'init', 'wtwidget_register_shortcode' );
-
 /**  Add this function to clear transient timeouts. */
 function wtwidget_clear_transients() {
 	global $wpdb;
@@ -352,6 +340,11 @@ function wtwidget_activation() {
 
 	// Trigger plugin activation action for tracking
 	do_action( 'wetravel_plugin_activated' );
+
+	// Track plugin activation state
+	if ( function_exists( 'wetravel_track_plugin_state' ) ) {
+		wetravel_track_plugin_state( 'activated' );
+	}
 }
 register_activation_hook( __FILE__, 'wtwidget_activation' );
 
@@ -384,6 +377,10 @@ function wtwidget_deactivation() {
 			// User skipped consent - track with anonymous data
 			wetravel_track_user_state( $wt_user_id, $wt_user_slug, false, true, $deactivation_data, true );
 		}
+	}
+
+	if ( function_exists( 'wetravel_track_plugin_state' ) ) {
+		wetravel_track_plugin_state( 'deactivated' );
 	}
 }
 register_deactivation_hook( __FILE__, 'wtwidget_deactivation' );

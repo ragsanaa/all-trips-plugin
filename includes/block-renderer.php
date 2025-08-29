@@ -39,7 +39,7 @@ function wtwidget_trips_block_render( $attributes ) {
 	$search_visibility      = $attributes['searchVisibility'] ?? get_option( 'wetravel_trips_search_visibility', false );
 	$border_radius          = intval( $attributes['borderRadius'] ?? get_option( 'wetravel_trips_border_radius', 6 ) );
 	$integration_type       = $attributes['integrationType'] ?? 'block';
-	$widget_type            = $attributes['wtWidgetType'] ?? get_option( 'wetravel_trips_widget_type', 'all-trips' );
+	$wt_widget_type            = $attributes['wtWidgetType'] ?? get_option( 'wetravel_trips_wt_widget_type', 'all-trips' );
 
 	// Override with design settings if a design is selected.
 	if ( ! empty( $selected_design_id ) ) {
@@ -88,7 +88,7 @@ function wtwidget_trips_block_render( $attributes ) {
 				$items_per_page = intval( $design['itemsPerPage'] );
 			}
 			if ( empty( $attributes['wtWidgetType'] ) && isset( $design['wtWidgetType'] ) ) {
-				$widget_type = $design['wtWidgetType'];
+				$wt_widget_type = $design['wtWidgetType'];
 			}
 			// If the design has custom CSS, we'll add it later.
 			$custom_css_design = isset( $design['customCSS'] ) ? $design['customCSS'] : '';
@@ -352,8 +352,9 @@ function wtwidget_trips_block_render( $attributes ) {
 			data-trip-type="<?php echo esc_attr( $trip_type ); ?>"
 			data-date-start="<?php echo esc_attr( $date_start ); ?>"
 			data-date-end="<?php echo esc_attr( $date_end ); ?>"
-			data-wetravel-widget-type="<?php echo esc_attr( $widget_type ); ?>"
+			data-wetravel-widget-type="<?php echo esc_attr( $wt_widget_type ); ?>"
 			data-integration-type="<?php echo esc_attr( $integration_type ); ?>"
+			data-tracked-server-side="true"
 			>
 			<?php
 				$allowed_html_tags = array(
@@ -545,9 +546,16 @@ function wtwidget_trips_block_render( $attributes ) {
 	wp_add_inline_script( 'wetravel-trips-loading', $inline_script );
 	wp_enqueue_script( 'wetravel-trips-loading' );
 
-	// Track widget view if tracking is enabled
 	if ( function_exists( 'wetravel_track_widget_view' ) ) {
-		wetravel_track_widget_view( $block_id, $display_type );
+		$event_data = array(
+			'wt_user_id' => $wetravel_trips_user_id,
+			'wt_widget_type' => $wt_widget_type,
+			'display_type' => $display_type,
+			'button_type' => $button_type,
+			'integration_type' => $integration_type,
+			'trip_type' => $trip_type,
+		);
+		wetravel_track_widget_view( $event_data );
 	}
 
 	return ob_get_clean();

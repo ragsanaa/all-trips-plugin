@@ -45,5 +45,10 @@ $wpdb->query( $wpdb->prepare( "DELETE FROM $wpdb->options WHERE option_name LIKE
 // Clear any scheduled hooks.
 wp_clear_scheduled_hook( 'wetravel_trips_daily_cleanup' );
 
+// Track plugin uninstall state before cleanup
+if ( function_exists( 'wetravel_track_plugin_state' ) ) {
+	wetravel_track_plugin_state( 'uninstalled' );
+}
+
 // Clear cache to ensure all deleted options are flushed.
 wp_cache_flush();

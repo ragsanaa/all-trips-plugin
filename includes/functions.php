@@ -189,13 +189,6 @@ function wtwidget_get_cdn_url( $env ) {
 }
 
 /**
- * Fix trips loading in editor
- */
-function wtwidget_fix_trips_loading_in_editor() {
-	// ... existing code ...
-}
-
-/**
  * Check if WeTravel widgets are being used in any posts or pages
  *
  * @return array Array containing usage information
@@ -419,7 +412,7 @@ function wtwidget_generate_shortcode_with_params($design, $design_id) {
  * Update existing designs to include wtWidgetType field for backward compatibility
  * This function should be called once to migrate existing designs
  */
-function wtwidget_update_existing_designs_with_widget_type() {
+function wtwidget_update_existing_designs_with_wt_widget_type() {
 	$designs = get_option( 'wetravel_trips_designs', array() );
 	$updated = false;
 
@@ -443,6 +436,6 @@ function wtwidget_update_existing_designs_with_widget_type() {
 /**
  * Hook to run the design update on plugin activation or admin init
  */
-add_action( 'admin_init', 'wtwidget_update_existing_designs_with_widget_type' );
+add_action( 'admin_init', 'wtwidget_update_existing_designs_with_wt_widget_type' );
 
 

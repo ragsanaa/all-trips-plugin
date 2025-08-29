@@ -40,7 +40,7 @@ function wtwidget_trips_shortcode( $atts ) {
 		'date_end'               => '',
 		'search_visibility'      => get_option( 'wetravel_trips_search_visibility', false ),
 		'border_radius'          => get_option( 'wetravel_trips_border_radius', 6 ),
-		'widget_type'            => get_option( 'wetravel_trips_widget_type', 'all-trips' ),
+		'wt_widget_type'            => get_option( 'wetravel_trips_wt_widget_type', 'all-trips' ),
 	);
 
 	// First, get the design if specified
@@ -89,7 +89,7 @@ function wtwidget_trips_shortcode( $atts ) {
 				$default_atts['search_visibility'] = $design['searchVisibility'];
 			}
 			if (!empty($design['wtWidgetType'])) {
-				$default_atts['widget_type'] = $design['wtWidgetType'];
+				$default_atts['wt_widget_type'] = $design['wtWidgetType'];
 			}
 
 			// Fix: Use shortcode attributes as fallback before global options
@@ -121,7 +121,7 @@ function wtwidget_trips_shortcode( $atts ) {
 		'searchVisibility' => $atts['search_visibility'],
 		'borderRadius'   => $atts['border_radius'],
 		'integrationType' => 'shortcode',
-		'wtWidgetType'     => $atts['widget_type'],
+		'wtWidgetType'     => $atts['wt_widget_type'],
 	);
 
 	// Add the selected design ID if a widget was specified
@@ -132,9 +132,6 @@ function wtwidget_trips_shortcode( $atts ) {
 	// Use the existing block render function to maintain consistency
 	if (function_exists('wtwidget_trips_block_render')) {
 		return wtwidget_trips_block_render($block_atts);
-	} else {
-		// Fallback if block render function doesn't exist
-		return wtwidget_render_trips_fallback($block_atts);
 	}
 }
 add_shortcode( 'wetravel_trips', 'wtwidget_trips_shortcode' );
@@ -163,7 +160,7 @@ function wtwidget_register_trips_ajax_handlers() {
 			$trip_type  = isset( $_POST['tripType'] ) ? sanitize_text_field( wp_unslash( $_POST['tripType'] ) ) : 'all';
 			$date_start = isset( $_POST['dateStart'] ) ? sanitize_text_field( wp_unslash( $_POST['dateStart'] ) ) : '';
 			$date_end   = isset( $_POST['dateEnd'] ) ? sanitize_text_field( wp_unslash( $_POST['dateEnd'] ) ) : '';
-			$widget_type = isset( $_POST['wtWidgetType'] ) ? sanitize_text_field( wp_unslash( $_POST['wtWidgetType'] ) ) : 'all-trips';
+			$wt_widget_type = isset( $_POST['wtWidgetType'] ) ? sanitize_text_field( wp_unslash( $_POST['wtWidgetType'] ) ) : 'all-trips';
 
 			// Build API URL with parameters
 			$api_url = wtwidget_build_api_url($env, $slug, array(

@@ -27,6 +27,9 @@ class WetravelTracking {
 		add_action( 'wp_ajax_wetravel_track_event', array( $this, 'handle_track_event' ) );
 		add_action( 'wp_ajax_nopriv_wetravel_track_event', array( $this, 'handle_track_event' ) );
 
+		// Track widget usage to keep user state up-to-date
+		add_action( 'save_post', array( $this, 'update_user_state_on_widget_change' ), 10, 3 );
+
 	}
 
 	/**
@@ -47,11 +50,48 @@ class WetravelTracking {
 	}
 
 	/**
+	 * Check if current context is admin, edit, preview, or customizer
+	 */
+	public function is_admin_or_edit_context() {
+		// Skip in WordPress admin
+		if ( is_admin() ) {
+			return true;
+		}
+
+		// Skip in preview mode
+		if ( is_preview() ) {
+			return true;
+		}
+
+		// Skip in customizer
+		if ( is_customize_preview() ) {
+			return true;
+		}
+
+		// Skip in block editor (REST API context)
+		if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
+			return true;
+		}
+
+		// Skip if this is an iframe preview (Gutenberg editor)
+		if ( isset( $_GET['context'] ) && $_GET['context'] === 'edit' ) {
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
 	 * Enqueue tracking scripts
 	 */
 	public function enqueue_tracking_scripts() {
 		// Skip if tracking is disabled
 		if ( ! $this->is_tracking_enabled() ) {
+			return;
+		}
+
+		// Skip tracking in admin, edit, preview, or customizer contexts
+		if ( $this->is_admin_or_edit_context() ) {
 			return;
 		}
 
@@ -71,6 +111,7 @@ class WetravelTracking {
 				'ajaxurl' => admin_url( 'admin-ajax.php' ),
 				'nonce' => wp_create_nonce( 'wetravel_tracking_nonce' ),
 				'has_consent' => $this->is_tracking_enabled(),
+				'is_admin_context' => $this->is_admin_or_edit_context(),
 				'tracking_endpoint' => get_option( 'wetravel_tracking_endpoint', 'http://localhost:9292' ),
 				'events' => array(
 					'widget_load' => $this->is_tracking_enabled(),
@@ -130,9 +171,10 @@ class WetravelTracking {
 		$full_url = $base_url . '/public/v1/plugin/track';
 
 		// Extract widget and layout type from event data
-		$widget_type = $event_data['display_type'] ?? 'unknown';
+		$wt_widget_type = $event_data['wt_widget_type'] ?? 'unknown';
 		$layout_type = $event_data['display_type'] ?? 'vertical';
 		$button_type = $event_data['button_type'] ?? 'book_now';
+		$integration_type = $event_data['integration_type'] ?? 'block';
 
 		// Get current user ID, default to 0 for anonymous
 		$user_id = get_current_user_id();
@@ -145,15 +187,16 @@ class WetravelTracking {
 			'user_id' => $user_id,
 			'wt_user_id' => $event_data['wt_user_id'] ?? '',
 			'base_url' => home_url(),
-			'wt_widget_type' => $widget_type,
+			'wt_widget_type' => $wt_widget_type,
 			'version' => WETRAVEL_PLUGIN_VERSION,
 			'full_page_url' => $event_data['page_url'] ?? $_SERVER['REQUEST_URI'] ?? '',
 			'event_type' => $event_type,
 			'layout_type' => $layout_type,
 			'button_type' => $button_type,
-			'integration_type' => 'wordpress-plugin',
+			'integration_type' => $integration_type,
 			'trip_uuid' => $event_data['trip_uuid'] ?? '',
 			'trip_type' => $event_data['trip_type'] ?? '',
+			'user_agent' => $event_data['user_agent'] ?? '',
 		);
 
 		// Get API key from settings or environment for authentication
@@ -248,6 +291,70 @@ class WetravelTracking {
 		}
 
 		return $roles[0]; // Return first role
+	}
+
+	/**
+	 * Update user state when widgets are added/modified on posts
+	 * Lightweight check to keep user_state current without detailed event tracking
+	 */
+	public function update_user_state_on_widget_change( $post_id, $post, $update ) {
+		// Skip if tracking is disabled
+		if ( ! $this->is_tracking_enabled() ) {
+			return;
+		}
+
+		// Skip autosaves and revisions
+		if ( wp_is_post_autosave( $post_id ) || wp_is_post_revision( $post_id ) ) {
+			return;
+		}
+
+		// Only track published posts
+		if ( $post->post_status !== 'publish' ) {
+			return;
+		}
+
+		// Check if post contains WeTravel widgets
+		if ( $this->post_contains_wetravel_widgets( $post->post_content ) ) {
+			// Throttle user state updates to prevent duplicate requests
+			$this->throttled_user_state_update();
+		}
+	}
+
+	/**
+	 * Throttled user state update to prevent multiple requests from multiple save hooks
+	 */
+	private function throttled_user_state_update() {
+		$user_id = get_current_user_id();
+		$transient_key = 'wetravel_user_state_updated_' . $user_id;
+		$last_update = get_transient( $transient_key );
+
+		// Only update if we haven't updated in the last 30 seconds
+		if ( ! $last_update ) {
+			// Set transient to prevent duplicate updates
+			set_transient( $transient_key, time(), 30 );
+
+			// Update user state to keep active widget counts current
+			if ( function_exists( 'wetravel_track_user_state' ) ) {
+				wetravel_track_user_state();
+			}
+		}
+	}
+
+	/**
+	 * Simple check if post content contains WeTravel widgets
+	 */
+	private function post_contains_wetravel_widgets( $content ) {
+		// Check for Gutenberg blocks
+		if ( has_blocks( $content ) && strpos( $content, 'wetravel-trips/block' ) !== false ) {
+			return true;
+		}
+
+		// Check for shortcodes
+		if ( strpos( $content, '[wetravel_trips' ) !== false ) {
+			return true;
+		}
+
+		return false;
 	}
 }
 
@@ -356,25 +463,26 @@ class WeTravelAuditAPI {
 	 */
 	public function track_event( $user_id, $event_type, $event_data = array() ) {
 		// Extract widget and layout information from event data
-		// TODO: widget_type should be wt_widget_type, like 'all-trips', 'button'
-		$widget_type = $event_data['widget_type'] ?? $event_data['display_type'] ?? 'unknown';
+		$wt_widget_type = $event_data['wt_widget_type'] ?? 'unknown';
 		$layout_type = $event_data['display_type'] ?? 'vertical';
 		$button_type = $event_data['button_type'] ?? 'book_now';
 		$page_url = $event_data['page_url'] ?? $_SERVER['REQUEST_URI'] ?? '';
+		$integration_type = $event_data['integration_type'] ?? 'block';
 
 		$data = array(
 			'user_id'          => intval( $user_id ),
 			'wt_user_id'       => $event_data['wt_user_id'] ?? '',
 			'base_url'         => home_url(),
-			'wt_widget_type'   => $widget_type,
+			'wt_widget_type'   => $wt_widget_type,
 			'version'          => WETRAVEL_PLUGIN_VERSION,
 			'full_page_url'    => $page_url,
 			'event_type'       => $event_type,
 			'layout_type'      => $layout_type,
 			'button_type'      => $button_type,
-			'integration_type' => 'wordpress-plugin',
+			'integration_type' => $integration_type,
 			'trip_uuid'        => $event_data['trip_uuid'] ?? '',
 			'trip_type'        => $event_data['trip_type'] ?? '',
+			'user_agent'       => $event_data['user_agent'] ?? '',
 		);
 
 		return $this->make_request( '/public/v1/plugin/track', $data );
@@ -383,32 +491,12 @@ class WeTravelAuditAPI {
 	/**
 	 * Convenience methods for common events
 	 */
-	public function track_widget_view( $user_id, $widget_id, $widget_type ) {
-		return $this->track_event( $user_id, 'widget_load', array(
-			'widget_id'    => $widget_id,
-			'widget_type'  => $widget_type,
-			'display_type' => $widget_type,
-			'page_url'     => $this->get_current_page_url(),
-			'timestamp'    => current_time( 'mysql' ),
-		) );
-	}
-
-	public function track_button_click( $user_id, $button_type, $trip_id = null ) {
-		return $this->track_event( $user_id, 'button_click', array(
-			'button_type' => $button_type,
-			'trip_id'     => $trip_id,
-			'page_url'    => $this->get_current_page_url(),
-			'user_agent'  => $_SERVER['HTTP_USER_AGENT'] ?? '',
-			'timestamp'   => current_time( 'mysql' ),
-		) );
-	}
-
-	public function track_admin_action( $user_id, $action, $details = array() ) {
-		return $this->track_event( $user_id, 'admin_action', array_merge( array(
-			'action'       => $action,
-			'wp_user_role' => $this->get_user_role( $user_id ),
-			'timestamp'    => current_time( 'mysql' ),
-		), $details ) );
+	public function track_widget_view( $user_id, $event_data ) {
+		$page_url = $this->get_current_page_url();
+		return $this->track_event( $user_id, 'widget_load', array_merge( $event_data, array(
+			'page_url' => $page_url,
+			'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? '',
+		) ) );
 	}
 
 	/**
@@ -548,51 +636,26 @@ class WeTravelAuditAPI {
 		$counts = array();
 
 		foreach ( $designs as $design ) {
-			// Use 'wtWidgetType' (new) or fallback to 'widgetType' (legacy), default to 'all-trips'
-			$widget_type = isset( $design['wtWidgetType'] ) ? $design['wtWidgetType'] : ( isset( $design['widgetType'] ) ? $design['widgetType'] : 'all-trips' );
+			$wt_widget_type = isset( $design['wtWidgetType'] ) ? $design['wtWidgetType'] : 'all-trips';
 			$display_type = isset( $design['displayType'] ) ? $design['displayType'] : 'vertical';
 
-			if ( ! isset( $counts[ $widget_type ] ) ) {
-				$counts[ $widget_type ] = array();
+			if ( ! isset( $counts[ $wt_widget_type ] ) ) {
+				$counts[ $wt_widget_type ] = array();
 			}
-			if ( ! isset( $counts[ $widget_type ][ $display_type ] ) ) {
-				$counts[ $widget_type ][ $display_type ] = 0;
+			if ( ! isset( $counts[ $wt_widget_type ][ $display_type ] ) ) {
+				$counts[ $wt_widget_type ][ $display_type ] = 0;
 			}
-			$counts[ $widget_type ][ $display_type ]++;
+			$counts[ $wt_widget_type ][ $display_type ]++;
 		}
 
 		// Optionally, add total for each widget type and grand total
 		$grand_total = 0;
-		foreach ( $counts as $widget_type => $display_counts ) {
+		foreach ( $counts as $wt_widget_type => $display_counts ) {
 			$type_total = array_sum( $display_counts );
-			$counts[ $widget_type ]['total'] = $type_total;
+			$counts[ $wt_widget_type ]['total'] = $type_total;
 			$grand_total += $type_total;
 		}
 		$counts['total'] = $grand_total;
-
-		return $counts;
-	}
-
-	/**
-	 * Get button type counts
-	 */
-	private function get_button_type_counts() {
-		$designs = get_option( 'wetravel_trips_designs', array() );
-
-		$counts = array(
-			'book_now'          => 0,
-			'trip_link'        => 0,
-			'custom'            => 0,
-		);
-
-		foreach ( $designs as $design ) {
-			$button_type = $design['buttonType'] ?? 'book_now';
-			if ( isset( $counts[$button_type] ) ) {
-				$counts[$button_type]++;
-			} else {
-				$counts['custom']++;
-			}
-		}
 
 		return $counts;
 	}
@@ -611,11 +674,11 @@ class WeTravelAuditAPI {
 		$counts = array();
 
 		if ( empty( $designs ) ) {
-			return $counts;
+			return (object) $counts;
 		}
 
 		foreach ( $designs as $design_id => $design ) {
-			$widget_type = isset( $design['widgetType'] ) ? $design['widgetType'] : 'all-trips';
+			$wt_widget_type = isset( $design['widgetType'] ) ? $design['widgetType'] : 'all-trips';
 
 			// Legacy widget counting for backward compatibility
 			$has_src = ! empty( $design['src'] );
@@ -668,17 +731,17 @@ class WeTravelAuditAPI {
 				$block_count = max( $block_count, intval( $pattern_count ) );
 			}
 
-			if ( ! isset( $counts[ $widget_type ] ) ) {
-				$counts[ $widget_type ] = array(
+			if ( ! isset( $counts[ $wt_widget_type ] ) ) {
+				$counts[ $wt_widget_type ] = array(
 					'shortcode' => 0,
 					'block' => 0,
 				);
 			}
 			if ( $shortcode_count > 0 ) {
-				$counts[ $widget_type ]['shortcode']++;
+				$counts[ $wt_widget_type ]['shortcode']++;
 			}
 			if ( $block_count > 0 ) {
-				$counts[ $widget_type ]['block']++;
+				$counts[ $wt_widget_type ]['block']++;
 			}
 		}
 
@@ -696,29 +759,6 @@ class WeTravelAuditAPI {
 		$protocol = ( isset( $_SERVER['HTTPS'] ) && $_SERVER['HTTPS'] === 'on' ) ? 'https' : 'http';
 		return $protocol . '://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
 	}
-
-	/**
-	 * Get user role
-	 */
-	private function get_user_role( $user_id ) {
-		$user = get_userdata( $user_id );
-		return $user ? implode( ', ', $user->roles ) : 'unknown';
-	}
-}
-
-/**
- * Helper function to track events from PHP
- */
-function wetravel_track_event( $event_type, $widget_id = '', $event_data = array() ) {
-	$tracking = WetravelTracking::get_instance();
-
-	if ( ! $tracking->is_tracking_enabled() ) {
-		return false;
-	}
-
-	// This would be called from widget render functions
-	// For now, we'll rely on JavaScript tracking
-	return true;
 }
 
 /**
@@ -731,43 +771,20 @@ function wetravel_get_audit_api() {
 /**
  * Helper function to track widget view
  */
-function wetravel_track_widget_view( $widget_id, $widget_type ) {
+function wetravel_track_widget_view( $event_data ) {
+	// Skip tracking in admin/edit contexts
+	$tracking = WetravelTracking::get_instance();
+	if ( $tracking->is_admin_or_edit_context() ) {
+		return false;
+	}
+
 	$user_id = get_current_user_id();
 	if ( ! $user_id ) {
 		$user_id = 0; // Anonymous user
 	}
 
 	$audit_api = wetravel_get_audit_api();
-	return $audit_api->track_widget_view( $user_id, $widget_id, $widget_type );
-}
-
-/**
- * Helper function to track button click
- */
-function wetravel_track_button_click( $button_type, $trip_id = null ) {
-	$user_id = get_current_user_id();
-	if ( ! $user_id ) {
-		$user_id = 0; // Anonymous user
-	}
-
-	$audit_api = wetravel_get_audit_api();
-	return $audit_api->track_button_click( $user_id, $button_type, $trip_id );
-}
-
-/**
- * Helper function to get active widget counts
- * Can be called from anywhere in the plugin to get current usage statistics
- *
- * @return array Detailed widget usage counts by type and integration method
- */
-function wetravel_get_active_widget_counts() {
-	$audit_api = wetravel_get_audit_api();
-	// Use reflection to call the private method
-	$reflection = new ReflectionClass( $audit_api );
-	$method = $reflection->getMethod( 'get_active_widget_counts' );
-	$method->setAccessible( true );
-	error_log( 'get_active_widget_counts' );
-	return $method->invoke( $audit_api );
+	return $audit_api->track_widget_view( $user_id, $event_data );
 }
 
 /**
@@ -782,12 +799,6 @@ function wetravel_get_active_widget_counts() {
  */
 function wetravel_track_user_state( $wt_user_id = null, $wt_user_slug = null, $force_plugin_state = null, $anonymous = false, $additional_data = array(), $bypass_consent = false ) {
     $wp_user_id = get_current_user_id();
-    // If anonymous tracking is requested, generate a hash for the user_id
-    if ( $anonymous ) {
-        // Generate an irreversible hash for user_id using SHA-256 with a salt
-        $salt = bin2hex(random_bytes(16));
-        $wp_user_id = hash('sha256', $salt . '|' . $wp_user_id);
-    }
 
     // Get WeTravel user info from plugin settings if not provided
     if ( ! $wt_user_id ) {
