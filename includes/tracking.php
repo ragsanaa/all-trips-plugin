@@ -536,9 +536,6 @@ class WeTravelAuditAPI {
 			// Create irreversible hashes for sensitive data
 			$salt = bin2hex(random_bytes(16));
 
-			// Hash user_id (WordPress user ID)
-			$hashed_user_id = hash('sha256', $salt . '|' . ( $wp_user_id ? $wp_user_id : 'anonymous' ));
-
 			// Hash site_url
 			$hashed_site_url = hash('sha256', $salt . '|' . home_url());
 
@@ -548,7 +545,6 @@ class WeTravelAuditAPI {
 
 			// Build the data payload with the specified structure
 			$data = array(
-				'user_id' => $hashed_user_id,
 				'site_url' => $hashed_site_url,
 				'wt_user_id' => $hashed_wt_user_id,
 				'wt_user_slug' => $hashed_wt_user_slug,
