@@ -125,7 +125,7 @@
       return `
         <div class="preview-search-filter">
           <div class="preview-search-filter-container">
-            <input type="text" class="preview-search-input" placeholder="Search trips by name..." disabled />
+            <input type="text" class="preview-search-input" placeholder="Search trips by name or location..." disabled />
             <button type="button" class="preview-location-button" style="background-color: ${buttonColor}; border-color: ${buttonColor}; color: white;">
               <span>${buttonText}</span>
               <span class="preview-dropdown-arrow">▲</span>
@@ -648,30 +648,118 @@
               action: "check_keyword_unique",
               keyword: keyword,
               design_id: wetravel_ajax.design_id || "",
-              nonce: wetravel_ajax.nonce
+              nonce: wetravel_ajax.nonce,
             },
             success: function (response) {
-              if (response && typeof response.unique !== 'undefined') {
+              if (response && typeof response.unique !== "undefined") {
                 if (!response.unique) {
                   // Display validation message
-                  $('<p id="keyword-validation-message" class="validation-error" style="color:red; margin-top: 5px; font-size: 12px;">⚠️ This keyword is already in use. Please choose a unique keyword.</p>')
-                    .insertAfter("#design_keyword");
+                  $(
+                    '<p id="keyword-validation-message" class="validation-error" style="color:red; margin-top: 5px; font-size: 12px;">⚠️ This keyword is already in use. Please choose a unique keyword.</p>'
+                  ).insertAfter("#design_keyword");
                 } else {
                   // Show success message
-                  $('<p id="keyword-validation-message" class="validation-success" style="color:green; margin-top: 5px; font-size: 12px;">✓ Keyword is available!</p>')
-                    .insertAfter("#design_keyword");
+                  $(
+                    '<p id="keyword-validation-message" class="validation-success" style="color:green; margin-top: 5px; font-size: 12px;">✓ Keyword is available!</p>'
+                  ).insertAfter("#design_keyword");
                 }
               }
             },
-            error: function(xhr, status, error) {
-              console.log('Keyword check error:', error);
+            error: function (xhr, status, error) {
+              console.log("Keyword check error:", error);
               // Optionally show an error message to user
-              $('<p id="keyword-validation-message" class="validation-error" style="color:orange; margin-top: 5px; font-size: 12px;">⚠️ Could not verify keyword uniqueness. Please try again.</p>')
-                .insertAfter("#design_keyword");
-            }
+              $(
+                '<p id="keyword-validation-message" class="validation-error" style="color:orange; margin-top: 5px; font-size: 12px;">⚠️ Could not verify keyword uniqueness. Please try again.</p>'
+              ).insertAfter("#design_keyword");
+            },
           });
         }, 500);
       }
+    });
+  });
+
+  // Handle trip type changes to reload locations
+  $("#trip_type").on("change", function () {
+    var tripType = $(this).val();
+    var $locationSelect = $("#trip_location");
+
+    // Show loading state
+    $locationSelect.prop("disabled", true);
+    $locationSelect.html("<option>🔄 Loading locations...</option>");
+    $locationSelect
+      .next(".description")
+      .html("Fetching locations for " + tripType + " trips...");
+
+    // Make AJAX request to fetch locations for the selected trip type
+    $.ajax({
+      url: wetravel_ajax.ajaxurl,
+      type: "POST",
+      data: {
+        action: "fetch_locations_by_trip_type",
+        trip_type: tripType,
+        nonce: wetravel_ajax.nonce,
+      },
+      success: function (response) {
+        if (response.success) {
+          var locations = response.data.locations;
+
+          // Clear and rebuild options
+          $locationSelect.html("");
+
+          if (locations.length === 0) {
+            $locationSelect.html(
+              '<option value="" disabled>No locations found for this trip type</option>'
+            );
+            $locationSelect
+              .next(".description")
+              .html("No locations available for " + tripType + " trips.");
+          } else {
+            // Add new location options (no pre-selection)
+            $.each(locations, function (index, location) {
+              $locationSelect.append(
+                '<option value="' + location + '">' + location + "</option>"
+              );
+            });
+          }
+
+          // Re-enable and refresh Select2
+          $locationSelect.prop("disabled", false);
+          $locationSelect
+            .next(".description")
+            .html(
+              "Select one or more locations. Leave empty to show all locations."
+            );
+          if ($locationSelect.hasClass("select2-hidden-accessible")) {
+            $locationSelect.select2("destroy");
+          }
+          $locationSelect.select2({
+            placeholder: "Select locations...",
+            allowClear: true,
+            width: "100%",
+          });
+        } else {
+          // Handle error
+          $locationSelect.html(
+            '<option value="" disabled>Error loading locations</option>'
+          );
+          $locationSelect.prop("disabled", false);
+          $locationSelect
+            .next(".description")
+            .html("Error loading locations. Please try again.");
+          console.error("Error fetching locations:", response.data);
+        }
+      },
+      error: function (xhr, status, error) {
+        // Handle AJAX error
+        $locationSelect.html(
+          '<option value="" disabled>Error loading locations</option>'
+        );
+        $locationSelect.prop("disabled", false);
+        $locationSelect
+          .next(".description")
+          .html("Network error. Please check your connection and try again.");
+        console.error("AJAX error:", error);
+      },
     });
   });
 })(jQuery);

@@ -349,7 +349,7 @@
             },
             createElement("input", {
               type: "text",
-              placeholder: "Search trips by name...",
+              placeholder: "Search trips by name or location...",
               style: searchInputStyle,
               className: "wetravel-search-input",
             }),

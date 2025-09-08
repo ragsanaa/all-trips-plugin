@@ -37,6 +37,53 @@ function wtwidget_handle_design_form_submission() {
 add_action( 'admin_init', 'wtwidget_handle_design_form_submission' );
 
 /**
+ * AJAX handler to fetch locations based on trip type
+ */
+function wtwidget_fetch_locations_by_trip_type() {
+	// Verify nonce
+	if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'wetravel_trips_nonce' ) ) {
+		wp_send_json_error( 'Invalid nonce' );
+		return;
+	}
+
+	// Check user permissions
+	if ( ! current_user_can( 'manage_options' ) ) {
+		wp_send_json_error( 'Insufficient permissions' );
+		return;
+	}
+
+	$trip_type = isset( $_POST['trip_type'] ) ? sanitize_text_field( wp_unslash( $_POST['trip_type'] ) ) : 'all';
+	$env = get_option( 'wetravel_trips_env', 'https://pre.wetravel.to' );
+	$slug = get_option( 'wetravel_trips_slug', '' );
+
+	$locations = array();
+
+	// Only try to fetch locations if slug is configured
+	if ( ! empty( $slug ) && function_exists( 'wtwidget_build_api_url' ) && function_exists( 'wtwidget_get_trips_data' ) && function_exists( 'wtwidget_get_trip_locations' ) ) {
+		try {
+			// Get trips data based on trip type
+			$api_url = wtwidget_build_api_url( $env, $slug, array(
+				'trip_type' => $trip_type
+			) );
+
+			$trips = wtwidget_get_trips_data( $api_url );
+
+			if ( is_array( $trips ) ) {
+				$locations = wtwidget_get_trip_locations( $trips );
+			}
+		} catch ( Exception $e ) {
+			$locations = array();
+		}
+	}
+
+	wp_send_json_success( array(
+		'locations' => $locations,
+		'message' => empty( $locations ) ? 'No locations found for this trip type' : 'Locations loaded successfully'
+	) );
+}
+add_action( 'wp_ajax_fetch_locations_by_trip_type', 'wtwidget_fetch_locations_by_trip_type' );
+
+/**
  * Process the actual form submission
  */
 function wtwidget_process_form_submission() {
