@@ -38,6 +38,7 @@ function wtwidget_trips_shortcode( $atts ) {
 		'trip_type'              => 'all',
 		'date_start'             => '',
 		'date_end'               => '',
+		'locations'              => '', // Semicolon-separated list of locations to filter by
 		'search_visibility'      => get_option( 'wetravel_trips_search_visibility', false ),
 		'border_radius'          => get_option( 'wetravel_trips_border_radius', 6 ),
 	);
@@ -114,6 +115,7 @@ function wtwidget_trips_shortcode( $atts ) {
 		'tripType'       => $atts['trip_type'],
 		'dateStart'      => $atts['date_start'],
 		'dateEnd'        => $atts['date_end'],
+		'locations'      => $atts['locations'],
 		'searchVisibility' => $atts['search_visibility'],
 		'borderRadius'   => $atts['border_radius'],
 	);
@@ -157,6 +159,27 @@ function wtwidget_register_trips_ajax_handlers() {
 			$trip_type  = isset( $_POST['tripType'] ) ? sanitize_text_field( wp_unslash( $_POST['tripType'] ) ) : 'all';
 			$date_start = isset( $_POST['dateStart'] ) ? sanitize_text_field( wp_unslash( $_POST['dateStart'] ) ) : '';
 			$date_end   = isset( $_POST['dateEnd'] ) ? sanitize_text_field( wp_unslash( $_POST['dateEnd'] ) ) : '';
+			$design_id  = isset( $_POST['designID'] ) ? sanitize_text_field( wp_unslash( $_POST['designID'] ) ) : '';
+			$locations_override = isset( $_POST['locations'] ) ? sanitize_text_field( wp_unslash( $_POST['locations'] ) ) : null;
+
+			// Get design information if design ID is provided
+			$design = null;
+			if (!empty($design_id)) {
+				$designs = get_option('wetravel_trips_designs', array());
+
+				// First try to find design by keyword
+				foreach ($designs as $id => $design_data) {
+					if (isset($design_data['keyword']) && $design_data['keyword'] === $design_id) {
+						$design = $design_data;
+						break;
+					}
+				}
+
+				// If not found by keyword, try to find by design ID
+				if (null === $design && isset($designs[$design_id])) {
+					$design = $designs[$design_id];
+				}
+			}
 
 			// Build API URL with parameters
 			$api_url = wtwidget_build_api_url($env, $slug, array(
@@ -183,13 +206,30 @@ function wtwidget_register_trips_ajax_handlers() {
 				);
 			}
 
-			// Filter trips by location if design location is specified
-			if ($design && !empty($design['location'])) {
-				$design_location = $design['location'];
+			// Determine which locations to use for filtering
+			$locations_to_filter = array();
+
+			// Check if locations were overridden in the request
+			if ($locations_override !== null) {
+				if (!empty($locations_override)) {
+					// Parse semicolon-separated locations from override
+					$locations_to_filter = array_map('trim', explode(';', $locations_override));
+					$locations_to_filter = array_filter($locations_to_filter); // Remove empty entries
+				}
+				// If locations_override is empty string, no filtering (shows all)
+			}
+			// If no override, fall back to design locations
+			elseif ($design && !empty($design['locations'])) {
+				$design_locations = is_array($design['locations']) ? $design['locations'] : array($design['locations']);
+				$locations_to_filter = $design_locations;
+			}
+
+			// Apply location filtering if locations are specified
+			if (!empty($locations_to_filter)) {
 				$trips = array_filter(
 					$trips,
-					function($trip) use ($design_location) {
-						return !empty($trip['location']) && strtolower($trip['location']) === strtolower($design_location);
+					function($trip) use ($locations_to_filter) {
+						return !empty($trip['location']) && in_array($trip['location'], $locations_to_filter);
 					}
 				);
 			}

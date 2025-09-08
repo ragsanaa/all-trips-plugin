@@ -3,7 +3,7 @@ Contributors: wtragsana
 Tags: travel, widget, multi-day, booking, wetravel
 Requires at least: 5.2
 Tested up to: 6.8
-Stable tag: 1.2.2
+Stable tag: 1.2.3
 Requires PHP: 7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -168,6 +168,14 @@ This is perfect for creating region-specific trip displays.
 * New Changes
   - Redirected to create widget page when creating a new widget design
 
+= 1.2.3 =
+* Bug Fixes
+  - Fixed broken location-based shortcode functionality
+  - Fixed dynamic location loaded functionality when trip type is changed
+
+* New Changes
+  - Added locations attribute to shortcode
+
 == Upgrade Notice ==
 
 = 1.0 =
@@ -196,9 +204,10 @@ The `[wetravel_trips]` shortcode accepts the following parameters:
 * `date_end` - End date for filtering trips (format: YYYY-MM-DD)
 * `search_visibility` - Toggle search bar visibility: true (1) or false(0) (default: false). This is not available for carousel display type.
 * `border_radius` - Border radius for the widget design (default: 0)
+* `locations` - Semicolon-separated list of locations to filter by
 
 Basic usage with a saved design:
 `[wetravel_trips widget="my-custom-design"]`
 
 Example with custom parameters:
-`[wetravel_trips display_type="carousel" items_per_slide="3" button_color="#ff0000" button_text="Book Now"]`
+`[wetravel_trips display_type="carousel" items_per_slide="3" button_color="#ff0000" button_text="Book Now" locations="New York, USA;London;Paris, France"]`

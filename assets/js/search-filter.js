@@ -93,7 +93,10 @@
       const title = tripItem.find("h3").text().toLowerCase();
       const location = tripItem.find(".trip-location").text().toLowerCase();
 
-      const matchesSearch = !searchText || title.includes(searchText);
+      const matchesSearch =
+        !searchText ||
+        title.includes(searchText) ||
+        location.includes(searchText);
       const matchesLocation =
         selectedLocs.length === 0 ||
         selectedLocs.some((loc) => location.includes(loc.toLowerCase()));
