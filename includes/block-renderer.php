@@ -399,7 +399,10 @@ function wtwidget_trips_block_render( $attributes ) {
 					),
 					'h3' => array(),
 					'p' => array(),
-					'span' => array(),
+					'span' => array(
+						'class' => true,
+						'style' => true,
+					),
 					'button' => array(
 						'class' => true,
 						'style' => true,
@@ -662,11 +665,22 @@ function wtwidget_render_trip_item( $trip, $options, $visibility_class = '' ) {
 	$html .= '<div class="trip-title-desc">';
 	$html .= '<h3>' . esc_html( $trip['title'] ) . '</h3>';
 
-	// Description.
+	// Description with See More functionality.
 	if ( ! empty( $trip['full_description'] ) ) {
-    // Remove emojis from description to prevent layout issues.
-    $clean_description = wtwidget_remove_emojis_comprehensive($trip['full_description']);
-    $html .= '<div class="trip-description">' . wp_kses_post( $clean_description ) . '</div>';
+		// Remove emojis from description to prevent layout issues.
+		$clean_description = wtwidget_remove_emojis_comprehensive($trip['full_description']);
+
+		// Generate trip URL for See More link
+		$trip_url = wtwidget_get_button_url( $trip, array(
+			'env' => $options['env'],
+			'buttonType' => 'trip_link'
+		) );
+
+		// Show description with See More link (always visible)
+		$html .= '<div class="trip-description-wrapper">';
+		$html .= '<div class="trip-description">' . wp_kses_post( $clean_description ) . '</div>';
+		$html .= '<a href="' . esc_url( $trip_url ) . '" class="learn-more-link" target="_blank">See More <span class="dashicons dashicons-arrow-right-alt" style="vertical-align:middle; text-decoration: none;"></span></a>';
+		$html .= '</div>';
 	}
 	$html .= '</div>'; // Close trip-title-desc.
 

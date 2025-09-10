@@ -109,9 +109,6 @@
           }
         });
       });
-
-    // Apply fade effect to long descriptions
-    applyDescriptionFades();
   }
 
   // Initialize on document ready
@@ -130,28 +127,7 @@
 
   // Call the function after trips are rendered
   $(document).on("tripsRendered", function (e) {
-    // Apply fade effects to descriptions
-    applyDescriptionFades();
-
     // Initialize other interactive elements
     initializeEventHandlers($(e.target));
   });
-
-  /**
-   * Apply fade effects to descriptions that exceed 3 lines
-   */
-  function applyDescriptionFades() {
-    $(".trip-description").each(function () {
-      var $this = $(this);
-
-      // Calculate the line height and max height for 3 lines
-      var lineHeight = parseInt($this.css("line-height"));
-      var maxHeight = lineHeight * 3;
-
-      // Check if the actual scroll height exceeds what we want to show
-      if ($this[0].scrollHeight > maxHeight) {
-        $this.addClass("needs-fade");
-      }
-    });
-  }
 })(jQuery);

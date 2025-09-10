@@ -46,29 +46,40 @@ a {
   gap: 16px;
 }
 
-.trip-description {
-  color: #475569;
-  max-height: 100px; /* Limit height */
-  font-weight: 400;
-  font-size: 16px;
-  overflow: hidden;
+.trip-description-wrapper {
   position: relative;
 }
 
-/* Add a new class for the fade effect that we'll apply conditionally */
-.trip-description.needs-fade:after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  height: 30px; /* Height of fade effect */
-  width: 100%;
-  background: linear-gradient(
-    to bottom,
-    rgba(255, 255, 255, 0),
-    rgba(255, 255, 255, 1)
-  ); /* Transparent to white fade */
-  pointer-events: none; /* Makes sure the fade doesn't interfere with clicks */
+.trip-description {
+  color: #475569;
+  font-weight: 400;
+  font-size: 16px;
+  position: relative;
+  line-height: 1.5;
+  margin-bottom: 8px;
+  max-height: 120px; /* 5 lines × 24px line-height */
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+  -webkit-box-orient: vertical;
+  text-overflow: ellipsis;
+}
+
+/* Fade effect removed per user request */
+
+/* See More link styling */
+.learn-more-link {
+  color: var(--button-color) !important;
+  text-decoration: none !important;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.learn-more-link:hover {
+  opacity: 0.8;
+  text-decoration: underline !important;
 }
 
 .trip-loc-duration {
@@ -99,6 +110,8 @@ a {
 .trip-price {
   font-size: 16px;
   color: #333;
+  width: 100%;
+  word-break: auto-phrase;
 }
 
 .trip-price p {
@@ -423,6 +436,24 @@ a {
     grid-template-columns: repeat(2, 1fr);
   }
 
+  /* Tablet description styling */
+  .trip-description {
+    font-size: 15px;
+    line-height: 1.4;
+    max-height: 84px; /* 4 lines × 21px line-height */
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
+    text-overflow: ellipsis;
+    margin-bottom: 8px;
+  }
+
+  .learn-more-link {
+    font-size: 14px;
+  }
+
   .wetravel-trips-container.carousel-view .swiper-container-wrapper {
     gap: 15px;
   }
@@ -459,6 +490,27 @@ a {
 
   .trip-item img {
     max-height: 100px;
+  }
+
+  /* Mobile description styling */
+  .trip-description {
+    font-size: 14px;
+    line-height: 1.4;
+    max-height: 58px; /* 3 lines × ~19px line-height */
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
+    text-overflow: ellipsis;
+    margin-bottom: 6px;
+  }
+
+  /* Ensure See More link is visible on mobile */
+  .learn-more-link {
+    font-size: 13px;
+    white-space: nowrap;
+    display: block;
   }
 
   .wetravel-trips-container.carousel-view .swiper-container-wrapper {
