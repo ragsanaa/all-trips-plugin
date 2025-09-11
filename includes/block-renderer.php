@@ -295,63 +295,118 @@ function wtwidget_trips_block_render( $attributes ) {
 		<?php
 			if ( 'carousel' !== $display_type && $search_visibility ) :
 		?>
+
 		<!-- Search Filter UI -->
-		<div class="wetravel-trips-search-filter" id="search-filter-<?php echo esc_attr( $block_id ); ?>"
-			style="--button-color: <?php echo esc_attr( $button_color ); ?>; --button-color-rgb: <?php echo esc_attr(wtwidget_hex_to_rgb($button_color)); ?>;">
+		<div class="wetravel-trips-search-filter"
+     id="search-filter-<?php echo esc_attr( $block_id ); ?>"
+     style="--button-color: <?php echo esc_attr( $button_color ); ?>; --button-color-rgb: <?php echo esc_attr(wtwidget_hex_to_rgb($button_color)); ?>;">
+
 			<div class="search-filter-container">
 				<!-- Search input with clear button -->
 				<div class="search-input-wrapper">
-					<input type="text"
-							class="search-input"
-							placeholder="Search trips by name or location..."
-							data-block-id="<?php echo esc_attr( $block_id ); ?>"
+						<input type="text"
+										class="search-input"
+										placeholder="Search trips by name or location..."
+										data-block-id="<?php echo esc_attr( $block_id ); ?>"
 						/>
-					<button type="button" class="search-clear-btn" data-block-id="<?php echo esc_attr( $block_id ); ?>" style="display: none;">×</button>
+						<button type="button" class="search-clear-btn"
+										data-block-id="<?php echo esc_attr( $block_id ); ?>"
+										style="display: none;">×</button>
 				</div>
 
-				<!-- Location Filter -->
-				<button type="button" class="location-button" data-block-id="<?php echo esc_attr( $block_id ); ?>">
-					<span id="selected-text">Select locations</span>
-					<span class="selected-count" id="selected-count" style="display: none;">0 selected</span>
-					<span class="dropdown-arrow" id="dropdown-arrow">▲</span>
-				</button>
+				<!-- Filter toggle button wrapper -->
+				<div class="filter-button-wrapper">
+					<button type="button" class="filter-button"
+									data-block-id="<?php echo esc_attr( $block_id ); ?>">
+							<span class="dashicons dashicons-admin-settings"></span>
+							<span class="filter-button-text">Filter</span>
+					</button>
 
-				<!-- Clear All Filters Button -->
-				<button type="button" class="clear-all-filters" data-block-id="<?php echo esc_attr( $block_id ); ?>" style="display: none;">
-					Clear All Filters
-				</button>
-			</div>
-			<!-- Custom Location Dropdown -->
-			<div class="location-dropdown">
-				<div class="dropdown-menu" id="dropdown-menu">
-					<div class="location-search">
-						<input type="text" placeholder="Search Location" id="location-search" data-block-id="<?php echo esc_attr( $block_id ); ?>" />
-					</div>
-					<div class="location-list" id="location-list">
-						<?php
-						// Get unique locations from trips
-						$locations = array();
-						if (is_array($enhanced_trips)) {
-							$locations = array_unique(array_filter(array_map(function($trip) {
-								return isset($trip['location']) ? $trip['location'] : '';
-							}, $enhanced_trips)));
-							sort($locations);
-						}
+					<!-- Filter Dropdown (hidden until button click) -->
+					<div class="filter-dropdown" style="display: none;">
+						<!-- Filter Header with close button -->
+						<div class="filter-header">
+							<h3 class="filter-title">Filter</h3>
+							<button type="button" class="filter-close-btn" data-block-id="<?php echo esc_attr( $block_id ); ?>">✕</button>
+						</div>
 
-						foreach ($locations as $location) {
-							if (!empty($location)) {
-								$location_id = sanitize_title($location);
-								echo '<div class="location-item" data-location="' . esc_attr($location) . '" data-block-id="' . esc_attr($block_id) . '">';
-								echo '<div class="checkmark" id="check-' . esc_attr($location_id) . '"></div>';
-								echo '<div class="location-name">' . esc_html($location) . '</div>';
-								echo '</div>';
-							}
-						}
-						?>
+						<!-- Location Filter -->
+						<div class="filter-group">
+								<div class="filter-label-row">
+									<label class="filter-label">Location</label>
+									<button type="button" class="location-clear-btn" data-block-id="<?php echo esc_attr( $block_id ); ?>" style="display: none;">Clear</button>
+								</div>
+								<div class="location-filter-wrapper">
+									<button type="button" class="location-button" data-block-id="<?php echo esc_attr( $block_id ); ?>">
+											<span id="selected-text">Select location</span>
+											<span class="selected-count" id="selected-count" style="display: none;">0 selected</span>
+											<span class="dashicons dashicons-arrow-down-alt2"></span>
+									</button>
+
+									<!-- Custom Location Dropdown -->
+									<div class="location-dropdown">
+											<div class="dropdown-menu" id="dropdown-menu">
+													<div class="location-search">
+															<input type="text" placeholder="Search Location"
+																			id="location-search"
+																			data-block-id="<?php echo esc_attr( $block_id ); ?>" />
+													</div>
+													<div class="location-list" id="location-list">
+															<?php
+															// Get unique locations from trips
+															$locations = array();
+															if (is_array($enhanced_trips)) {
+																	$locations = array_unique(array_filter(array_map(function($trip) {
+																			return isset($trip['location']) ? $trip['location'] : '';
+																	}, $enhanced_trips)));
+																	sort($locations);
+															}
+
+															foreach ($locations as $location) {
+																	if (!empty($location)) {
+																			$location_id = sanitize_title($location);
+																			echo '<div class="location-item" data-location="' . esc_attr($location) . '" data-block-id="' . esc_attr($block_id) . '">';
+																			echo '<div class="checkmark" id="check-' . esc_attr($location_id) . '"></div>';
+																			echo '<div class="location-name">' . esc_html($location) . '</div>';
+																			echo '</div>';
+																	}
+															}
+															?>
+													</div>
+											</div>
+									</div>
+								</div>
+						</div>
+
+						<!-- Date Range Filter -->
+						<div class="filter-group">
+								<label class="filter-label">Date Range</label>
+								<div class="date-range-inputs">
+								<div class="date-input-group">
+										<input type="date" class="date-input date-start-input"
+														data-block-id="<?php echo esc_attr( $block_id ); ?>"
+														data-date-type="start" />
+								</div>
+								<span class="date-separator">To</span>
+								<div class="date-input-group">
+										<input type="date" class="date-input date-end-input"
+														data-block-id="<?php echo esc_attr( $block_id ); ?>"
+														data-date-type="end" />
+								</div>
+								</div>
+						</div>
+
+						<!-- Action Buttons -->
+						<div class="filter-actions">
+								<button type="button" class="reset-btn">Reset</button>
+								<button type="button" class="apply-btn">Apply</button>
+						</div>
 					</div>
 				</div>
 			</div>
+
 		</div>
+
 		<?php endif; ?>
 
 		<div class="wetravel-trips-container <?php echo esc_attr( $display_type ); ?>-view"
