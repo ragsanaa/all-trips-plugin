@@ -126,8 +126,6 @@ class WetravelTracking {
 				'site_info' => array(
 					'site_url' => get_site_url(),
 					'site_name' => get_bloginfo( 'name' ),
-					'page_type' => $this->get_current_page_type(),
-					'user_role' => $this->get_user_role(),
 				)
 			)
 		);
@@ -147,15 +145,13 @@ class WetravelTracking {
 			wp_send_json_error( 'User has not given consent' );
 		}
 
-		$event_type = isset( $_POST['event_type'] ) ? sanitize_text_field( wp_unslash( $_POST['event_type'] ) ) : '';
+
 		$widget_id = isset( $_POST['widget_id'] ) ? sanitize_text_field( wp_unslash( $_POST['widget_id'] ) ) : '';
-		// Get and sanitize event data array
 		$raw_event_data = isset( $_POST['event_data'] ) ? sanitize_text_field( wp_unslash( $_POST['event_data'] ) ) : array();
 		$event_data = $this->sanitize_event_data( $raw_event_data );
 
-		// Send to external endpoint
-		$endpoint = get_option( 'wetravel_tracking_endpoint', 'http://localhost:9292/' );
-		$sent = $this->send_to_endpoint( $event_type, $widget_id, $event_data, $endpoint );
+		// Send directly to wt_widgets_tracking endpoint
+		$sent = $this->send_tracking_data( $event_data );
 
 		if ( $sent ) {
 			wp_send_json_success( 'Event tracked successfully' );
@@ -164,312 +160,10 @@ class WetravelTracking {
 		}
 	}
 
-
-
-	/**
-	 * Send tracking data to external endpoint
-	 */
-	private function send_to_endpoint( $event_type, $widget_id, $event_data, $endpoint ) {
-		// Construct the full API endpoint URL
-		$base_url = rtrim( $endpoint, '/' );
-		$full_url = $base_url . '/public/v1/plugin/track';
-
-		// Extract widget and layout type from event data
-		$wt_widget_type = $event_data['wt_widget_type'] ?? 'unknown';
-		$layout_type = $event_data['display_type'] ?? 'vertical';
-		$button_type = $event_data['button_type'] ?? 'book_now';
-		$integration_type = $event_data['integration_type'] ?? 'block';
-
-		// Get current user ID, default to 0 for anonymous
-		$user_id = get_current_user_id();
-		if ( ! $user_id ) {
-			$user_id = 0;
-		}
-
-		// Map to new PluginLog structure
-		$payload = array(
-			'user_id' => $user_id,
-			'wt_user_id' => $event_data['wt_user_id'] ?? '',
-			'base_url' => home_url(),
-			'wt_widget_type' => $wt_widget_type,
-			'version' => WETRAVEL_PLUGIN_VERSION,
-			'full_page_url' => $event_data['page_url'] ?? ( isset( $_SERVER['REQUEST_URI'] ) ? esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '' ),
-			'event_type' => $event_type,
-			'layout_type' => $layout_type,
-			'button_type' => $button_type,
-			'integration_type' => $integration_type,
-			'trip_uuid' => $event_data['trip_uuid'] ?? '',
-			'trip_type' => $event_data['trip_type'] ?? '',
-			'user_agent' => $event_data['user_agent'] ?? '',
-		);
-
-		// Get API key from settings or environment for authentication
-		$api_key = get_option( 'wetravel_tracking_api_key', '' );
-		if ( empty( $api_key ) && defined( 'WETRAVEL_INTERNAL_API_KEY' ) ) {
-			$api_key = WETRAVEL_INTERNAL_API_KEY;
-		}
-
-		$headers = array(
-			'Content-Type' => 'application/json',
-			'User-Agent' => 'WeTravel-Widgets-Plugin/' . get_option( 'wetravel_plugin_version', '1.0' ),
-		);
-
-		// Add X-WP-Plugin-Key header if API key is available
-		if ( ! empty( $api_key ) ) {
-			$headers['X-WP-Plugin-Key'] = $api_key;
-		}
-
-		$response = wp_remote_post( $full_url, array(
-			'timeout' => 10,
-			'headers' => $headers,
-			'body' => json_encode( $payload ),
-		) );
-
-		if ( is_wp_error( $response ) ) {
-			// Log error only in debug mode
-			if ( defined( 'WP_DEBUG' ) && WP_DEBUG && defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) {
-				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-				error_log( 'WeTravel Tracking Error: ' . $response->get_error_message() );
-			}
-			return false;
-		}
-
-		$response_code = wp_remote_retrieve_response_code( $response );
-		$response_body = wp_remote_retrieve_body( $response );
-
-		return $response_code >= 200 && $response_code < 300;
-	}
-
-	/**
-	 * Sanitize event data
-	 */
-	private function sanitize_event_data( $data ) {
-		if ( ! is_array( $data ) ) {
-			return array();
-		}
-
-		$sanitized = array();
-		foreach ( $data as $key => $value ) {
-			$key = sanitize_key( $key );
-			if ( is_array( $value ) ) {
-				$sanitized[$key] = $this->sanitize_event_data( $value );
-			} else {
-				$sanitized[$key] = sanitize_text_field( $value );
-			}
-		}
-
-		return $sanitized;
-	}
-
-	/**
-	 * Get current page type
-	 */
-	private function get_current_page_type() {
-		if ( is_front_page() ) return 'home';
-		if ( function_exists( 'is_shop' ) && is_shop() ) return 'shop';
-		if ( function_exists( 'is_product' ) && is_product() ) return 'product';
-		if ( function_exists( 'is_cart' ) && is_cart() ) return 'cart';
-		if ( function_exists( 'is_checkout' ) && is_checkout() ) return 'checkout';
-		if ( function_exists( 'is_account_page' ) && is_account_page() ) return 'account';
-		if ( is_category() ) return 'category';
-		if ( is_tag() ) return 'tag';
-		if ( is_author() ) return 'author';
-		if ( is_date() ) return 'date';
-		if ( is_search() ) return 'search';
-		if ( is_404() ) return '404';
-		if ( is_page() ) return 'page';
-		if ( is_single() ) return 'post';
-		if ( is_archive() ) return 'archive';
-		return 'other';
-	}
-
-	/**
-	 * Get user role
-	 */
-	private function get_user_role() {
-		if ( ! is_user_logged_in() ) {
-			return 'visitor';
-		}
-
-		$user = wp_get_current_user();
-		$roles = $user->roles;
-
-		if ( empty( $roles ) ) {
-			return 'user';
-		}
-
-		return $roles[0]; // Return first role
-	}
-
-	/**
-	 * Update user state when widgets are added/modified on posts
-	 * Lightweight check to keep user_state current without detailed event tracking
-	 */
-	public function update_user_state_on_widget_change( $post_id, $post, $update ) {
-		// Skip if tracking is disabled
-		if ( ! $this->is_tracking_enabled() ) {
-			return;
-		}
-
-		// Skip autosaves and revisions
-		if ( wp_is_post_autosave( $post_id ) || wp_is_post_revision( $post_id ) ) {
-			return;
-		}
-
-		// Only track published posts
-		if ( $post->post_status !== 'publish' ) {
-			return;
-		}
-
-		// Check if post contains WeTravel widgets
-		if ( $this->post_contains_wetravel_widgets( $post->post_content ) ) {
-			// Throttle user state updates to prevent duplicate requests
-			$this->throttled_user_state_update();
-		}
-	}
-
-	/**
-	 * Throttled user state update to prevent multiple requests from multiple save hooks
-	 */
-	private function throttled_user_state_update() {
-		$user_id = get_current_user_id();
-		$transient_key = 'wetravel_user_state_updated_' . $user_id;
-		$last_update = get_transient( $transient_key );
-
-		// Only update if we haven't updated in the last 30 seconds
-		if ( ! $last_update ) {
-			// Set transient to prevent duplicate updates
-			set_transient( $transient_key, time(), 30 );
-
-			// Update user state to keep active widget counts current
-			if ( function_exists( 'wetravel_track_user_state' ) ) {
-				wetravel_track_user_state();
-			}
-		}
-	}
-
-	/**
-	 * Simple check if post content contains WeTravel widgets
-	 */
-	private function post_contains_wetravel_widgets( $content ) {
-		// Check for Gutenberg blocks
-		if ( has_blocks( $content ) && strpos( $content, 'wetravel-trips/block' ) !== false ) {
-			return true;
-		}
-
-		// Check for shortcodes
-		if ( strpos( $content, '[wetravel_trips' ) !== false ) {
-			return true;
-		}
-
-		return false;
-	}
-}
-
-// Initialize tracking
-function wetravel_tracking_init() {
-	return WetravelTracking::get_instance();
-}
-
-// Hook to initialize tracking
-add_action( 'plugins_loaded', 'wetravel_tracking_init' );
-
-/**
- * WeTravel Audit API Class
- *
- * Handles advanced tracking for plugin events and user state
- */
-class WeTravelAuditAPI {
-
-	/**
-	 * Instance of this class
-	 */
-	private static $instance = null;
-
-	/**
-	 * Base API URL for tracking
-	 */
-	private $base_url;
-
-	/**
-	 * Constructor
-	 */
-	private function __construct() {
-		// Get the tracking endpoint from settings, fallback to WeTravel production
-		$this->base_url = get_option( 'wetravel_tracking_endpoint', 'http://localhost:9292' );
-		// Remove trailing slash
-		$this->base_url = rtrim( $this->base_url, '/' );
-	}
-
-	/**
-	 * Get instance
-	 */
-	public static function get_instance() {
-		if ( null === self::$instance ) {
-			self::$instance = new self();
-		}
-		return self::$instance;
-	}
-
-		/**
-	 * Make HTTP request to WeTravel API
-	 */
-	public function make_request( $endpoint, $data, $method = 'POST', $bypass_consent = false ) {
-		// Check if tracking is enabled and has consent (unless bypass is requested)
-		$tracking = WetravelTracking::get_instance();
-
-		// Enhanced debugging for consent and settings
-		$tracking_enabled = $tracking->is_tracking_enabled();
-
-		if ( ! $tracking_enabled && ! $bypass_consent ) {
-			return false;
-		}
-
-		$url = $this->base_url . $endpoint;
-
-		// Get API key from settings or environment
-		$api_key = get_option( 'wetravel_tracking_api_key', '' );
-		if ( empty( $api_key ) && defined( 'WETRAVEL_INTERNAL_API_KEY' ) ) {
-			$api_key = WETRAVEL_INTERNAL_API_KEY;
-		}
-
-		$headers = array(
-			'Content-Type' => 'application/json',
-			'User-Agent'   => 'WeTravel-WordPress-Plugin/' . WETRAVEL_PLUGIN_VERSION,
-		);
-
-		// Add X-WP-Plugin-Key header if API key is available
-		if ( ! empty( $api_key ) ) {
-			$headers['X-WP-Plugin-Key'] = $api_key;
-		}
-
-		$args = array(
-			'method'  => $method,
-			'timeout' => 15,
-			'headers' => $headers,
-			'body'    => json_encode( $data ),
-		);
-
-		$response = wp_remote_request( $url, $args );
-
-		if ( is_wp_error( $response ) ) {
-			return false;
-		}
-
-		$response_code = wp_remote_retrieve_response_code( $response );
-		$response_body = wp_remote_retrieve_body( $response );
-		$response_headers = wp_remote_retrieve_headers( $response );
-
-
-		$success = $response_code >= 200 && $response_code < 300;
-
-		return $success;
-	}
-
 	/**
 	 * Track a plugin event
 	 */
-	public function track_event( $user_id, $event_type, $event_data = array() ) {
+	public function track_event( $event_type, $event_data = array() ) {
 		// Extract widget and layout information from event data
 		$wt_widget_type = $event_data['wt_widget_type'] ?? 'unknown';
 		$layout_type = $event_data['display_type'] ?? 'vertical';
@@ -478,7 +172,6 @@ class WeTravelAuditAPI {
 		$integration_type = $event_data['integration_type'] ?? 'block';
 
 		$data = array(
-			'user_id'          => intval( $user_id ),
 			'wt_user_id'       => $event_data['wt_user_id'] ?? '',
 			'base_url'         => home_url(),
 			'wt_widget_type'   => $wt_widget_type,
@@ -491,17 +184,18 @@ class WeTravelAuditAPI {
 			'trip_uuid'        => $event_data['trip_uuid'] ?? '',
 			'trip_type'        => $event_data['trip_type'] ?? '',
 			'user_agent'       => $event_data['user_agent'] ?? '',
+			'requested_for'    => 'wp_plugin_event',
 		);
 
-		return $this->make_request( '/public/v1/plugin/track', $data );
+		return $this->send_tracking_data( $data, false );
 	}
 
 	/**
 	 * Convenience methods for common events
 	 */
-	public function track_widget_view( $user_id, $event_data ) {
+	public function track_widget_view( $event_data ) {
 		$page_url = $this->get_current_page_url();
-		return $this->track_event( $user_id, 'widget_load', array_merge( $event_data, array(
+		return $this->track_event( 'widget_load', array_merge( $event_data, array(
 			'page_url' => $page_url,
 			'user_agent' => isset( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ) : '',
 		) ) );
@@ -510,7 +204,6 @@ class WeTravelAuditAPI {
 	/**
 	 * Track user state - call this periodically or on significant changes
 	 *
-	 * @param int|string $wp_user_id WordPress user ID
 	 * @param string|null $wt_user_id WeTravel user ID (null if not yet configured)
 	 * @param string|null $wt_user_slug WeTravel user slug (null if not yet configured)
 	 * @param bool|null $force_plugin_state Force plugin state (null for auto-detection)
@@ -518,7 +211,7 @@ class WeTravelAuditAPI {
 	 * @param array $additional_data Additional data to include
 	 * @param bool $bypass_consent Whether to bypass consent check for critical events
 	 */
-	public function track_user_state( $wp_user_id, $wt_user_id, $wt_user_slug, $force_plugin_state = null, $anonymous = false, $additional_data = array(), $bypass_consent = false ) {
+	public function track_user_state( $wt_user_id, $wt_user_slug, $force_plugin_state = null, $anonymous = false, $additional_data = array(), $bypass_consent = false ) {
 		global $wp_version;
 
 		// Get current plugin active status
@@ -555,7 +248,6 @@ class WeTravelAuditAPI {
 
 		} else {
 			$data = array(
-				'user_id' => $wp_user_id,
 				'site_url' => home_url(),
 				'wt_user_id' => $wt_user_id,
 				'wt_user_slug' => $wt_user_slug,
@@ -602,7 +294,12 @@ class WeTravelAuditAPI {
 			}
 		}
 
-		return $this->make_request( '/public/v1/plugin/track/user/state', $data, 'POST', $bypass_consent );
+		// Add requested_for field if not already set (e.g., from deactivation)
+		if ( ! isset( $data['requested_for'] ) ) {
+			$data['requested_for'] = 'wp_user_state';
+		}
+
+		return $this->send_tracking_data( $data, $bypass_consent );
 	}
 
 	/**
@@ -614,23 +311,84 @@ class WeTravelAuditAPI {
 			'plugin_slug'        => WETRAVEL_PLUGIN_SLUG,
 			'plugin_version'     => WETRAVEL_PLUGIN_VERSION,
 			'event_type'         => $action_type,
+			'requested_for'      => 'wp_plugin_state',
 		);
 
-		return $this->make_request( '/public/v1/plugin/track/state', $plugin_state_data, 'POST', $bypass_consent );
+		return $this->send_tracking_data( $plugin_state_data, $bypass_consent );
 	}
 
 	/**
-	 * Get WeTravel environment
+	 * Send tracking data to WeTravel widget tracking endpoint
+	 *
+	 * @param array $event_data The tracking data to send
+	 * @param bool $bypass_consent Whether to bypass consent check for critical events
+	 * @param int $timeout HTTP request timeout in seconds (default: 10)
+	 * @return bool True if tracking was successful, false otherwise
 	 */
-	private function get_wetravel_environment() {
-		$env_url = get_option( 'wetravel_trips_env', 'https://pre.wetravel.to' );
+	public function send_tracking_data( $event_data, $bypass_consent = false, $timeout = 10 ) {
+		// Check if tracking is enabled (unless bypass is requested)
+		if ( ! $bypass_consent && ! $this->is_tracking_enabled() ) {
+			return false;
+		}
 
-		return $env_url;
+		// Get the tracking URL (same logic as embeds)
+		$env = get_option( 'wetravel_trips_env', 'https://wetravel.com' );
+		$tracking_url = $this->get_tracking_url( $env );
+
+		// Use event data directly
+		$payload = $event_data;
+
+		$response = wp_remote_post( $tracking_url, array(
+			'timeout' => $timeout,
+			'headers' => array(
+				'Content-Type' => 'application/json',
+			),
+			'body' => json_encode( $payload ),
+		) );
+
+		if ( is_wp_error( $response ) ) {
+			return false;
+		}
+
+		$response_code = wp_remote_retrieve_response_code( $response );
+		return $response_code >= 200 && $response_code < 300;
 	}
 
 	/**
-	 * Get widget counts by type
+	 * Same tracking URL logic as embeds
 	 */
+	private function get_tracking_url( $env ) {
+		if ( strpos( $env, 'wetravel.com' ) !== false ) {
+			return 'https://t.wetravel.com/widgets';
+		}
+
+		$parsed = wp_parse_url( $env );
+		$host = $parsed['host'] ?? $env;
+		$base = implode( '.', array_slice( explode( '.', $host ), -3 ) );
+		return 'https://t.' . $base . '/widgets';
+	}
+
+	/**
+	 * Sanitize event data
+	 */
+	private function sanitize_event_data( $data ) {
+		if ( ! is_array( $data ) ) {
+			return array();
+		}
+
+		$sanitized = array();
+		foreach ( $data as $key => $value ) {
+			$key = sanitize_key( $key );
+			if ( is_array( $value ) ) {
+				$sanitized[$key] = $this->sanitize_event_data( $value );
+			} else {
+				$sanitized[$key] = sanitize_text_field( $value );
+			}
+		}
+
+		return $sanitized;
+	}
+
 	/**
 	 * Get widget counts by widget type and display type, dynamically.
 	 * Returns array: [ 'all-trips' => [ 'vertical' => 2, 'carousel' => 1, ... ], ... ]
@@ -772,7 +530,7 @@ class WeTravelAuditAPI {
 	/**
 	 * Get current page URL
 	 */
-	private function get_current_page_url() {
+	public function get_current_page_url() {
 		if ( ! isset( $_SERVER['HTTP_HOST'] ) || ! isset( $_SERVER['REQUEST_URI'] ) ) {
 			return home_url();
 		}
@@ -780,14 +538,88 @@ class WeTravelAuditAPI {
 		$protocol = ( isset( $_SERVER['HTTPS'] ) && $_SERVER['HTTPS'] === 'on' ) ? 'https' : 'http';
 		return $protocol . '://' . sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) ) . esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) );
 	}
+
+		/**
+	 * Get WeTravel environment
+	 */
+	private function get_wetravel_environment() {
+		$env_url = get_option( 'wetravel_trips_env', 'https://pre.wetravel.to' );
+
+		return $env_url;
+	}
+
+	/**
+	 * Update user state when widgets are added/modified on posts
+	 * Lightweight check to keep user_state current without detailed event tracking
+	 */
+	public function update_user_state_on_widget_change( $post_id, $post, $update ) {
+		// Skip if tracking is disabled
+		if ( ! $this->is_tracking_enabled() ) {
+			return;
+		}
+
+		// Skip autosaves and revisions
+		if ( wp_is_post_autosave( $post_id ) || wp_is_post_revision( $post_id ) ) {
+			return;
+		}
+
+		// Only track published posts
+		if ( $post->post_status !== 'publish' ) {
+			return;
+		}
+
+		// Check if post contains WeTravel widgets
+		if ( $this->post_contains_wetravel_widgets( $post->post_content ) ) {
+			// Throttle user state updates to prevent duplicate requests
+			$this->throttled_user_state_update();
+		}
+	}
+
+	/**
+	 * Throttled user state update to prevent multiple requests from multiple save hooks
+	 */
+	private function throttled_user_state_update() {
+		$user_id = get_current_user_id();
+		$transient_key = 'wetravel_user_state_updated_' . $user_id;
+		$last_update = get_transient( $transient_key );
+
+		// Only update if we haven't updated in the last 30 seconds
+		if ( ! $last_update ) {
+			// Set transient to prevent duplicate updates
+			set_transient( $transient_key, time(), 30 );
+
+			// Update user state to keep active widget counts current
+			if ( function_exists( 'wetravel_track_user_state' ) ) {
+				wetravel_track_user_state();
+			}
+		}
+	}
+
+	/**
+	 * Simple check if post content contains WeTravel widgets
+	 */
+	private function post_contains_wetravel_widgets( $content ) {
+		// Check for Gutenberg blocks
+		if ( has_blocks( $content ) && strpos( $content, 'wetravel-trips/block' ) !== false ) {
+			return true;
+		}
+
+		// Check for shortcodes
+		if ( strpos( $content, '[wetravel_trips' ) !== false ) {
+			return true;
+		}
+
+		return false;
+	}
 }
 
-/**
- * Helper function to get audit API instance
- */
-function wetravel_get_audit_api() {
-	return WeTravelAuditAPI::get_instance();
+// Initialize tracking
+function wetravel_tracking_init() {
+	return WetravelTracking::get_instance();
 }
+
+// Hook to initialize tracking
+add_action( 'plugins_loaded', 'wetravel_tracking_init' );
 
 /**
  * Helper function to track widget view
@@ -799,13 +631,7 @@ function wetravel_track_widget_view( $event_data ) {
 		return false;
 	}
 
-	$user_id = get_current_user_id();
-	if ( ! $user_id ) {
-		$user_id = 0; // Anonymous user
-	}
-
-	$audit_api = wetravel_get_audit_api();
-	return $audit_api->track_widget_view( $user_id, $event_data );
+	return $tracking->track_widget_view( $event_data );
 }
 
 /**
@@ -819,8 +645,6 @@ function wetravel_track_widget_view( $event_data ) {
  * @param bool $bypass_consent Whether to bypass consent check for critical events
  */
 function wetravel_track_user_state( $wt_user_id = null, $wt_user_slug = null, $force_plugin_state = null, $anonymous = false, $additional_data = array(), $bypass_consent = false ) {
-    $wp_user_id = get_current_user_id();
-
     // Get WeTravel user info from plugin settings if not provided
     if ( ! $wt_user_id ) {
         $wt_user_id = get_option( 'wetravel_trips_user_id', '' );
@@ -829,11 +653,11 @@ function wetravel_track_user_state( $wt_user_id = null, $wt_user_slug = null, $f
         $wt_user_slug = get_option( 'wetravel_trips_slug', '' );
     }
 
-    $audit_api = wetravel_get_audit_api();
-    return $audit_api->track_user_state( $wp_user_id, $wt_user_id, $wt_user_slug, $force_plugin_state, $anonymous, $additional_data, $bypass_consent );
+    $tracking = WetravelTracking::get_instance();
+    return $tracking->track_user_state( $wt_user_id, $wt_user_slug, $force_plugin_state, $anonymous, $additional_data, $bypass_consent );
 }
 
 function wetravel_track_plugin_state($action_type){
-	$audit_api = wetravel_get_audit_api();
-	return $audit_api->track_plugin_state( $action_type, true );
+	$tracking = WetravelTracking::get_instance();
+	return $tracking->track_plugin_state( $action_type, true );
 }

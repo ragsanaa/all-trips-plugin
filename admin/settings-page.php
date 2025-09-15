@@ -242,9 +242,6 @@ function wetravel_trips_main_page() {
  */
 function wetravel_trips_handle_main_redirect() {
 	// Only run on our main menu page - safely check the page parameter
-	if ( ! isset( $_GET['wetravel_trips_settings_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['wetravel_trips_settings_nonce'] ) ), 'wetravel_trips_settings_nonce' ) ) {
-		return;
-	}
 	$page = isset( $_GET['page'] ) ? sanitize_text_field( wp_unslash( $_GET['page'] ) ) : '';
 	if ( $page !== 'wetravel-trips-main' ) {
 		return;
