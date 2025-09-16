@@ -574,11 +574,14 @@ function wtwidget_get_button_url( $trip, $options ) {
 
 	// Set up button URL based on button type.
 	if ( 'book_now' === $options['buttonType'] ) {
-		$button_url = $env . '/checkout_embed?uuid=' . $trip['uuid'];
+		$button_url = $env . '/checkout_embed?uuid=' . $trip['uuid'] . '&source=wp_widget_book_now';
 	} else {
-		$button_url = $env . '/trips/' . $trip['uuid'];
+		$button_url = $env . '/trips/' . $trip['uuid'] . '?source=wp_widget_trip_link';
 		if ( isset( $trip['href'] ) ) {
 			$button_url = $trip['href'];
+			// Add source parameter to existing href URL
+			$separator = strpos( $button_url, '?' ) !== false ? '&' : '?';
+			$button_url .= $separator . 'source=wp_widget_trip_link';
 		}
 	}
 
