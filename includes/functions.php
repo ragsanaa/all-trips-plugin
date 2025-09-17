@@ -121,16 +121,8 @@ function wtwidget_check_keyword_unique() {
  * Enqueue scripts and styles for the plugin
  */
 function wtwidget_enqueue_scripts() {
-	// Enqueue editor fix script
-	wp_register_script(
-		'wetravel-trips-editor-fix',
-		plugins_url( 'assets/js/editor-fix.js', dirname( __FILE__ ) ),
-		array( 'jquery' ),
-		filemtime( plugin_dir_path( dirname( __FILE__ ) ) . 'assets/js/editor-fix.js' ),
-		true
-	);
-
-	wp_enqueue_script( 'wetravel-trips-editor-fix' );
+	// Removed editor-fix.js since widgets are server-side rendered
+	// This prevents AJAX conflicts in editors
 }
 add_action( 'wp_enqueue_scripts', 'wtwidget_enqueue_scripts' );
 

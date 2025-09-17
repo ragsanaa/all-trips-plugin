@@ -103,6 +103,17 @@ function wtwidget_trips_shortcode( $atts ) {
 	// Now merge with shortcode attributes, allowing them to override both defaults and design values
 	$atts = shortcode_atts($default_atts, $original_atts, 'wetravel_trips');
 
+	// Add validation for shortcode attributes
+	$atts['items_per_page'] = max(1, min(50, intval($atts['items_per_page'])));
+	$atts['items_per_row'] = max(1, min(4, intval($atts['items_per_row'])));
+	$atts['items_per_slide'] = max(1, min(4, intval($atts['items_per_slide'])));
+	$atts['display_type'] = in_array($atts['display_type'], ['vertical', 'grid', 'carousel']) ? $atts['display_type'] : 'vertical';
+	$atts['button_type'] = in_array($atts['button_type'], ['book_now', 'trip_link']) ? $atts['button_type'] : 'book_now';
+	$atts['button_color'] = sanitize_hex_color($atts['button_color']) ?: '#33ae3f';
+	$atts['trip_type'] = in_array($atts['trip_type'], ['all', 'one-time', 'recurring']) ? $atts['trip_type'] : 'all';
+	$atts['border_radius'] = max(0, min(100, intval($atts['border_radius'])));
+	$atts['search_visibility'] = (bool) $atts['search_visibility'];
+
 	// Convert to block attributes format
 	$block_atts = array(
 		'slug'           => $atts['slug'],
@@ -136,79 +147,3 @@ function wtwidget_trips_shortcode( $atts ) {
 }
 add_shortcode( 'wetravel_trips', 'wtwidget_trips_shortcode' );
 
-/**
- * Load trips data with AJAX for shortcode or block
- * This makes the shortcode behave the same as the block renderer
- */
-function wtwidget_register_trips_ajax_handlers() {
-	// Ensure that the AJAX handler from trips-loader.js works correctly.
-	if ( ! function_exists( 'wtwidget_get_trips_ajax' ) ) {
-		/**
-		 * AJAX handler for fetching trips data.
-		 *
-		 * This function handles the AJAX request to fetch trips data based on the provided parameters.
-		 * It checks the nonce, retrieves the parameters, formats the environment URL, builds the API URL,
-		 * and retrieves the trips data.
-		 */
-		function wtwidget_get_trips_ajax() {
-			// Security check.
-			check_ajax_referer( 'wetravel_trips_nonce', 'nonce' );
-
-			// Get parameters from the request.
-			$slug       = isset( $_POST['slug'] ) ? sanitize_text_field( wp_unslash( $_POST['slug'] ) ) : '';
-			$env        = isset( $_POST['env'] ) ? sanitize_text_field( wp_unslash( $_POST['env'] ) ) : 'https://pre.wetravel.to';
-			$trip_type  = isset( $_POST['tripType'] ) ? sanitize_text_field( wp_unslash( $_POST['tripType'] ) ) : 'all';
-			$date_start = isset( $_POST['dateStart'] ) ? sanitize_text_field( wp_unslash( $_POST['dateStart'] ) ) : '';
-			$date_end   = isset( $_POST['dateEnd'] ) ? sanitize_text_field( wp_unslash( $_POST['dateEnd'] ) ) : '';
-			$wt_widget_type = isset( $_POST['wtWidgetType'] ) ? sanitize_text_field( wp_unslash( $_POST['wtWidgetType'] ) ) : 'all-trips';
-
-			// Build API URL with parameters
-			$api_url = wtwidget_build_api_url($env, $slug, array(
-				'trip_type' => $trip_type,
-				'date_start' => $date_start,
-				'date_end' => $date_end
-			));
-
-			// Get trips data
-			$trips = wtwidget_get_trips_data($api_url);
-
-			// Handle case when trips data is false (error occurred)
-			if (false === $trips) {
-				$trips = array(); // Set to empty array to show "No trips found" message
-			}
-
-			if ( 'recurring' === $trip_type ) {
-				// Filter trips where 'all_year' is true.
-				$trips = array_filter(
-					$trips,
-					function ( $trip ) {
-						return ! empty( $trip['all_year'] ) && true === $trip['all_year'];
-					}
-				);
-			}
-
-			// Filter trips by location if design location is specified
-			if ($design && !empty($design['location'])) {
-				$design_location = $design['location'];
-				$trips = array_filter(
-					$trips,
-					function($trip) use ($design_location) {
-						return !empty($trip['location']) && strtolower($trip['location']) === strtolower($design_location);
-					}
-				);
-			}
-
-			// Enhance trips with details since we need them for display
-			if (!empty($trips)) {
-				$trips = wtwidget_enhance_trips_with_details($trips, $env);
-			}
-
-			// Return the trips data as JSON.
-			wp_send_json_success( $trips );
-		}
-
-		add_action( 'wp_ajax_wetravel_trips_get_trips', 'wtwidget_get_trips_ajax' );
-		add_action( 'wp_ajax_nopriv_wetravel_trips_get_trips', 'wtwidget_get_trips_ajax' );
-	}
-}
-add_action( 'init', 'wtwidget_register_trips_ajax_handlers' );

@@ -156,9 +156,9 @@ function wtwidget_trips_block_render( $attributes ) {
 		);
 	}
 
-	// Fetch enhanced trip data with additional details since we need it for display
-	if (!empty($trips)) {
-		$trips = wtwidget_enhance_trips_with_details($trips, $env);
+	// Enhance trips with details (but only if we have data).
+	if ( ! empty( $trips ) && is_array( $trips ) ) {
+		$trips = wtwidget_enhance_trips_with_details( $trips, $env );
 	}
 
 	// Enqueue necessary assets based on display type.
@@ -194,20 +194,22 @@ function wtwidget_trips_block_render( $attributes ) {
 		);
 	}
 
-	// Enqueue Select2 for location filter
-	wp_enqueue_style(
-		'select2-css',
-		plugins_url( 'assets/css/select2.min.css', dirname( __FILE__ ) ),
-		array(),
-		filemtime( plugin_dir_path( dirname( __FILE__ ) ) . 'assets/css/select2.min.css' )
-	);
-	wp_enqueue_script(
-		'select2-js',
-		plugins_url( 'assets/js/select2.min.js', dirname( __FILE__ ) ),
-		array('jquery'),
-		filemtime( plugin_dir_path( dirname( __FILE__ ) ) . 'assets/js/select2.min.js' ),
-		true
-	);
+	// Only enqueue Select2 when search is enabled.
+	if ( $search_visibility ) {
+		wp_enqueue_style(
+			'select2-css',
+			plugins_url( 'assets/css/select2.min.css', dirname( __FILE__ ) ),
+			array(),
+			filemtime( plugin_dir_path( dirname( __FILE__ ) ) . 'assets/css/select2.min.css' )
+		);
+		wp_enqueue_script(
+			'select2-js',
+			plugins_url( 'assets/js/select2.min.js', dirname( __FILE__ ) ),
+			array('jquery'),
+			filemtime( plugin_dir_path( dirname( __FILE__ ) ) . 'assets/js/select2.min.js' ),
+			true
+		);
+	}
 
 	// Enqueue search filter script
 	wp_enqueue_script(
@@ -337,6 +339,9 @@ function wtwidget_trips_block_render( $attributes ) {
 			id="trips-container-<?php echo esc_attr( $block_id ); ?>"
 			data-slug="<?php echo esc_attr( $slug ); ?>"
 			data-env="<?php echo esc_attr( $env ); ?>"
+			data-trip-type="<?php echo esc_attr( $trip_type ); ?>"
+			data-date-start="<?php echo esc_attr( $date_start ); ?>"
+			data-date-end="<?php echo esc_attr( $date_end ); ?>"
 			data-wetravel-user-id="<?php echo esc_attr( $wetravel_trips_user_id ); ?>"
 			data-nonce="<?php echo esc_attr( $nonce ); ?>"
 			data-items-per-page="<?php echo esc_attr( $items_per_page ); ?>"
