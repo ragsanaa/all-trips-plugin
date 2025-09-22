@@ -163,9 +163,30 @@ function wetravel_add_consent_page() {
             'wetravel-consent',
             'wetravel_consent_page'
         );
+    } else {
+        // Always register the consent page for consent management actions, but hide it from menu
+        add_submenu_page(
+            null, // No parent - hidden from menu
+            'Consent Management',
+            'Consent Management',
+            'manage_options',
+            'wetravel-consent',
+            'wetravel_consent_management_page'
+        );
     }
 }
 add_action( 'admin_menu', 'wetravel_add_consent_page' );
+
+/**
+ * Consent management page for handling opt-in/opt-out actions
+ */
+function wetravel_consent_management_page() {
+    // This page only handles consent actions via URL parameters
+    // The actual rendering is handled by wetravel_handle_consent_actions()
+    // If we reach here without an action, redirect to settings
+    wp_safe_redirect( admin_url( 'admin.php?page=wetravel-trips-setup' ) );
+    exit;
+}
 
 /**
  * Handle consent actions from settings page links

@@ -363,9 +363,10 @@ function wetravel_trips_instructions_page() {
 							if ( $consent_given !== 0 ) : ?>
 								<?php
 									$button_text = $consent_given ? 'Opt Out' : 'Opt In';
+									$nonce = wp_create_nonce( 'wetravel_consent_action_nonce' );
 									$button_url = $consent_given ?
-										admin_url( 'admin.php?page=wetravel-consent&action=opt_out&return_page=wetravel-trips-instructions&return_tab=privacy-requirements' ) :
-										admin_url( 'admin.php?page=wetravel-consent&action=opt_in&return_page=wetravel-trips-instructions&return_tab=privacy-requirements' );
+										admin_url( 'admin.php?page=wetravel-consent&action=opt_out&return_page=wetravel-trips-instructions&return_tab=privacy-requirements&_wpnonce=' . $nonce ) :
+										admin_url( 'admin.php?page=wetravel-consent&action=opt_in&return_page=wetravel-trips-instructions&return_tab=privacy-requirements&_wpnonce=' . $nonce );
 									$description = $consent_given ? 'You\'ve opted in to receive important updates about WeTravel Widgets. You can opt out anytime.' : 'You\'ve opted out of receiving updates. You can opt back in anytime.';
 								?>
 								<div>
