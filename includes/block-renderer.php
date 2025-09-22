@@ -46,11 +46,22 @@ function wtwidget_trips_block_render( $attributes ) {
 		// Handle both array and object format for designs.
 		$design = null;
 
-		if ( isset( $designs[ $selected_design_id ] ) ) {
+		// First try to find design by keyword (same logic as shortcode)
+		foreach ( $designs as $id => $design_data ) {
+			if ( isset( $design_data['keyword'] ) && $design_data['keyword'] === $selected_design_id ) {
+				$design = $design_data;
+				break;
+			}
+		}
+
+		// If not found by keyword, try direct ID lookup
+		if ( null === $design && isset( $designs[ $selected_design_id ] ) ) {
 			// Object format.
 			$design = $designs[ $selected_design_id ];
-		} else {
-			// Array format - find by ID.
+		}
+
+		// If still not found, try array format - find by ID.
+		if ( null === $design ) {
 			foreach ( $designs as $d ) {
 				if ( isset( $d['id'] ) && $d['id'] === $selected_design_id ) {
 					$design = $d;
@@ -121,8 +132,21 @@ function wtwidget_trips_block_render( $attributes ) {
 	$date_start = ! empty( $attributes['dateStart'] ) ? $attributes['dateStart'] : ( ! empty( $design['dateRangeStart'] ) ? $design['dateRangeStart'] : '' );
 	$date_end   = ! empty( $attributes['dateEnd'] ) ? $attributes['dateEnd'] : ( ! empty( $design['dateRangeEnd'] ) ? $design['dateRangeEnd'] : '' );
 
-	// Get selected locations from design
-	$locations = !empty($design['locations']) ? $design['locations'] : array();
+	// Get selected locations - prioritize shortcode attribute over design settings
+	$locations = array();
+
+	// Check if locations were specified in shortcode attributes
+	if (isset($attributes['locations']) && $attributes['locations'] !== '') {
+		$locations_attr = $attributes['locations'];
+		// Parse semicolon-separated locations from shortcode
+		$locations = array_map('trim', explode(';', $locations_attr));
+		$locations = array_filter($locations); // Remove empty entries
+	}
+	// If no locations attribute in shortcode or it's empty, fall back to design settings
+	elseif (!empty($design) && isset($design['locations']) && is_array($design['locations'])) {
+		$locations = $design['locations'];
+	}
+
 
 	// Build API URL with parameters
 	$api_url = wtwidget_build_api_url($env, $slug, array(
@@ -146,6 +170,7 @@ function wtwidget_trips_block_render( $attributes ) {
 		});
 	}
 
+
 	if ( 'recurring' === $trip_type ) {
 		// Filter trips where 'all_year' is true.
 		$trips = array_filter(
@@ -158,7 +183,7 @@ function wtwidget_trips_block_render( $attributes ) {
 
 	// Enhance trips with details (but only if we have data).
 	if ( ! empty( $trips ) && is_array( $trips ) ) {
-		$trips = wtwidget_enhance_trips_with_details( $trips, $env );
+		$enhanced_trips = wtwidget_enhance_trips_with_details( $trips, $env );
 	}
 
 	// Enqueue necessary assets based on display type.
@@ -284,7 +309,7 @@ function wtwidget_trips_block_render( $attributes ) {
 				<div class="search-input-wrapper">
 					<input type="text"
 							class="search-input"
-							placeholder="Search trips by name..."
+							placeholder="Search trips by name or location..."
 							data-block-id="<?php echo esc_attr( $block_id ); ?>"
 						/>
 					<button type="button" class="search-clear-btn" data-block-id="<?php echo esc_attr( $block_id ); ?>" style="display: none;">×</button>
@@ -312,10 +337,10 @@ function wtwidget_trips_block_render( $attributes ) {
 						<?php
 						// Get unique locations from trips
 						$locations = array();
-						if (is_array($trips)) {
+						if (is_array($enhanced_trips)) {
 							$locations = array_unique(array_filter(array_map(function($trip) {
 								return isset($trip['location']) ? $trip['location'] : '';
-							}, $trips)));
+							}, $enhanced_trips)));
 							sort($locations);
 						}
 
@@ -360,6 +385,9 @@ function wtwidget_trips_block_render( $attributes ) {
 			data-wetravel-widget-type="<?php echo esc_attr( $wt_widget_type ); ?>"
 			data-integration-type="<?php echo esc_attr( $integration_type ); ?>"
 			data-tracked-server-side="true"
+			<?php if (!empty($locations)) : ?>
+			data-locations="<?php echo esc_attr( implode(';', $locations) ); ?>"
+			<?php endif; ?>
 			>
 			<?php
 				$allowed_html_tags = array(
@@ -404,7 +432,7 @@ function wtwidget_trips_block_render( $attributes ) {
 				);
 			?>
 
-			<?php if ( empty( $trips ) ) : ?>
+			<?php if ( empty( $enhanced_trips ) ) : ?>
 				<div class="no-trips">No trips found</div>
 			<?php else : ?>
 
@@ -415,7 +443,7 @@ function wtwidget_trips_block_render( $attributes ) {
 
 						<div class="swiper">
 							<div class="swiper-wrapper">
-								<?php foreach ( $trips as $trip ) : ?>
+								<?php foreach ( $enhanced_trips as $trip ) : ?>
 									<div class="swiper-slide">
 										<?php
 										// The output contains trusted, controlled HTML (e.g., iframe, div, etc.)
@@ -446,7 +474,7 @@ function wtwidget_trips_block_render( $attributes ) {
 				<?php else : ?>
 					<?php
 					$counter = 0;
-					foreach ( $trips as $trip ) :
+					foreach ( $enhanced_trips as $trip ) :
 						$visibility_class = $counter < $items_per_page ? 'visible-item' : 'hidden-item';
 						// The output contains trusted, controlled HTML (e.g., iframe, div, etc.)
 						// Escaping it with esc_html() breaks embed functionality
@@ -472,12 +500,12 @@ function wtwidget_trips_block_render( $attributes ) {
 			<?php endif; ?>
 		</div>
 
-		<?php if ( ! empty( $trips ) && 'carousel' !== $display_type && count( $trips ) > $items_per_page ) : ?>
+		<?php if ( ! empty( $enhanced_trips ) && 'carousel' !== $display_type && count( $enhanced_trips ) > $items_per_page ) : ?>
 			<!-- Numbered pagination container -->
 			<div id="pagination-<?php echo esc_attr( $block_id ); ?>" class="wetravel-trips-pagination">
 				<div class="pagination-controls">
 					<?php
-					$total_pages = ceil( count( $trips ) / $items_per_page );
+					$total_pages = ceil( count( $enhanced_trips ) / $items_per_page );
 					for ( $i = 1; $i <= $total_pages; $i++ ) {
 						$active_class = 1 === $i ? 'active' : '';
 						echo '<span class="page-number ' . esc_attr( $active_class ) . '" data-page="' . esc_attr( $i ) . '">' . esc_html( $i ) . '</span>';

@@ -277,8 +277,13 @@ function wtwidget_build_api_url($env, $slug, $params = array()) {
     }
 
     // Set recurring/one-time parameters
-    if (isset($params['trip_type']) && 'one-time' === $params['trip_type']) {
-        $query_params['all_year'] = 'false';
+    if (isset($params['trip_type'])) {
+        if ('recurring' === $params['trip_type']) {
+            $query_params['all_year'] = 1;
+        } elseif ('one-time' === $params['trip_type']) {
+            $query_params['all_year'] = 0;
+        }
+        // For 'all' trip type, no all_year parameter is set
     }
 
     return add_query_arg($query_params, $api_url);

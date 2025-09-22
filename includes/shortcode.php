@@ -38,6 +38,7 @@ function wtwidget_trips_shortcode( $atts ) {
 		'trip_type'              => 'all',
 		'date_start'             => '',
 		'date_end'               => '',
+		'locations'              => '', // Semicolon-separated list of locations to filter by
 		'search_visibility'      => get_option( 'wetravel_trips_search_visibility', false ),
 		'border_radius'          => get_option( 'wetravel_trips_border_radius', 6 ),
 		'wt_widget_type'            => get_option( 'wetravel_trips_wt_widget_type', 'all-trips' ),
@@ -129,6 +130,7 @@ function wtwidget_trips_shortcode( $atts ) {
 		'tripType'       => $atts['trip_type'],
 		'dateStart'      => $atts['date_start'],
 		'dateEnd'        => $atts['date_end'],
+		'locations'      => $atts['locations'],
 		'searchVisibility' => $atts['search_visibility'],
 		'borderRadius'   => $atts['border_radius'],
 		'integrationType' => 'shortcode',
