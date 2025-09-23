@@ -84,20 +84,19 @@ function wetravel_consent_page() {
             <div class="consent-container">
                 <div class="consent-logo">
                     <img src="<?php echo esc_url( plugins_url( 'assets/icon.svg', dirname( __FILE__ ) ) ); ?>" alt="WeTravel Logo" style="width:96px;height:96px;" />
-                    <h1>Never miss an important update</h1>
+                    <h1>Help us improve WeTravel Widgets</h1>
                 </div>
 
                 <div class="consent-content">
                     <p class="consent-description">
-                        Opt in to get email notifications for security & feature updates, educational content, and occasional offers, and to share some basic WordPress environment info. This will help us make the plugin more compatible with your site and better at doing what you need it to.
+                        When you accept consent, we will track user information (state), plugin state, and plugin events (such as widget loads). We use this data to gather statistics about how our users interact with our plugin and to identify areas for improvement. This tracking helps us make the plugin more compatible with your site and better at doing what you need it to.
                     </p>
 
                     <form method="post" action="">
                         <?php wp_nonce_field( 'wetravel_consent_action', 'wetravel_consent_nonce' ); ?>
                         <div class="consent-buttons">
                             <button type="submit" name="wetravel_consent_action" value="allow" class="consent-btn allow">
-                                Allow & Continue
-                                <span class="arrow">→</span>
+                                Accept & Continue
                             </button>
 
                             <button type="submit" name="wetravel_consent_action" value="skip" class="consent-btn skip">
@@ -106,15 +105,12 @@ function wetravel_consent_page() {
                         </div>
                     </form>
 
-                    <div class="consent-link">
-                        This will allow <a href="https://wetravel.com" target="_blank">WeTravel Widgets</a> →
-                    </div>
                 </div>
 
                 <div class="global-footer">
-                    Powered by <a href="https://freemius.com" target="_blank">Freemius</a> -
-                    <a href="#" target="_blank">Privacy Policy</a> -
-                    <a href="#" target="_blank">Terms of Service</a>
+                    Powered by <a href="https://wetravel.com" target="_blank">WeTravel</a> -
+                    <a href="https://www.wetravel.com/privacy" target="_blank">Privacy Policy</a> -
+                    <a href="https://www.wetravel.com/terms" target="_blank">Terms of Service</a>
                 </div>
             </div>
         </div>
@@ -146,6 +142,21 @@ function wetravel_redirect_to_consent() {
     }
 }
 add_action( 'admin_init', 'wetravel_redirect_to_consent' );
+
+/**
+ * TODO: REMOVE this before push the changes
+ * Force redirect to consent page for testing
+ */
+function wetravel_force_consent_redirect() {
+    // Only for testing - remove in production
+    if ( isset( $_GET['force_consent'] ) && current_user_can( 'manage_options' ) ) {
+        set_transient( 'wetravel_activation_consent_notice', true, 60 * 60 * 24 * 7 );
+        delete_option( 'wetravel_consent_given' );
+        wp_safe_redirect( admin_url( 'admin.php?page=wetravel-consent' ) );
+        exit;
+    }
+}
+add_action( 'admin_init', 'wetravel_force_consent_redirect' );
 
 /**
  * Add consent page to admin menu as submenu

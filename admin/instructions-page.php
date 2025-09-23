@@ -367,7 +367,7 @@ function wetravel_trips_instructions_page() {
 									$button_url = $consent_given ?
 										admin_url( 'admin.php?page=wetravel-consent&action=opt_out&return_page=wetravel-trips-instructions&return_tab=privacy-requirements&_wpnonce=' . $nonce ) :
 										admin_url( 'admin.php?page=wetravel-consent&action=opt_in&return_page=wetravel-trips-instructions&return_tab=privacy-requirements&_wpnonce=' . $nonce );
-									$description = $consent_given ? 'You\'ve opted in to receive important updates about WeTravel Widgets. You can opt out anytime.' : 'You\'ve opted out of receiving updates. You can opt back in anytime.';
+									$description = $consent_given ? 'You\'ve opted in to help us improve WeTravel Widgets through usage data collection. You can opt out anytime.' : 'You\'ve opted out of usage data collection. You can opt back in anytime to help us improve the plugin.';
 								?>
 								<div>
 									<span class="dashicons dashicons-update"></span>

@@ -6,9 +6,10 @@ This document explains how the consent system works in the WeTravel Widgets plug
 
 The consent system is designed to ask users for permission to:
 
-- Send email notifications for security & feature updates
-- Share basic WordPress environment information
-- Receive educational content and occasional offers
+- Track user information (state) for usage analytics
+- Track plugin state and events (such as widget loads)
+- Gather statistics about plugin usage to identify areas for improvement
+- Make the plugin more compatible with user sites and improve functionality
 
 ## How It Works
 
@@ -23,17 +24,17 @@ When a user activates the plugin:
 
 The plugin listing page shows different action links based on consent status:
 
-- **No Consent Given**: Shows "Opt-in" button that directs to plugin settings
-- **Consent Given**: Shows "Manage Consent" button for updating preferences
+- **No Consent Given**: Shows "Opt-in" button that directs to consent page
 - **Always Available**: "Settings" and "Widget Library" links for easy access
 
 ### 3. Consent Page
 
 The consent page (`admin/consent-page.php`) displays:
 
-- A modern, responsive design matching the provided image
+- A modern, responsive design with WeTravel branding
 - Two options: "Allow & Continue" or "Skip"
-- Information about what the consent allows
+- Clear information about what tracking data is collected and why
+- Links to WeTravel's Privacy Policy and Terms of Service
 
 ### 4. Consent Handling
 
@@ -41,14 +42,14 @@ The consent page (`admin/consent-page.php`) displays:
 - **Skip**: Sets `wetravel_consent_given` to `false`, `wetravel_consent_type` to `skipped`
 - Both actions set a timestamp and remove the activation notice
 
-### 5. Settings Page Integration
+### 5. Consent Management
 
-After consent:
+After initial consent:
 
-- A dismissible message appears on the settings page
-- Simple consent management links appear below the main settings
-- Users can opt in/out anytime with direct links
-- Clean, minimal interface without complex forms
+- Users can manage their consent preferences through the Instructions/Privacy page
+- Opt-in and opt-out options are available in the privacy section
+- Users can change their consent status anytime
+- Clean, minimal interface integrated with existing admin pages
 
 ### 6. Plugin Uninstallation
 
@@ -56,55 +57,6 @@ When the plugin is uninstalled:
 
 - All consent-related options are automatically removed
 - No trace of user consent remains
-
-## Files Modified/Created
-
-### New Files
-
-- `admin/consent-page.php` - Main consent page and logic
-
-### Modified Files
-
-- `wetravel-widgets.php` - Added consent page include
-- `admin/settings-page.php` - Added consent messages and management section
-- `admin/css/admin-styles.css` - Added consent styling
-- `uninstall.php` - Added consent options cleanup
-
-## Testing the Consent System
-
-### Test Consent Page
-
-To test the consent page without activating the plugin:
-
-1. Add `?force_consent=1` to any admin URL
-2. This will simulate the activation state and show the consent page
-
-### Test Consent Flow
-
-1. Activate the plugin (or use force_consent)
-2. You'll be redirected to the consent page
-3. Choose Allow or Skip
-4. You'll be redirected to settings with a message
-5. Check the Consent Management section
-
-### Test Plugin Listing Links
-
-1. Go to WordPress Admin → Plugins
-2. Find "WeTravel Widgets" in the list
-3. **Before consent**: You should see "Opt-in", "Settings", "Widget Library" links
-4. **After consent**: You should see "Manage Consent", "Settings", "Widget Library" links
-5. Click the links to verify they direct to the correct pages
-
-### Reset Consent for Testing
-
-To reset consent and test again:
-
-```php
-delete_option('wetravel_consent_given');
-delete_option('wetravel_consent_type');
-delete_option('wetravel_consent_timestamp');
-set_transient('wetravel_activation_consent_notice', true, 60 * 60 * 24 * 7);
-```
 
 ## Database Options
 
@@ -130,12 +82,33 @@ The consent page uses:
 - Modern UI elements matching the design image
 - Consistent styling with the rest of the plugin
 
+## Data Collection
+
+When users consent, the plugin tracks:
+
+- **User State**: Information about the user's plugin configuration and usage patterns
+- **Plugin State**: Current plugin settings, active features, and configuration status
+- **Plugin Events**: Widget loads, user interactions, and feature usage
+
+This data is used to:
+
+- Generate usage statistics
+- Identify areas for plugin improvement
+- Enhance compatibility with different WordPress environments
+- Improve user experience and functionality
+
+## Privacy
+
+- Privacy Policy: https://www.wetravel.com/privacy
+- Terms of Service: https://www.wetravel.com/terms
+- Users can opt-out at any time through the plugin settings
+- No personal user data is collected beyond WordPress environment information
+
 ## Future Enhancements
 
 Potential improvements:
 
-- Email preference management
-- Granular consent options
-- Consent analytics tracking
+- Granular consent options for different types of tracking
+- Enhanced analytics dashboard
 - GDPR compliance features
 - Multi-language support

@@ -109,8 +109,8 @@ function wetravel_trips_setup_page() {
 		if ( $consent_param === 'allowed' ) : ?>
 			<div class="notice notice-success is-dismissible" id="wetravel-consent-notice">
 				<p>
-					<strong>Thank you!</strong> You've opted in to receive important updates about WeTravel Widgets.
-					We'll keep you informed about security updates, new features, and helpful content.
+					<strong>Thank you!</strong> You've opted in to help us improve WeTravel Widgets.
+					We'll collect usage data to understand how you use the plugin and identify areas for improvement.
 				</p>
 				<button type="button" class="notice-dismiss" onclick="dismissConsentNotice()">
 					<span class="screen-reader-text">Dismiss this notice.</span>
