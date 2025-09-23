@@ -89,6 +89,11 @@
       // Initialize swiper
       swiper.init();
 
+      // Apply description fades if function is available
+      if (window.applyDescriptionFades) {
+        window.applyDescriptionFades();
+      }
+
       // Update swiper when all images are loaded
       const images = swiperElement.getElementsByTagName("img");
       let loadedImages = 0;
@@ -97,6 +102,10 @@
         loadedImages++;
         if (loadedImages === images.length) {
           swiper.update();
+          // Apply description fades after images are loaded
+          if (window.applyDescriptionFades) {
+            window.applyDescriptionFades();
+          }
         }
       }
 

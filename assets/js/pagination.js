@@ -249,6 +249,9 @@
     // Initialize pagination
     renderPagination();
     displayItems(currentPage);
+
+    // Apply description fades after pagination setup
+    applyDescriptionFades();
   }
 
   // Function to apply fade effects to descriptions
