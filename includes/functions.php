@@ -274,7 +274,7 @@ function wtwidget_generate_shortcode_with_params($design, $design_id) {
 
 	if ($display_type === 'carousel') {
 		// Carousel: items_per_slide
-		$items_per_slide = isset($design['itemsPerSlide']) ? $design['itemsPerSlide'] : get_option('wetravel_trips_items_per_slide', 3);
+		$items_per_slide = isset($design['itemsPerSlide']) ? $design['itemsPerSlide'] : get_option('wetravel_trips_items_per_slide', 1);
 		$shortcode .= ' items_per_slide="' . intval($items_per_slide) . '"';
 	} elseif ($display_type === 'grid') {
 		// Grid: items_per_row, items_per_page

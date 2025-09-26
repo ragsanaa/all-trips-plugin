@@ -6,7 +6,7 @@
     function () {
       // Initialize this specific carousel
       const container = this;
-      const itemsPerSlide = parseInt($(this).data("items-per-slide")) || 3;
+      const itemsPerSlide = parseInt($(this).data("items-per-slide")) || 1;
       const buttonColor = $(this).data("button-color") || "#33ae3f";
       const swiperElement = container.querySelector(".swiper");
 
@@ -21,16 +21,23 @@
         return;
       }
 
+      // Check if this swiper is already initialized
+      if (swiperElement.swiper) {
+        swiperElement.swiper.destroy(true, true);
+      }
+
       // Initialize Swiper
       const swiper = new Swiper(swiperElement, {
         init: false,
         spaceBetween: 20,
-        slidesPerView: 1,
+        slidesPerView: itemsPerSlide,
+        width: null, // Let Swiper calculate width automatically
         watchOverflow: true,
         watchSlidesProgress: true,
         slidesOffsetBefore: 0,
         slidesOffsetAfter: 0,
         centeredSlides: false,
+        autoHeight: false,
         pagination: {
           el: swiperElement.querySelector(".swiper-pagination"),
           clickable: true,
@@ -39,19 +46,22 @@
           nextEl: container.querySelector(".swiper-button-next"),
           prevEl: container.querySelector(".swiper-button-prev"),
         },
+        // Ensure navigation buttons are positioned correctly
+        observer: true,
+        observeParents: true,
         breakpoints: {
           // when window width is >= 480px
           480: {
-            slidesPerView: 1,
+            slidesPerView: Math.min(1, itemsPerSlide),
             spaceBetween: 10,
           },
           // when window width is >= 640px
           640: {
-            slidesPerView: 2,
+            slidesPerView: Math.min(2, itemsPerSlide),
             spaceBetween: 20,
           },
           960: {
-            slidesPerView: 3,
+            slidesPerView: Math.min(3, itemsPerSlide),
             spaceBetween: 20,
           },
           1024: {
@@ -87,7 +97,17 @@
       }
 
       // Initialize swiper
-      swiper.init();
+      try {
+        swiper.init();
+
+        // Force update after initialization to ensure proper layout
+        setTimeout(() => {
+          swiper.update();
+        }, 100);
+
+      } catch (error) {
+        console.error("Error initializing Swiper:", error);
+      }
 
       // Update swiper when all images are loaded
       const images = swiperElement.getElementsByTagName("img");
@@ -100,18 +120,31 @@
         }
       }
 
-      Array.from(images).forEach((img) => {
-        if (img.complete) {
-          checkAllImagesLoaded();
-        } else {
-          img.addEventListener("load", checkAllImagesLoaded);
-        }
-      });
+      // Handle image loading
+      if (images.length > 0) {
+        Array.from(images).forEach((img) => {
+          if (img.complete) {
+            checkAllImagesLoaded();
+          } else {
+            img.addEventListener("load", checkAllImagesLoaded);
+            img.addEventListener("error", checkAllImagesLoaded); // Count errors too
+          }
+        });
+      }
 
       // Update on window resize
-      window.addEventListener("resize", () => {
-        swiper.update();
-      });
+      const resizeHandler = () => {
+        if (swiper && !swiper.destroyed) {
+          swiper.update();
+        }
+      };
+
+      window.addEventListener("resize", resizeHandler);
+
+      // Store resize handler for cleanup
+      if (!container.swiperResizeHandler) {
+        container.swiperResizeHandler = resizeHandler;
+      }
     }
   );
 

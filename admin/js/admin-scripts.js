@@ -10,7 +10,7 @@
     });
   }
 
-  // Update the design preview
+  // Update the design preview with live mock data
   function updatePreview() {
     const displayType = $("#display_type").val();
     const buttonType = $("#button_type").val();
@@ -19,505 +19,237 @@
     const tripType = $("#trip_type").val();
     const itemsPerPage = $("#items_per_page").val() || 10;
     const itemsPerRow = $("#items_per_row").val() || 3;
-    const itemsPerSlide = $("#items_per_slide").val() || 3;
+    const itemsPerSlide = $("#items_per_slide").val() || 1;
     const borderRadius = $("#border_radius").val() || 6;
     const searchVisibility = $("#search_visibility").is(":checked");
 
     // Get selected locations from the trip_location select field
     const selectedLocations = $("#trip_location").val() || [];
-    const tripLocation =
-      selectedLocations.length > 0 ? selectedLocations[0] : "All Locations";
 
-    // Create container based on display type
-    let previewHtml = "";
-    let containerClass = "preview-" + displayType;
+    $("#design-preview").html(
+      '<div style="text-align: center; padding: 40px;"><div style="display: inline-block; width: 20px; height: 20px; border: 3px solid #f3f3f3; border-top: 3px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite;"></div><p style="margin-top: 10px;">Loading preview...</p></div><style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>'
+    );
+
+    // Generate live preview using server-side mock data
+    setTimeout(() => {
+      generateLivePreview();
+    }, 800);
+
+    function generateLivePreview() {
+      // Use the actual block renderer via AJAX
+      const requestData = {
+        action: "render_mock_preview",
+        nonce: wetravel_ajax.nonce,
+        displayType: displayType,
+        buttonType: buttonType,
+        buttonText: buttonText,
+        buttonColor: buttonColor,
+        borderRadius: parseInt(borderRadius),
+        itemsPerRow: parseInt(itemsPerRow),
+        itemsPerPage: parseInt(itemsPerPage),
+        itemsPerSlide: parseInt(itemsPerSlide),
+        searchVisibility: searchVisibility ? 1 : 0,
+        tripType: tripType,
+        locations: selectedLocations,
+      };
+
+      $.ajax({
+        url: wetravel_ajax.ajaxurl,
+        type: "POST",
+        data: requestData,
+        success: function (response) {
+          if (response.success) {
+            const previewHtml = `
+              <h4>${
+                displayType.charAt(0).toUpperCase() + displayType.slice(1)
+              } Layout Preview - Live Data</h4>
+              ${response.data.html}
+            `;
+            $("#design-preview").html(previewHtml);
+
+            // Hide loading spinner if it exists
+            $("#design-preview .wetravel-trips-loading").hide();
+
+            // Initialize components based on display type
+            if (displayType === "carousel") {
+              initializeCarouselPreview();
+            } else {
+              initializePaginationPreview();
+            }
+          } else {
+            $("#design-preview").html(`
+              <div style="color: red; padding: 20px;">
+                <h4>Preview Error</h4>
+                <p>Failed to load preview: ${
+                  response.data || "Unknown error"
+                }</p>
+              </div>
+            `);
+          }
+        },
+        error: function (xhr, status, error) {
+          $("#design-preview").html(`
+            <div style="color: red; padding: 20px;">
+              <h4>Preview Error</h4>
+              <p>Failed to load preview: ${error}</p>
+            </div>
+          `);
+        },
+      });
+    }
+
+    function initializeCarouselPreview() {
+      // Wait for DOM to be fully ready and Swiper to be loaded
+      function waitForSwiper(callback, maxAttempts = 50) {
+        let attempts = 0;
+
+        function checkSwiper() {
+          attempts++;
+
+          if (typeof Swiper !== "undefined") {
+            callback();
+          } else if (attempts < maxAttempts) {
+            setTimeout(checkSwiper, 100);
+          } else {
+            console.error("Swiper library failed to load for admin preview");
+          }
+        }
+
+        checkSwiper();
+      }
+
+      waitForSwiper(function () {
+        setTimeout(function () {
+          const carouselContainer = $(
+            "#design-preview .wetravel-trips-container.carousel-view"
+          );
+
+          if (carouselContainer.length > 0) {
+            // Set consistent preview width to 600px (same as other layouts)
+            const previewContainer = $("#design-preview");
+
+            // Let CSS handle the carousel wrapper styling
+            const carouselWrapper = carouselContainer.find(
+              ".wetravel-carousel-wrapper"
+            );
+            if (carouselWrapper.length > 0) {
+              carouselWrapper.removeAttr("style");
+            }
+
+            // Force proper CSS for carousel container
+            carouselContainer.css({
+              width: "100%",
+              "max-width": "100%",
+              overflow: "visible", // Allow buttons to be visible outside
+              "box-sizing": "border-box",
+            });
+
+            const swiperContainerWrapper = carouselContainer.find(
+              ".swiper-container-wrapper"
+            );
+            if (swiperContainerWrapper.length > 0) {
+              swiperContainerWrapper.removeAttr("style");
+            }
+
+            const swiperElement = carouselContainer.find(".swiper");
+            if (swiperElement.length > 0) {
+              swiperElement.css({
+                width: "100%",
+                "max-width": "100%",
+                height: "auto",
+                "box-sizing": "border-box",
+                overflow: "hidden",
+              });
+
+              const swiperWrapper = swiperElement.find(".swiper-wrapper");
+              if (swiperWrapper.length > 0) {
+                swiperWrapper.css({
+                  width: "100%",
+                  "max-width": "100%",
+                  "box-sizing": "border-box",
+                });
+              }
+
+              // Constrain slide widths
+              const swiperSlides = swiperElement.find(".swiper-slide");
+              swiperSlides.css({
+                width: "100%",
+                "max-width": "100%",
+                "box-sizing": "border-box",
+              });
+            }
+
+            // Remove any custom styling since we now use CSS for consistent positioning
+            const navButtons = carouselContainer.find(
+              ".swiper-button-next, .swiper-button-prev"
+            );
+            if (navButtons.length > 0) {
+              // Clear any inline styles to let CSS take over
+              navButtons.removeAttr("style");
+            }
+
+            // Ensure all images are loaded before initializing
+            const images = carouselContainer.find("img");
+            let loadedImages = 0;
+
+            function checkAllImagesLoaded() {
+              loadedImages++;
+
+              if (loadedImages === images.length || images.length === 0) {
+                // Small delay to ensure DOM is stable
+                setTimeout(() => {
+                  carouselContainer.trigger("tripsRendered");
+                }, 100);
+              }
+            }
+
+            if (images.length === 0) {
+              carouselContainer.trigger("tripsRendered");
+            } else {
+              // Wait for all images to load
+              images.each(function () {
+                if (this.complete) {
+                  checkAllImagesLoaded();
+                } else {
+                  $(this).on("load error", checkAllImagesLoaded);
+                }
+              });
+
+              // Fallback timeout in case some images fail to load
+              setTimeout(function () {
+                if (loadedImages < images.length) {
+                  carouselContainer.trigger("tripsRendered");
+                }
+              }, 3000);
+            }
+          } else {
+            console.error("Carousel container not found in preview");
+          }
+        }, 300);
+      });
+    }
+
+    // New function to initialize pagination preview
+    function initializePaginationPreview() {
+      setTimeout(() => {
+        const previewContainer = $("#design-preview .wetravel-trips-container");
+        if (previewContainer.length > 0) {
+          // Trigger the pagination initialization from pagination.js
+          if (typeof window.initializePaginationForContainer === "function") {
+            window.initializePaginationForContainer(previewContainer);
+          } else {
+            // Fallback: trigger the existing pagination system
+            previewContainer.trigger("tripsRendered");
+          }
+        }
+      }, 500);
+    }
 
     // Button style with border radius
     const buttonStyle =
       displayType === "vertical"
         ? `background-color: ${buttonColor}; color: white; padding: 8px 16px; border-radius: ${borderRadius}px; text-decoration: none; display: inline-block; text-align: center; cursor: pointer; border: 1px solid ${buttonColor};`
         : `background-color: transparent; color: ${buttonColor}; padding: 8px 16px; border-radius: ${borderRadius}px; text-decoration: none; display: inline-block; text-align: center; cursor: pointer; border: 1px solid ${buttonColor};`;
-
-    // Create sample trip item - matching the rendering from trips-loader.js
-    function createTripItem(index, displayType) {
-      const tripDates = "Dec 15-22, 2024";
-      const tripDuration = "10 days";
-
-      // Date overlay for carousel and grid views
-      const dateOverlay =
-        displayType === "carousel" || displayType === "grid"
-          ? `<div class="preview-trip-date-overlay">${tripDates}</div>`
-          : "";
-
-      return `
-        <div class="preview-trip-item">
-          <div class="preview-trip-image">
-            Trip Image
-            ${dateOverlay}
-          </div>
-          <div class="preview-trip-content">
-            <div class="preview-trip-title-desc">
-              <h3>Sample Trip ${index}</h3>
-                <div class="preview-trip-description">
-                  <p>About your trip description goes here with more details about this amazing trip.
-                  This text may be longer to demonstrate the fading effect on descriptions.</p>
-                </div>
-            </div>
-            ${
-              displayType === "carousel"
-                ? `<div class='preview-trip-loc-price'>`
-                : ""
-            }
-            <div class="preview-trip-loc-duration">
-              ${
-                displayType === "vertical"
-                  ? `<div class="preview-trip-tag">${tripDuration}</div>`
-                  : ""
-              }
-              <div class="preview-trip-tag">${tripLocation}</div>
-            </div>
-
-            ${displayType !== "carousel" ? `</div>` : ""}
-          <div class="preview-trip-price-button">
-              <div class="preview-trip-price">
-                <p>From</p> <span>$1,000</span>
-              </div>
-              ${
-                displayType !== "carousel"
-                  ? `<a href="#" style="${buttonStyle}" class="preview-button-${buttonType}">${buttonText}</a>`
-                  : ""
-              }
-            </div>
-          ${displayType === "carousel" ? `</div></div>` : ""}
-        </div>
-      `;
-    }
-
-    // Create pagination preview
-    function createPaginationPreview(buttonColor) {
-      return `
-        <div class="preview-pagination">
-          <div class="preview-pagination-item">«</div>
-          <div class="preview-pagination-item">‹</div>
-          <div class="preview-pagination-item active">1</div>
-          <div class="preview-pagination-item">2</div>
-          <div class="preview-pagination-item">3</div>
-          <div class="preview-pagination-item">...</div>
-          <div class="preview-pagination-item">10</div>
-          <div class="preview-pagination-item">›</div>
-          <div class="preview-pagination-item">»</div>
-        </div>
-      `;
-    }
-
-    // Create search bar preview
-    function createSearchBarPreview(buttonColor) {
-      // Get selected locations for the search button text
-      const selectedLocations = $("#trip_location").val() || [];
-      let buttonText = "Select locations";
-
-      if (selectedLocations.length === 1) {
-        buttonText = selectedLocations[0];
-      } else if (selectedLocations.length > 1) {
-        buttonText = `${selectedLocations.length} locations selected`;
-      }
-
-      return `
-        <div class="preview-search-filter">
-          <div class="preview-search-filter-container">
-            <input type="text" class="preview-search-input" placeholder="Search trips by name or location..." disabled />
-            <button type="button" class="preview-location-button" style="background-color: ${buttonColor}; border-color: ${buttonColor}; color: white;">
-              <span>${buttonText}</span>
-              <span class="preview-dropdown-arrow">▲</span>
-            </button>
-          </div>
-        </div>
-      `;
-    }
-
-    // Generate preview based on display type
-    if (displayType === "grid") {
-      previewHtml = `
-        <h4>Grid Layout Preview</h4>
-        ${searchVisibility ? createSearchBarPreview(buttonColor) : ""}
-        <div class="${containerClass}" style="grid-template-columns: repeat(${itemsPerRow}, 1fr);">
-          ${createTripItem(1, displayType)}
-          ${createTripItem(2, displayType)}
-          ${createTripItem(3, displayType)}
-        </div>
-      `;
-
-      // Add pagination preview for grid and vertical layouts
-      previewHtml += createPaginationPreview(buttonColor);
-    } else if (displayType === "carousel") {
-      previewHtml = `
-        <h4>Carousel Layout Preview</h4>
-        <div class="${containerClass}">
-          <div class="preview-carousel-controls">
-            <div class="preview-carousel-nav prev" style="background-color: ${buttonColor};">◀</div>
-            <div class="preview-carousel-slides">
-              ${createTripItem(1, displayType)}
-            </div>
-            <div class="preview-carousel-nav next" style="background-color: ${buttonColor};">▶</div>
-          </div>
-          <div class="preview-carousel-pagination">
-            <span class="preview-pagination-bullet active" style="background-color: ${buttonColor};"></span>
-            <span class="preview-pagination-bullet"></span>
-            <span class="preview-pagination-bullet"></span>
-          </div>
-        </div>
-      `;
-    } else {
-      // Vertical layout
-      previewHtml = `
-        <h4>Vertical Layout Preview</h4>
-        ${searchVisibility ? createSearchBarPreview(buttonColor) : ""}
-        <div class="${containerClass}">
-          ${createTripItem(1, displayType)}
-          ${createTripItem(2, displayType)}
-        </div>
-      `;
-
-      // Add pagination preview for grid and vertical layouts
-      previewHtml += createPaginationPreview(buttonColor);
-    }
-
-    // Update the preview
-    $("#design-preview").html(previewHtml);
-
-    // Add styles to the preview - matching trips-loader.js styling
-    $("#design-preview").append(`
-      <style>
-        .preview-trip-item {
-          border: 1px solid #ddd;
-          padding: 15px;
-          margin-bottom: 15px;
-          border-radius: ${borderRadius}px;
-          background-color: white;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-
-        .preview-trip-image {
-          height: 150px;
-          background-color: #eee;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          margin-bottom: 10px;
-          color: #777;
-          border-radius: ${borderRadius}px;
-          position: relative;
-        }
-
-        .preview-trip-date-overlay {
-          position: absolute;
-          bottom: 12px;
-          left: 12px;
-          background-color: #fff;
-          color: #64748b;
-          padding: 4px 8px;
-          border-radius: 16px;
-          font-size: 14px;
-          font-weight: 500;
-          line-height: 100%;
-          letter-spacing: 0%;
-          vertical-align: middle;
-          z-index: 2;
-          border: 1px solid #cbd5e1;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        .preview-trip-content {
-          display: flex;
-          flex-direction: column;
-        }
-
-        .preview-trip-title-desc h3 {
-          margin-top: 0;
-          margin-bottom: 10px;
-        }
-
-        .preview-trip-description {
-          position: relative;
-          max-height: 80px;
-          overflow: hidden;
-          margin-bottom: 10px;
-        }
-
-        .preview-trip-description:after {
-          content: "";
-          position: absolute;
-          bottom: 0;
-          left: 0;
-          width: 100%;
-          height: 20px;
-          background: linear-gradient(transparent, white);
-        }
-
-        .preview-trip-loc-duration {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 8px;
-          margin-bottom: 10px;
-        }
-        .preview-trip-loc-price {
-          display: flex;
-          justify-content: space-between;
-        }
-        .preview-trip-tag {
-          border-radius: 16px;
-          border: 1px solid #cbd5e1;
-          padding: 4px 8px;
-        }
-
-        .preview-trip-price-button {
-          display: flex;
-          justify-content: space-between;
-          flex-direction: column;
-          direction: rtl;
-        }
-
-        .preview-trip-price {
-          display: flex;
-          flex-direction: column;
-        }
-
-        .preview-trip-price p {
-          margin: 0;
-          font-size: 12px;
-          color: #777;
-        }
-
-        .preview-trip-price span {
-          font-size: 18px;
-          font-weight: bold;
-        }
-
-        .preview-grid {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 15px;
-        }
-
-        .preview-grid .preview-trip-item {
-          display: flex;
-          flex-direction: column;
-          gap: 16px;
-        }
-
-        .preview-grid .preview-trip-image {
-          height: 180px;
-          margin-bottom: 0;
-        }
-
-        .preview-grid .preview-trip-content {
-          display: flex;
-          flex-direction: column;
-          gap: 16px;
-          flex-grow: 1;
-        }
-
-        .preview-grid .preview-trip-title-desc {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-        }
-
-        .preview-grid .preview-trip-price-button {
-          direction: ltr;
-          display: flex;
-          flex-direction: row;
-          justify-content: space-between;
-          align-items: end;
-          margin-top: auto;
-        }
-
-        .preview-carousel {
-          position: relative;
-        }
-
-        .preview-carousel-controls {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-        }
-
-        .preview-carousel-slides {
-          flex: 1;
-          overflow: hidden;
-          display: flex;
-          gap: 15px;
-          padding: 10px 0;
-        }
-
-        .preview-carousel .preview-trip-item {
-          flex-shrink: 1;
-          display: flex;
-          flex-direction: column;
-          gap: 16px;
-        }
-
-        .preview-carousel .preview-trip-image {
-          height: 180px;
-          margin-bottom: 0;
-        }
-
-        .preview-carousel .preview-trip-content {
-          display: flex;
-          flex-direction: column;
-          gap: 16px;
-          flex-grow: 1;
-        }
-
-        .preview-carousel .preview-trip-loc-price {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-
-        .preview-carousel .preview-trip-price-button {
-          margin-top: 12px;
-          direction: rtl;
-        }
-
-        .preview-carousel-pagination {
-          display: flex;
-          justify-content: center;
-          gap: 5px;
-          margin-top: 15px;
-        }
-
-        .preview-pagination-bullet {
-          width: 10px;
-          height: 10px;
-          border-radius: 50%;
-          background-color: #ddd;
-          cursor: pointer;
-        }
-
-        .preview-pagination-bullet.active {
-          background-color: ${buttonColor};
-        }
-
-        .preview-pagination {
-          display: flex;
-          justify-content: center;
-          margin-top: 20px;
-          flex-wrap: wrap;
-          gap: 5px;
-        }
-
-        .preview-pagination-item {
-          width: 35px;
-          height: 35px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border: 1px solid #ddd;
-          border-radius: 4px;
-          cursor: pointer;
-        }
-
-        .preview-pagination-item.active {
-          background-color: ${buttonColor};
-          color: white;
-          border-color: ${buttonColor};
-        }
-
-        /* Vertical layout specific styles */
-        .preview-vertical .preview-trip-item {
-          display: grid;
-          grid-template-columns: 3fr 6fr 2fr;
-          gap: 16px;
-        }
-
-        .preview-vertical .preview-trip-image {
-          height: 100%;
-          margin-bottom: 0;
-          min-height: 200px;
-        }
-
-        .preview-vertical .preview-trip-content {
-          display: flex;
-          flex-direction: column;
-          justify-content: space-between;
-        }
-
-        .preview-vertical .preview-trip-price-button {
-          display: flex;
-          flex-direction: column;
-          justify-content: space-between;
-          height: 100%;
-        }
-
-        .preview-vertical .preview-trip-price {
-          text-align: right;
-        }
-
-        /* Search filter styles */
-        .preview-search-filter {
-          margin-bottom: 20px;
-        }
-
-        .preview-search-filter-container {
-          display: flex;
-          gap: 10px;
-          margin-bottom: 10px;
-        }
-
-        .preview-search-input {
-          flex: 1;
-          padding: 8px 12px;
-          border: 1px solid #ddd;
-          border-radius: 4px;
-          font-size: 14px;
-          background-color: #f5f5f5;
-          cursor: not-allowed;
-        }
-
-        .preview-search-input::placeholder {
-          color: #888;
-        }
-
-        .preview-location-button {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 8px 12px;
-          border: 1px solid;
-          border-radius: 4px;
-          cursor: pointer;
-          font-size: 14px;
-          transition: all 0.3s ease;
-        }
-
-        .preview-location-button:hover {
-          opacity: 0.9;
-        }
-
-        .preview-dropdown-arrow {
-          font-size: 10px;
-          transform: rotate(180deg);
-          color: white;
-        }
-
-        .preview-carousel .preview-trip-price-button {
-          margin-top: 12px;
-          direction: rtl;
-        }
-
-        .preview-carousel-nav {
-          width: 30px;
-          height: 30px;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: white;
-          cursor: pointer;
-        }
-      </style>
-    `);
 
     // Update shortcode preview if we're creating a new design
     if (!$('input[name="design_id"]').length) {

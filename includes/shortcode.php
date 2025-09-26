@@ -33,7 +33,7 @@ function wtwidget_trips_shortcode( $atts ) {
 		'button_color'           => get_option( 'wetravel_trips_button_color', '#33ae3f' ),
 		'items_per_page'         => get_option( 'wetravel_trips_items_per_page', 10 ),
 		'items_per_row'          => get_option( 'wetravel_trips_items_per_row', 3 ),
-		'items_per_slide'        => get_option( 'wetravel_trips_items_per_slide', 3 ),
+		'items_per_slide'        => get_option( 'wetravel_trips_items_per_slide', 1 ),
 		'load_more_text'         => get_option( 'wetravel_trips_load_more_text', 'Load More' ),
 		'trip_type'              => 'all',
 		'date_start'             => '',

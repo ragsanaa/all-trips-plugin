@@ -35,7 +35,7 @@ function wtwidget_trips_block_render( $attributes ) {
 	$button_color           = $attributes['buttonColor'] ?? get_option( 'wetravel_trips_button_color', '#33ae3f' );
 	$items_per_page         = intval( $attributes['itemsPerPage'] ?? get_option( 'wetravel_trips_items_per_page', 10 ) );
 	$items_per_row          = intval( $attributes['itemsPerRow'] ?? get_option( 'wetravel_trips_items_per_row', 3 ) );
-	$items_per_slide        = intval( $attributes['itemsPerSlide'] ?? get_option( 'wetravel_trips_items_per_slide', 3 ) );
+	$items_per_slide        = intval( $attributes['itemsPerSlide'] ?? get_option( 'wetravel_trips_items_per_slide', 1 ) );
 	$load_more_text         = $attributes['loadMoreText'] ?? get_option( 'wetravel_trips_load_more_text', 'Load More' );
 	$search_visibility      = $attributes['searchVisibility'] ?? get_option( 'wetravel_trips_search_visibility', false );
 	$border_radius          = intval( $attributes['borderRadius'] ?? get_option( 'wetravel_trips_border_radius', 6 ) );
@@ -144,26 +144,34 @@ function wtwidget_trips_block_render( $attributes ) {
 	}
 
 
-	// Build API URL with parameters
-	$api_url = wtwidget_build_api_url($env, $slug, array(
-		'trip_type' => $trip_type,
-		'date_start' => $date_start,
-		'date_end' => $date_end
-	));
+	// Check if this is mock data request
+	$is_mock_data = isset($attributes['mockData']) && $attributes['mockData'];
 
-	// Get trips data
-	$trips = wtwidget_get_trips_data($api_url);
+	if ($is_mock_data) {
+		// Use mock data instead of API
+		$trips = wtwidget_get_mock_trips_data($attributes);
+	} else {
+		// Build API URL with parameters
+		$api_url = wtwidget_build_api_url($env, $slug, array(
+			'trip_type' => $trip_type,
+			'date_start' => $date_start,
+			'date_end' => $date_end
+		));
 
-	// Handle case when trips data is false (error occurred)
-	if (false === $trips) {
-		$trips = array(); // Set to empty array to show "No trips found" message
-	}
+		// Get trips data
+		$trips = wtwidget_get_trips_data($api_url);
 
-	// Filter trips by location if locations are specified
-	if (!empty($locations)) {
-		$trips = array_filter($trips, function($trip) use ($locations) {
-			return !empty($trip['location']) && in_array($trip['location'], $locations);
-		});
+		// Handle case when trips data is false (error occurred)
+		if (false === $trips) {
+			$trips = array(); // Set to empty array to show "No trips found" message
+		}
+
+		// Filter trips by location if locations are specified
+		if (!empty($locations)) {
+			$trips = array_filter($trips, function($trip) use ($locations) {
+				return !empty($trip['location']) && in_array($trip['location'], $locations);
+			});
+		}
 	}
 
 
@@ -179,7 +187,12 @@ function wtwidget_trips_block_render( $attributes ) {
 
 	// Fetch enhanced trip data with additional details since we need it for display
 	if (!empty($trips)) {
-		$enhanced_trips = wtwidget_enhance_trips_with_details($trips, $env);
+		if ($is_mock_data) {
+			// For mock data, skip enhancement since data is already complete
+			$enhanced_trips = $trips;
+		} else {
+			$enhanced_trips = wtwidget_enhance_trips_with_details($trips, $env);
+		}
 	}
 
 	// Enqueue necessary assets based on display type.
@@ -345,7 +358,7 @@ function wtwidget_trips_block_render( $attributes ) {
 
 									<!-- Custom Location Dropdown -->
 									<div class="location-dropdown">
-											<div class="dropdown-menu" id="dropdown-menu">
+											<div class="wetravel-dropdown-menu" id="wetravel-dropdown-menu">
 													<div class="location-search">
 															<input type="text" placeholder="Search Location"
 																			id="location-search"
@@ -481,40 +494,41 @@ function wtwidget_trips_block_render( $attributes ) {
 			<?php else : ?>
 
 				<?php if ( 'carousel' === $display_type ) : ?>
-					<div class="wetravel-carousel-wrapper">
-					<div class="swiper-container-wrapper">
-						<div class="swiper-button-prev"></div>
+						<div class="wetravel-carousel-wrapper">
+								<div class="swiper-container-wrapper">
+										<div class="swiper">
+												<div class="swiper-wrapper">
+														<?php
+														foreach ( $enhanced_trips as $trip ) :
+														?>
+																<div class="swiper-slide">
+																		<?php
+																		echo wp_kses(wtwidget_render_trip_item(
+																				$trip,
+																				array(
+																						'env'          => $env,
+																						'wetravelUserID' => $wetravel_trips_user_id,
+																						'displayType'  => $display_type,
+																						'buttonType'   => $button_type,
+																						'buttonText'   => $button_text,
+																						'buttonColor'  => $button_color,
+																						'itemsPerPage' => $items_per_page,
+																				)
+																		), $allowed_html_tags );
+																		?>
+																</div>
+														<?php
+														endforeach;
+														?>
+												</div>
+												<div class="swiper-pagination"></div>
+										</div>
 
-						<div class="swiper">
-							<div class="swiper-wrapper">
-								<?php foreach ( $enhanced_trips as $trip ) : ?>
-									<div class="swiper-slide">
-										<?php
-										// The output contains trusted, controlled HTML (e.g., iframe, div, etc.)
-										// Escaping it with esc_html() breaks embed functionality
-										// So we sanitize with wp_kses_post() to allow only safe HTML
-										echo wp_kses(wtwidget_render_trip_item(
-											$trip,
-											array(
-												'env'          => $env,
-												'wetravelUserID' => $wetravel_trips_user_id,
-												'displayType'  => $display_type,
-												'buttonType'   => $button_type,
-												'buttonText'   => $button_text,
-												'buttonColor'  => $button_color,
-												'itemsPerPage' => $items_per_page,
-											)
-										), $allowed_html_tags );
-										?>
-									</div>
-								<?php endforeach; ?>
-							</div>
-							<div class="swiper-pagination"></div>
+										<!-- Navigation buttons inside the container wrapper -->
+										<div class="swiper-button-prev"></div>
+										<div class="swiper-button-next"></div>
+								</div>
 						</div>
-
-						<div class="swiper-button-next"></div>
-					</div>
-					</div>
 				<?php else : ?>
 					<?php
 					$counter = 0;
@@ -950,6 +964,75 @@ function wtwidget_enqueue_trips_scripts() {
 	);
 }
 add_action( 'wp_enqueue_scripts', 'wtwidget_enqueue_trips_scripts' );
+
+/**
+ * Get mock trips data for preview functionality
+ *
+ * @param array $attributes Block attributes with mock data parameters.
+ * @return array Array of mock trips.
+ */
+function wtwidget_get_mock_trips_data($attributes) {
+	// Load mock trips data from JSON file
+	$json_file_path = plugin_dir_path(dirname(__FILE__)) . 'assets/data/mock-trips.json';
+
+	if (!file_exists($json_file_path)) {
+		error_log('WeTravel Widgets: Mock trips JSON file not found at ' . $json_file_path);
+		return array();
+	}
+
+	$json_content = file_get_contents($json_file_path);
+	if ($json_content === false) {
+		error_log('WeTravel Widgets: Failed to read mock trips JSON file');
+		return array();
+	}
+
+	$json_data = json_decode($json_content, true);
+	if (json_last_error() !== JSON_ERROR_NONE) {
+		error_log('WeTravel Widgets: Invalid JSON in mock trips file: ' . json_last_error_msg());
+		return array();
+	}
+
+	if (!isset($json_data['trips']) || !is_array($json_data['trips'])) {
+		error_log('WeTravel Widgets: Invalid JSON structure in mock trips file');
+		return array();
+	}
+
+	$mock_trips = $json_data['trips'];
+
+	// Convert image paths to full URLs
+	$plugin_url = plugins_url('', dirname(__FILE__));
+	foreach ($mock_trips as &$trip) {
+		if (isset($trip['default_image'])) {
+			$trip['default_image'] = $plugin_url . '/' . $trip['default_image'];
+		}
+	}
+	unset($trip); // Break the reference
+
+	// Filter by trip type
+	$trip_type = isset($attributes['mockTripType']) ? $attributes['mockTripType'] : 'all';
+	if ('recurring' === $trip_type) {
+		$mock_trips = array_filter($mock_trips, function($trip) {
+			return $trip['all_year'] === true;
+		});
+	} elseif ('one-time' === $trip_type) {
+		$mock_trips = array_filter($mock_trips, function($trip) {
+			return $trip['all_year'] === false;
+		});
+	}
+
+	// Handle location assignment
+	$selected_locations = isset($attributes['mockLocations']) ? $attributes['mockLocations'] : array();
+	if (!empty($selected_locations)) {
+		// Assign selected locations to trips randomly
+		$mock_trips = array_map(function($trip, $index) use ($selected_locations) {
+			$random_location_index = $index % count($selected_locations);
+			$trip['location'] = $selected_locations[$random_location_index];
+			return $trip;
+		}, array_values($mock_trips), array_keys($mock_trips));
+	}
+
+	return array_values($mock_trips);
+}
 
 /**
  * Convert hex color to RGB values

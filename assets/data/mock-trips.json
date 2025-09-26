@@ -1,0 +1,196 @@
+{
+  "trips": [
+    {
+      "uuid": "mock-uuid-001",
+      "title": "Adventure Escape",
+      "location": "Costa Rica",
+      "custom_duration": 8,
+      "all_year": false,
+      "start_end_dates": "Dec 15-22, 2024",
+      "default_image": "assets/images/trip1.avif",
+      "full_description": "An exciting journey filled with outdoor exploration, cultural encounters, and memorable activities designed for all adventure lovers.",
+      "price": {
+        "amount": "1,299",
+        "raw_amount": 1299,
+        "currencySymbol": "$"
+      },
+      "href": "#"
+    },
+    {
+      "uuid": "mock-uuid-002",
+      "title": "Winter Expedition",
+      "location": "Iceland",
+      "custom_duration": 6,
+      "all_year": false,
+      "start_end_dates": "Jan 10-16, 2025",
+      "default_image": "assets/images/trip2.avif",
+      "full_description": "Experience breathtaking natural wonders on a winter journey that combines scenic landscapes with unique seasonal activities.",
+      "price": {
+        "amount": "1,899",
+        "raw_amount": 1899,
+        "currencySymbol": "$"
+      },
+      "href": "#"
+    },
+    {
+      "uuid": "mock-uuid-003",
+      "title": "Cultural Journey",
+      "location": "Japan",
+      "custom_duration": 12,
+      "all_year": true,
+      "start_end_dates": "",
+      "default_image": "assets/images/trip3.avif",
+      "full_description": "Discover history, traditions, and modern experiences on a well-balanced trip that offers both learning and leisure.",
+      "price": {
+        "amount": "2,499",
+        "raw_amount": 2499,
+        "currencySymbol": "$"
+      },
+      "href": "#"
+    },
+    {
+      "uuid": "mock-uuid-004",
+      "title": "Hiking Expedition",
+      "location": "Argentina",
+      "custom_duration": 10,
+      "all_year": false,
+      "start_end_dates": "Mar 5-15, 2025",
+      "default_image": "assets/images/trip4.avif",
+      "full_description": "A rewarding outdoor journey featuring challenging treks, stunning scenery, and opportunities for connection with nature.",
+      "price": {
+        "amount": "1,799",
+        "raw_amount": 1799,
+        "currencySymbol": "$"
+      },
+      "href": "#"
+    },
+    {
+      "uuid": "mock-uuid-005",
+      "title": "Desert Escape",
+      "location": "Morocco",
+      "custom_duration": 7,
+      "all_year": true,
+      "start_end_dates": "",
+      "default_image": "assets/images/trip5.avif",
+      "full_description": "A unique adventure combining vibrant local culture with exploration of vast landscapes and unforgettable evenings under the stars.",
+      "price": {
+        "amount": "1,199",
+        "raw_amount": 1199,
+        "currencySymbol": "$"
+      },
+      "href": "#"
+    },
+    {
+      "uuid": "mock-uuid-006",
+      "title": "Mountain Trek",
+      "location": "Nepal",
+      "custom_duration": 14,
+      "all_year": false,
+      "start_end_dates": "Apr 20-May 4, 2025",
+      "default_image": "assets/images/trip6.avif",
+      "full_description": "A challenging adventure designed for explorers seeking high peaks, cultural insights, and unforgettable views along the way.",
+      "price": {
+        "amount": "2,299",
+        "raw_amount": 2299,
+        "currencySymbol": "$"
+      },
+      "href": "#"
+    },
+    {
+      "uuid": "mock-uuid-007",
+      "title": "Safari Adventure",
+      "location": "Kenya",
+      "custom_duration": 9,
+      "all_year": true,
+      "start_end_dates": "",
+      "default_image": "assets/images/trip1.avif",
+      "full_description": "An incredible wildlife experience featuring guided safaris, cultural visits, and comfortable accommodations in the heart of Africa.",
+      "price": {
+        "amount": "1,999",
+        "raw_amount": 1999,
+        "currencySymbol": "$"
+      },
+      "href": "#"
+    },
+    {
+      "uuid": "mock-uuid-008",
+      "title": "Island Paradise",
+      "location": "Maldives",
+      "custom_duration": 5,
+      "all_year": true,
+      "start_end_dates": "",
+      "default_image": "assets/images/trip2.avif",
+      "full_description": "A relaxing tropical getaway with pristine beaches, crystal-clear waters, and luxurious amenities for the perfect vacation.",
+      "price": {
+        "amount": "3,499",
+        "raw_amount": 3499,
+        "currencySymbol": "$"
+      },
+      "href": "#"
+    },
+    {
+      "uuid": "mock-uuid-009",
+      "title": "Northern Lights",
+      "location": "Norway",
+      "custom_duration": 6,
+      "all_year": false,
+      "start_end_dates": "Nov 15-21, 2024",
+      "default_image": "assets/images/trip3.avif",
+      "full_description": "A magical winter journey to witness the aurora borealis, combined with cozy accommodations and local cultural experiences.",
+      "price": {
+        "amount": "2,199",
+        "raw_amount": 2199,
+        "currencySymbol": "$"
+      },
+      "href": "#"
+    },
+    {
+      "uuid": "mock-uuid-010",
+      "title": "Amazon Exploration",
+      "location": "Brazil",
+      "custom_duration": 11,
+      "all_year": false,
+      "start_end_dates": "Jun 10-21, 2025",
+      "default_image": "assets/images/trip4.avif",
+      "full_description": "Discover the world's largest rainforest with expert guides, river cruises, and wildlife encounters in this eco-adventure.",
+      "price": {
+        "amount": "1,699",
+        "raw_amount": 1699,
+        "currencySymbol": "$"
+      },
+      "href": "#"
+    },
+    {
+      "uuid": "mock-uuid-011",
+      "title": "Ancient Wonders",
+      "location": "Egypt",
+      "custom_duration": 8,
+      "all_year": true,
+      "start_end_dates": "",
+      "default_image": "assets/images/trip5.avif",
+      "full_description": "Step back in time to explore pyramids, temples, and tombs while learning about one of history's greatest civilizations.",
+      "price": {
+        "amount": "1,899",
+        "raw_amount": 1899,
+        "currencySymbol": "$"
+      },
+      "href": "#"
+    },
+    {
+      "uuid": "mock-uuid-012",
+      "title": "Alpine Adventure",
+      "location": "Switzerland",
+      "custom_duration": 7,
+      "all_year": false,
+      "start_end_dates": "Jul 8-15, 2025",
+      "default_image": "assets/images/trip6.avif",
+      "full_description": "Experience stunning mountain landscapes, charming villages, and outdoor activities in the heart of the Swiss Alps.",
+      "price": {
+        "amount": "2,599",
+        "raw_amount": 2599,
+        "currencySymbol": "$"
+      },
+      "href": "#"
+    }
+  ]
+}

@@ -51,9 +51,6 @@ define( 'WETRAVEL_WIDGETS_PLUGIN_URL', plugin_dir_url( WETRAVEL_WIDGETS_PLUGIN_F
 // Include admin settings page.
 require_once WETRAVEL_WIDGETS_PLUGIN_DIR . 'admin/settings-page.php';
 
-// In wetravel-widgets.php, add this line to include the fetch-trips.php file.
-// Add this after the other require_once statements near the top of the file.
-
 // Include fetch trips functionality.
 require_once WETRAVEL_WIDGETS_PLUGIN_DIR . 'includes/fetch-trips.php';
 
@@ -133,10 +130,11 @@ function wtwidget_enqueue_block_assets() {
 		'buttonColor'    => get_option( 'wetravel_trips_button_color', '#33ae3f' ),
 		'itemsPerPage'   => (int) get_option( 'wetravel_trips_items_per_page', 10 ),
 		'itemsPerRow'    => (int) get_option( 'wetravel_trips_items_per_row', 3 ),
-		'itemsPerSlide'  => (int) get_option( 'wetravel_trips_items_per_slide', 3 ),
+		'itemsPerSlide'  => (int) get_option( 'wetravel_trips_items_per_slide', 1 ),
 		'loadMoreText'   => get_option( 'wetravel_trips_load_more_text', 'Load More' ),
 		'designs'        => get_option( 'wetravel_trips_designs', array() ),
 		'searchVisibility' => (bool) get_option( 'wetravel_trips_search_visibility', false ),
+		'pluginUrl'      => WETRAVEL_WIDGETS_PLUGIN_URL,
 	);
 
 	// Localize the script with settings.
@@ -151,7 +149,6 @@ function wtwidget_register_block() {
 		return;
 	}
 
-	// In wetravel-widgets.php, update the register_block_type attributes.
 	register_block_type(
 		'wetravel-trips/block',
 		array(
@@ -209,7 +206,7 @@ function wtwidget_register_block() {
 				),
 				'itemsPerSlide'    => array(
 					'type'    => 'number',
-					'default' => 3,
+					'default' => 1,
 				),
 				'loadMoreText'     => array(
 					'type'    => 'string',

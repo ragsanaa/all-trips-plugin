@@ -171,7 +171,7 @@ function wetravel_trips_instructions_page() {
 								<tr>
 									<td><code>items_per_slide</code></td>
 									<td>Number of trips to display per slide in carousel layout</td>
-									<td>3</td>
+									<td>1</td>
 								</tr>
 								<tr>
 									<td><code>trip_type</code></td>
@@ -207,7 +207,7 @@ function wetravel_trips_instructions_page() {
 							<code>[wetravel_trips widget="my-custom-design"]</code>
 
 							<p><strong>Custom parameters:</strong></p>
-							<code>[wetravel_trips display_type="carousel" items_per_slide="3" button_color="#ff0000" button_text="Book Now"]</code>
+							<code>[wetravel_trips display_type="carousel" items_per_slide="1" button_color="#ff0000" button_text="Book Now"]</code>
 						</div>
 
 						<h3>Using Gutenberg Blocks</h3>

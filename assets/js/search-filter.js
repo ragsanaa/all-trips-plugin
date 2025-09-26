@@ -9,7 +9,7 @@
 
   // Toggle dropdown visibility
   function toggleDropdown(blockId) {
-    const dropdown = $(`#search-filter-${blockId} .dropdown-menu`);
+    const dropdown = $(`#search-filter-${blockId} .wetravel-dropdown-menu`);
     const locationButton = $(`#search-filter-${blockId} .location-button`);
     const arrow = $(`#search-filter-${blockId} .dashicons`);
 
@@ -401,7 +401,7 @@
     });
 
     // Prevent dropdown from closing when clicking inside
-    $(document).on("click", ".dropdown-menu", function (e) {
+    $(document).on("click", ".wetravel-dropdown-menu", function (e) {
       e.stopPropagation();
     });
 

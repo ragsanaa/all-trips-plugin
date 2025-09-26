@@ -37,6 +37,66 @@ function wtwidget_handle_design_form_submission() {
 add_action( 'admin_init', 'wtwidget_handle_design_form_submission' );
 
 /**
+ * AJAX handler to render mock data preview using actual block renderer
+ */
+function wtwidget_render_mock_preview() {
+	// Verify nonce
+	if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'wetravel_trips_nonce' ) ) {
+	wp_send_json_error( 'Invalid nonce' );
+		return;
+	}
+
+	// Check user permissions
+	if ( ! current_user_can( 'manage_options' ) ) {
+		wp_send_json_error( 'Insufficient permissions' );
+		return;
+	}
+
+	// Get preview parameters
+	$display_type = isset( $_POST['displayType'] ) ? sanitize_text_field( wp_unslash( $_POST['displayType'] ) ) : 'vertical';
+	$button_type = isset( $_POST['buttonType'] ) ? sanitize_text_field( wp_unslash( $_POST['buttonType'] ) ) : 'book_now';
+	$button_text = isset( $_POST['buttonText'] ) ? sanitize_text_field( wp_unslash( $_POST['buttonText'] ) ) : 'Book Now';
+	$button_color = isset( $_POST['buttonColor'] ) ? sanitize_hex_color( wp_unslash( $_POST['buttonColor'] ) ) : '#33ae3f';
+	$border_radius = isset( $_POST['borderRadius'] ) ? intval( $_POST['borderRadius'] ) : 6;
+	$items_per_row = isset( $_POST['itemsPerRow'] ) ? intval( $_POST['itemsPerRow'] ) : 3;
+	$items_per_page = isset( $_POST['itemsPerPage'] ) ? intval( $_POST['itemsPerPage'] ) : 10;
+	$items_per_slide = isset( $_POST['itemsPerSlide'] ) ? intval( $_POST['itemsPerSlide'] ) : 1;
+	$search_visibility = isset( $_POST['searchVisibility'] ) ? (bool) $_POST['searchVisibility'] : false;
+	$trip_type = isset( $_POST['tripType'] ) ? sanitize_text_field( wp_unslash( $_POST['tripType'] ) ) : 'all';
+	$selected_locations = isset( $_POST['locations'] ) ? array_map( 'sanitize_text_field', wp_unslash( $_POST['locations'] ) ) : array();
+
+	// Create mock attributes for block renderer
+	$mock_attributes = array(
+    'displayType' => $display_type,
+    'buttonType' => $button_type,
+    'buttonText' => $button_text,
+    'buttonColor' => $button_color,
+    'borderRadius' => $border_radius,
+    'itemsPerRow' => 2,
+    'itemsPerPage' => 2,
+    'itemsPerSlide' => ($display_type === 'carousel') ? 1 : 1, // Ensure carousel shows 1 item per slide
+    'searchVisibility' => $search_visibility,
+    'src' => get_option( 'wetravel_trips_src', '' ),
+    'slug' => get_option( 'wetravel_trips_slug', '' ),
+    'env' => get_option( 'wetravel_trips_env', 'https://pre.wetravel.to' ),
+    'wetravelUserID' => get_option( 'wetravel_trips_user_id', '' ),
+    'mockData' => true, // Flag to indicate this is mock data
+    'mockTripType' => $trip_type,
+    'mockLocations' => $selected_locations
+	);
+
+	// Use the actual block renderer
+	$rendered_html = wtwidget_trips_block_render( $mock_attributes );
+
+	wp_send_json_success( array(
+		'html' => $rendered_html,
+		'message' => 'Mock preview rendered successfully'
+	) );
+}
+add_action( 'wp_ajax_render_mock_preview', 'wtwidget_render_mock_preview' );
+
+
+/**
  * AJAX handler to fetch locations based on trip type
  */
 function wtwidget_fetch_locations_by_trip_type() {
@@ -171,7 +231,7 @@ function wtwidget_process_form_submission() {
 		'modified'       => time(),
 		'locations'      => isset($_POST['trip_location']) ? array_map('sanitize_text_field', wp_unslash($_POST['trip_location'])) : array(),
 		'searchVisibility' => isset($_POST['search_visibility']) ? (bool) $_POST['search_visibility'] : false,
-		'itemsPerSlide'  => isset($_POST['items_per_slide']) ? intval($_POST['items_per_slide']) : get_option('wetravel_trips_items_per_slide', 3),
+		'itemsPerSlide'  => isset($_POST['items_per_slide']) ? intval($_POST['items_per_slide']) : get_option('wetravel_trips_items_per_slide', 1),
 		'itemsPerRow'    => isset($_POST['items_per_row']) ? intval($_POST['items_per_row']) : get_option('wetravel_trips_items_per_row', 3),
 		'itemsPerPage'   => isset($_POST['items_per_page']) ? intval($_POST['items_per_page']) : get_option('wetravel_trips_items_per_page', 10),
 		'borderRadius'   => isset($_POST['border_radius']) ? intval($_POST['border_radius']) : get_option('wetravel_trips_border_radius', 6),
@@ -229,7 +289,7 @@ function wtwidget_trip_create_design_page() {
 		'dateRangeStart' => '',
 		'dateRangeEnd'   => '',
 		'searchVisibility' => false,
-		'itemsPerSlide'  => get_option('wetravel_trips_items_per_slide', 3),
+		'itemsPerSlide'  => get_option('wetravel_trips_items_per_slide', 1),
 		'itemsPerRow'    => get_option('wetravel_trips_items_per_row', 3),
 		'itemsPerPage'   => get_option('wetravel_trips_items_per_page', 10),
 		'borderRadius'   => get_option('wetravel_trips_border_radius', 6),
@@ -441,7 +501,7 @@ function wtwidget_trip_create_design_page() {
 						</div>
 
 						<!-- Hidden fields for shortcode generation - values will be set from global settings -->
-						<input type="hidden" id="items_per_slide" name="items_per_slide" value="<?php echo isset( $design['itemsPerSlide'] ) ? esc_attr( $design['itemsPerSlide'] ) : esc_attr(get_option('wetravel_trips_items_per_slide', 3)); ?>">
+						<input type="hidden" id="items_per_slide" name="items_per_slide" value="<?php echo isset( $design['itemsPerSlide'] ) ? esc_attr( $design['itemsPerSlide'] ) : esc_attr(get_option('wetravel_trips_items_per_slide', 1)); ?>">
 						<input type="hidden" id="items_per_row" name="items_per_row" value="<?php echo isset( $design['itemsPerRow'] ) ? esc_attr( $design['itemsPerRow'] ) : esc_attr(get_option('wetravel_trips_items_per_row', 3)); ?>">
 						<input type="hidden" id="items_per_page" name="items_per_page" value="<?php echo isset( $design['itemsPerPage'] ) ? esc_attr( $design['itemsPerPage'] ) : esc_attr(get_option('wetravel_trips_items_per_page', 10)); ?>">
 						<input type="hidden" id="border_radius" name="border_radius" value="<?php echo isset( $design['borderRadius'] ) ? esc_attr( $design['borderRadius'] ) : esc_attr(get_option('wetravel_trips_border_radius', 6)); ?>">
@@ -456,32 +516,74 @@ function wtwidget_trip_create_design_page() {
 					</form>
 				</div>
 
-				<div class="wetravel-trips-design-preview-container">
+				<div class="wetravel-trips-design-preview-container"  style="max-width: 700px; margin: 0 auto; box-sizing: border-box;">
 					<h3>Live Preview</h3>
 					<div id="design-preview" class="wetravel-trips-preview">
-						<!-- Preview will be updated by JavaScript -->
-						<div class="wetravel-trips-preview-layout">
-							<div class="preview-display-type">Loading preview...</div>
-						</div>
+							<!-- Preview will be updated by JavaScript -->
+							<div class="wetravel-trips-preview-layout">
+									<div class="preview-display-type">Loading preview...</div>
+							</div>
 					</div>
 
 					<div class="wetravel-trips-shortcode-generator">
-						<h4>Generated Shortcode</h4>
-						<div class="shortcode-preview">
-							<?php if ( $editing ) : ?>
-								<code><?php echo esc_html(wtwidget_generate_shortcode_with_params($design, $design_id)); ?></code>
-								<button class="button button-small wetravel-trips-copy-shortcode"
-										data-shortcode='<?php echo esc_attr(wtwidget_generate_shortcode_with_params($design, $design_id)); ?>'>Copy</button>
-							<?php else : ?>
-								<p>Shortcode will be generated after saving.</p>
-							<?php endif; ?>
-						</div>
+							<h4>Generated Shortcode</h4>
+							<div class="shortcode-preview">
+									<?php if ( $editing ) : ?>
+											<code><?php echo esc_html(wtwidget_generate_shortcode_with_params($design, $design_id)); ?></code>
+											<button class="button button-small wetravel-trips-copy-shortcode"
+															data-shortcode='<?php echo esc_attr(wtwidget_generate_shortcode_with_params($design, $design_id)); ?>'>Copy</button>
+									<?php else : ?>
+											<p>Shortcode will be generated after saving.</p>
+									<?php endif; ?>
+							</div>
 					</div>
 				</div>
 			</div>
 		</div>
 	</div>
 	<?php
+	// Enqueue main WeTravel CSS for block-renderer preview
+	wp_enqueue_style(
+		'wetravel-trips-styles',
+		plugins_url('assets/css/wetravel-trips.css', dirname(__FILE__)),
+		array(),
+		filemtime(plugin_dir_path(dirname(__FILE__)) . 'assets/css/wetravel-trips.css')
+	);
+
+	// Enqueue Swiper for carousel preview
+	wp_enqueue_style(
+		'swiper-css',
+		plugins_url('assets/css/swiper-bundle.min.css', dirname(__FILE__)),
+		array(),
+		filemtime(plugin_dir_path(dirname(__FILE__)) . 'assets/css/swiper-bundle.min.css')
+	);
+	wp_enqueue_script(
+		'swiper-js',
+		plugins_url('assets/js/swiper-bundle.min.js', dirname(__FILE__)),
+		array(),
+		filemtime(plugin_dir_path(dirname(__FILE__)) . 'assets/js/swiper-bundle.min.js'),
+		true
+	);
+
+	// Enqueue pagination script for admin preview
+	wp_enqueue_script(
+		'wetravel-trips-pagination',
+		plugins_url('assets/js/pagination.js', dirname(__FILE__)),
+		array('jquery'),
+		filemtime(plugin_dir_path(dirname(__FILE__)) . 'assets/js/pagination.js'),
+		true
+	);
+
+
+	// Enqueue carousel script for admin preview
+	wp_enqueue_script(
+		'wetravel-trips-carousel',
+		plugins_url('assets/js/carousel.js', dirname(__FILE__)),
+		array('jquery', 'swiper-js'),
+		filemtime(plugin_dir_path(dirname(__FILE__)) . 'assets/js/carousel.js'),
+		true
+	);
+
 	// Enqueue Select2 library
 	wp_enqueue_style(
 		'select2',
@@ -501,7 +603,7 @@ function wtwidget_trip_create_design_page() {
 	wp_enqueue_script(
 		'wetravel-trips-admin-scripts',
 		plugins_url('js/admin-scripts.js', __FILE__),
-		array('jquery', 'select2'),
+		array('jquery', 'select2', 'wetravel-trips-pagination'),
 		filemtime(plugin_dir_path(__FILE__) . 'js/admin-scripts.js'),
 		true
 	);
@@ -511,6 +613,11 @@ function wtwidget_trip_create_design_page() {
 		'ajaxurl' => admin_url('admin-ajax.php'),
 		'nonce' => wp_create_nonce('wetravel_trips_nonce'),
 		'design_id' => $design_id
+	));
+
+	// Also localize the plugin settings for mock data
+	wp_localize_script('wetravel-trips-admin-scripts', 'wetravelTripsSettings', array(
+		'pluginUrl' => plugins_url('', dirname(__FILE__)) . '/'
 	));
 
 	// Initialize Select2

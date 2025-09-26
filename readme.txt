@@ -198,7 +198,7 @@ The `[wetravel_trips]` shortcode accepts the following parameters:
 * `button_color` - Color of the button (hex code, e.g., "#33ae3f")
 * `items_per_page` - Number of trips to display per page (default: 10)
 * `items_per_row` - Number of trips to display per row in grid layout (default: 3)
-* `items_per_slide` - Number of trips to display per slide in carousel layout (default: 3)
+* `items_per_slide` - Number of trips to display per slide in carousel layout (default: 1)
 * `trip_type` - Filter trips by type: "all", "one-time", or "recurring"
 * `date_start` - Start date for filtering trips (format: YYYY-MM-DD)
 * `date_end` - End date for filtering trips (format: YYYY-MM-DD)
@@ -210,4 +210,4 @@ Basic usage with a saved design:
 `[wetravel_trips widget="my-custom-design"]`
 
 Example with custom parameters:
-`[wetravel_trips display_type="carousel" items_per_slide="3" button_color="#ff0000" button_text="Book Now" locations="New York, USA;London;Paris, France"]`
+`[wetravel_trips display_type="carousel" items_per_slide="1" button_color="#ff0000" button_text="Book Now" locations="New York, USA;London;Paris, France"]`

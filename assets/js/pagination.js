@@ -37,6 +37,9 @@
     });
   }
 
+  // Expose function globally for admin use
+  window.initializePaginationForContainer = initializePaginationForContainer;
+
   function initializePaginationForContainer(container) {
     const blockId = container.attr("id").replace("trips-container-", "");
     const itemsPerPage = parseInt(container.data("items-per-page")) || 10;
