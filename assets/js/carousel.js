@@ -42,16 +42,16 @@
         breakpoints: {
           // when window width is >= 480px
           480: {
-            slidesPerView: 1,
+            slidesPerView: Math.min(1, itemsPerSlide),
             spaceBetween: 10,
           },
           // when window width is >= 640px
           640: {
-            slidesPerView: 2,
+            slidesPerView: Math.min(2, itemsPerSlide),
             spaceBetween: 20,
           },
           960: {
-            slidesPerView: 3,
+            slidesPerView: Math.min(3, itemsPerSlide),
             spaceBetween: 20,
           },
           1024: {

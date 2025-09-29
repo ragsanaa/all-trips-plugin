@@ -40,6 +40,7 @@
       button_color: config.buttonColor || "#33ae3f",
       items_per_page: config.itemsPerPage || 10,
       items_per_row: config.itemsPerRow || 3,
+      items_per_slide: config.itemsPerSlide || 1,
       wetravel_user_id: config.wetravelUserID || "",
     });
 
@@ -105,12 +106,8 @@
     // Update the content
     $container.html(newHtml);
 
-    // Re-initialize any scripts based on display type
-    if (config.displayType === "carousel") {
-      initializeCarousel(container.id);
-    } else {
-      initializePagination(container.id);
-    }
+    // Always trigger the shared event for both carousel and non-carousel views
+    $container.trigger("tripsRendered");
 
     // Initialize search filters if needed
     if (config.searchVisibility) {
@@ -129,97 +126,6 @@
     if (config.buttonType === "book_now" && window.wtrvl) {
       window.wtrvl.init();
     }
-  }
-
-  /**
-   * Initialize carousel for hydrated content
-   */
-  function initializeCarousel(containerId) {
-    const $container = $("#" + containerId);
-    const $swiper = $container.find(".swiper");
-
-    if ($swiper.length && window.Swiper) {
-      // Destroy existing swiper instance if any
-      if ($swiper[0].swiper) {
-        $swiper[0].swiper.destroy(true, true);
-      }
-
-      // Initialize new swiper
-      new window.Swiper($swiper[0], {
-        slidesPerView: 1,
-        spaceBetween: 20,
-        navigation: {
-          nextEl: $container.find(".swiper-button-next")[0],
-          prevEl: $container.find(".swiper-button-prev")[0],
-        },
-        pagination: {
-          el: $container.find(".swiper-pagination")[0],
-          clickable: true,
-        },
-        breakpoints: {
-          768: {
-            slidesPerView: 2,
-          },
-          1024: {
-            slidesPerView: 3,
-          },
-        },
-      });
-
-      // Apply description fades for carousel items
-      if (window.applyDescriptionFades) {
-        window.applyDescriptionFades();
-      }
-    }
-  }
-
-  /**
-   * Initialize pagination for hydrated content
-   */
-  function initializePagination(containerId) {
-    const $container = $("#" + containerId);
-    const blockId = containerId.replace("trips-container-", "");
-
-    // Re-bind pagination events
-    $("#pagination-" + blockId + " .page-number")
-      .off("click")
-      .on("click", function () {
-        const page = parseInt($(this).data("page"));
-        const itemsPerPage = parseInt($container.data("items-per-page")) || 10;
-
-        // Hide all items
-        $container
-          .find(".trip-item")
-          .addClass("hidden-item")
-          .removeClass("visible-item");
-
-        // Show items for current page
-        const startIndex = (page - 1) * itemsPerPage;
-        const endIndex = startIndex + itemsPerPage;
-
-        $container
-          .find(".trip-item")
-          .slice(startIndex, endIndex)
-          .removeClass("hidden-item")
-          .addClass("visible-item");
-
-        // Update pagination active state
-        $("#pagination-" + blockId + " .page-number").removeClass("active");
-        $(this).addClass("active");
-
-        // Apply description fades after pagination change
-        if (window.applyDescriptionFades) {
-          window.applyDescriptionFades();
-        }
-
-        // Scroll to top of trips container
-        $("html, body").animate(
-          {
-            scrollTop: $container.offset().top - 100,
-          },
-          500
-        );
-      });
   }
 
   /**
@@ -279,8 +185,6 @@
   // Expose utility functions for external use
   window.WeTravelTripsUtils = {
     updateContent: updateContent,
-    initializeCarousel: initializeCarousel,
-    initializePagination: initializePagination,
     initializeSearchFilters: initializeSearchFilters,
   };
 })(jQuery);
