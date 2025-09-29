@@ -96,8 +96,6 @@ function wtwidget_enqueue_frontend_scripts() {
 		':root { --button-color: ' . esc_attr( get_option( 'wetravel_trips_button_color', '#33ae3f' ) ) . '; --items-per-row: ' . esc_attr( get_option( 'wetravel_trips_items_per_row', 3 ) ) . '; }'
 	);
 
-	// Removed trips-loader.js since widgets are server-side rendered
-	// This prevents AJAX conflicts and improves performance
 }
 add_action( 'wp_enqueue_scripts', 'wtwidget_enqueue_frontend_scripts' );
 

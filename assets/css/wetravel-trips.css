@@ -1,5 +1,17 @@
 /* General styles for WeTravel Widgets plugin */
 
+/* Error message styles */
+.wetravel-trips-error {
+  padding: 16px;
+  background-color: #fee2e2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  color: #dc2626;
+  font-size: 14px;
+  text-align: center;
+  margin: 20px 0;
+}
+
 .wp-block-wetravel-trips-block {
   margin-bottom: 30px;
   position: relative;
@@ -602,7 +614,7 @@ a {
   width: 50px;
   height: 50px;
   border: 3px solid #f3f3f3;
-  border-top: 3px solid #33ae3f;
+  border-top: 3px solid var(--button-color);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 10px;

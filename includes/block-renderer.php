@@ -151,18 +151,29 @@ function wtwidget_trips_block_render( $attributes ) {
 	// Check if this is mock data request
 	$is_mock_data = isset($attributes['mockData']) && $attributes['mockData'];
 
-	if ($is_mock_data) {
-		// Use mock data instead of API
-		$trips = wtwidget_get_mock_trips_data($attributes);
-	} else {
-		// Build API URL with parameters
-		$api_url = wtwidget_build_api_url($env, $slug, array(
-			'trip_type' => $trip_type,
-			'date_start' => $date_start,
-			'date_end' => $date_end
-		));
+	// Build API URL with parameters
+	$api_url = wtwidget_build_api_url($env, $slug, array(
+		'trip_type'  => $trip_type,
+		'date_start' => $date_start,
+		'date_end'   => $date_end
+	));
 
-		// Get trips data
+	// Single optimized cache: stores complete enhanced trips with all filtering applied
+	$cache_key = 'wetravel_enhanced_' . md5($api_url . serialize($locations) . $trip_type);
+	$cached_enhanced_trips = get_transient($cache_key);
+
+	$enhanced_trips = array();
+	$is_using_cache = false;
+
+	if ($is_mock_data) {
+		// Use mock data instead of API, skip cache
+		$trips = wtwidget_get_mock_trips_data($attributes);
+	} elseif (false !== $cached_enhanced_trips) {
+		// Use cached enhanced data - fastest path
+		$enhanced_trips = $cached_enhanced_trips;
+		$is_using_cache = true;
+	} else {
+		// Cache miss: fetch fresh data
 		$trips = wtwidget_get_trips_data($api_url);
 
 		// Handle case when trips data is false (error occurred)
@@ -178,9 +189,20 @@ function wtwidget_trips_block_render( $attributes ) {
 		}
 	}
 
+		// Handle case when trips data is false (error occurred)
+		if (false === $trips) {
+			$trips = array(); // Set to empty array to show "No trips found" message
+		}
 
+		// Apply all filtering
+		if (!empty($locations)) {
+			$trips = array_filter($trips, function($trip) use ($locations) {
+				return !empty($trip['location']) && in_array($trip['location'], $locations);
+			});
+		}
+
+	// If trip_type is 'recurring', filter for all-year trips
 	if ( 'recurring' === $trip_type ) {
-		// Filter trips where 'all_year' is true.
 		$trips = array_filter(
 			$trips,
 			function ( $trip ) {
@@ -191,12 +213,17 @@ function wtwidget_trips_block_render( $attributes ) {
 
 	// Fetch enhanced trip data with additional details since we need it for display
 	if ( ! empty($trips) && is_array( $trips ) ) {
-		if ($is_mock_data) {
+		if ( isset($is_mock_data) && $is_mock_data ) {
 			// For mock data, skip enhancement since data is already complete
 			$enhanced_trips = $trips;
 		} else {
 			$enhanced_trips = wtwidget_enhance_trips_with_details($trips, $env);
 		}
+	}
+
+	// Cache complete enhanced and filtered result for 5 minutes
+	// Shorter cache = fresher data while still reducing API calls significantly
+	set_transient($cache_key, $enhanced_trips, 300); // 5 minutes
 	}
 
 	// Enqueue necessary assets based on display type.
@@ -277,7 +304,8 @@ function wtwidget_trips_block_render( $attributes ) {
 
 	// Use direct CSS instead of CSS custom properties for better compatibility with older WordPress versions
 	$custom_css = sprintf(
-		'#trips-container-%1$s { --button-color: %2$s; --items-per-row: %3$d; --border-radius: %4$dpx; }',
+		'#trips-container-%1$s { --button-color: %2$s; --items-per-row: %3$d; --border-radius: %4$dpx; }
+		#loading-%1$s .loading-spinner { border-top-color: %2$s; }',
 		esc_attr($block_id),
 		$button_color,
 		$items_per_row,
@@ -308,7 +336,6 @@ function wtwidget_trips_block_render( $attributes ) {
 		<!-- Initial loading state - show by default -->
 		<div class="wetravel-trips-loading" id="loading-<?php echo esc_attr( $block_id ); ?>">
 			<div class="loading-spinner"></div>
-			<p>Loading trips...</p>
 		</div>
 
 		<?php
@@ -456,6 +483,9 @@ function wtwidget_trips_block_render( $attributes ) {
 			<?php if (!empty($locations)) : ?>
 			data-locations="<?php echo esc_attr( implode(';', $locations) ); ?>"
 			<?php endif; ?>
+			data-hydrate="true"
+			data-search-visibility="<?php echo $search_visibility ? 'true' : 'false'; ?>"
+			data-cache-status="<?php echo $is_using_cache ? 'cached' : 'fresh'; ?>"
 			>
 			<?php
 				$allowed_html_tags = array(
@@ -608,6 +638,15 @@ function wtwidget_trips_block_render( $attributes ) {
 		filemtime( plugin_dir_path( dirname( __FILE__ ) ) . 'assets/js/trip-link-handler.js' ),
 		true
 	);
+
+	// Enqueue hydration script for hybrid SSR + JS pattern
+	wp_enqueue_script(
+		'wetravel-trips-hydration',
+		plugins_url( 'assets/js/wetravel-hydration.js', dirname( __FILE__ ) ),
+		array( 'jquery' ),
+		filemtime( plugin_dir_path( dirname( __FILE__ ) ) . 'assets/js/wetravel-hydration.js' ),
+		true
+	);
 	?>
 	<?php
 
@@ -632,11 +671,8 @@ function wtwidget_trips_block_render( $attributes ) {
 				}, 500);
 			}
 
-			// For client-side loaded content, the spinner is handled in trips-loader.js
-			// Add a global callback function that can be called after AJAX trips load
-			window.tripsLoaded = function(blockId) {
-				hideLoadingSpinner(blockId);
-			};
+			// For client-side loaded content, the spinner is handled in wetravel-hydration.js
+			// The hydration system will automatically handle loading states
 
 			// Add a fallback timeout to hide spinner after 15 seconds in case of errors
 			setTimeout(function() {
@@ -646,8 +682,7 @@ function wtwidget_trips_block_render( $attributes ) {
 	";
 
 	// Add the inline script to the output.
-	wp_register_script( 'wetravel-trips-loading', '', array( 'jquery' ),
-		filemtime( plugin_dir_path( dirname( __FILE__ ) ) . 'assets/js/trips-loader.js' ), true );
+	wp_register_script( 'wetravel-trips-loading', '', array( 'jquery' ), '1.0.0', true );
 	wp_add_inline_script( 'wetravel-trips-loading', $inline_script );
 	wp_enqueue_script( 'wetravel-trips-loading' );
 
@@ -662,6 +697,39 @@ function wtwidget_trips_block_render( $attributes ) {
 		);
 		wetravel_track_widget_view( $event_data );
 	}
+
+	// Add hydration initialization script
+	$hydration_config = json_encode(array(
+		'slug' => $slug,
+		'env' => $env,
+		'wetravelUserID' => $wetravel_trips_user_id,
+		'tripType' => $trip_type,
+		'dateStart' => $date_start,
+		'dateEnd' => $date_end,
+		'locations' => !empty($locations) ? implode(';', $locations) : '',
+		'displayType' => $display_type,
+		'buttonType' => $button_type,
+		'buttonText' => $button_text,
+		'buttonColor' => $button_color,
+		'itemsPerPage' => $items_per_page,
+		'itemsPerRow' => $items_per_row,
+		'searchVisibility' => $search_visibility,
+		'blockId' => $block_id,
+	));
+
+	$hydration_script = "
+		jQuery(document).ready(function($) {
+			// Initialize hydration after a short delay to ensure SSR content is visible
+			setTimeout(function() {
+				if (window.WeTravelTripsHydrate) {
+					const config = " . $hydration_config . ";
+					window.WeTravelTripsHydrate('" . esc_js($block_id) . "', config);
+				}
+			}, 1000);
+		});
+	";
+
+	wp_add_inline_script( 'wetravel-trips-hydration', $hydration_script );
 
 	return ob_get_clean();
 }
@@ -972,30 +1040,6 @@ function wtwidget_render_external_image($url, $alt = '', $args = array()) {
 
 	return sprintf('<img%s />', $html_attrs);
 }
-
-/**
- * Enqueue necessary scripts for WeTravel Trips
- */
-function wtwidget_enqueue_trips_scripts() {
-	wp_enqueue_script(
-		'wetravel-trips-loader',
-		plugins_url( 'assets/js/trips-loader.js', dirname( __FILE__ ) ),
-		array( 'jquery' ),
-		filemtime( plugin_dir_path( dirname( __FILE__ ) ) . 'assets/js/trips-loader.js' ),
-		true
-	);
-
-	// Localize the script to provide the AJAX URL.
-	wp_localize_script(
-		'wetravel-trips-loader',
-		'wetravelTripsData',
-		array(
-			'ajaxurl' => admin_url( 'admin-ajax.php' ),
-			'nonce'   => wp_create_nonce( 'wetravel_trips_nonce' ),
-		)
-	);
-}
-add_action( 'wp_enqueue_scripts', 'wtwidget_enqueue_trips_scripts' );
 
 /**
  * Get mock trips data for preview functionality

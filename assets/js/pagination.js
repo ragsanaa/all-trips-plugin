@@ -249,5 +249,8 @@
     // Initialize pagination
     renderPagination();
     displayItems(currentPage);
+
+    // Apply description fades after pagination setup
+    applyDescriptionFades();
   }
 })(jQuery);

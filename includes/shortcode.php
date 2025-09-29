@@ -145,7 +145,16 @@ function wtwidget_trips_shortcode( $atts ) {
 	// Use the existing block render function to maintain consistency
 	if (function_exists('wtwidget_trips_block_render')) {
 		return wtwidget_trips_block_render($block_atts);
+	} else {
+		// Fallback if block render function doesn't exist (shouldn't happen in normal operation)
+		return '<div class="wetravel-trips-error">WeTravel Widgets: Block renderer not available. Please check plugin installation.</div>';
 	}
 }
 add_shortcode( 'wetravel_trips', 'wtwidget_trips_shortcode' );
 
+/**
+ * Note: Legacy AJAX handlers have been removed as they were unused.
+ * All frontend functionality now uses:
+ * - Server-side rendering for initial content (block-renderer.php)
+ * - REST API endpoint for hydration (/wp-json/wetravel/v1/trips)
+ */
