@@ -50,20 +50,22 @@
         observer: true,
         observeParents: true,
         breakpoints: {
-          // when window width is >= 480px
-          480: {
-            slidesPerView: Math.min(1, itemsPerSlide),
-            spaceBetween: 10,
+          // Explicit mobile-first breakpoint (0 - 639px)
+          0: {
+            slidesPerView: 1,
+            spaceBetween: 20,
           },
-          // when window width is >= 640px
+          // >= 640px
           640: {
             slidesPerView: Math.min(2, itemsPerSlide),
             spaceBetween: 20,
           },
+          // >= 960px
           960: {
             slidesPerView: Math.min(3, itemsPerSlide),
             spaceBetween: 20,
           },
+          // >= 1024px
           1024: {
             slidesPerView: itemsPerSlide,
             spaceBetween: 20,
@@ -104,7 +106,6 @@
         setTimeout(() => {
           swiper.update();
         }, 100);
-
       } catch (error) {
         console.error("Error initializing Swiper:", error);
       }

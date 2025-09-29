@@ -77,11 +77,6 @@ a {
   transition: opacity 0.2s ease;
 }
 
-.learn-more-link:hover {
-  opacity: 0.8;
-  text-decoration: underline !important;
-}
-
 .trip-loc-duration {
   display: flex;
   align-items: center;
@@ -318,7 +313,6 @@ a {
   background-color: var(--button-color) !important;
   border-radius: 50% !important;
   color: #fff !important;
-  display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   transition: all 0.3s ease !important;
@@ -481,6 +475,10 @@ a {
 
   .learn-more-link {
     font-size: 14px;
+  }
+
+  .wetravel-trips-container.carousel-view .swiper-container-wrapper {
+    padding: 0;
   }
 
   .wetravel-trips-container.carousel-view .swiper-button-next,

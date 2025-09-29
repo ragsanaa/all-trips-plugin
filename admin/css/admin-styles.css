@@ -83,6 +83,53 @@
   border-radius: 3px;
 }
 
+/* Responsive layout: stack form above preview on smaller screens */
+@media (max-width: 1024px) {
+  .wetravel-trips-design-form-and-preview {
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 900px) {
+  .wetravel-trips-design-form-and-preview {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .wetravel-trips-design-form,
+  .wetravel-trips-design-preview-container {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .wetravel-trips-design-preview-container {
+    margin-top: 0;
+  }
+}
+
+/* WordPress admin common breakpoint */
+@media (max-width: 782px) {
+  .date-range-inputs {
+    flex-direction: column;
+  }
+
+  .shortcode-preview {
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+  }
+}
+
+@media (max-width: 480px) {
+  .wetravel-trips-design-form-and-preview {
+    gap: 16px;
+  }
+
+  .wetravel-trips-preview {
+    padding: 10px;
+  }
+}
+
 /* Widget Library Page Styles */
 
 .wetravel-trips-design-library-container {

@@ -378,20 +378,14 @@
 
         const tripDescriptionStyle = {
           color: "#475569",
-          maxHeight: "100px",
+          maxHeight: "120px",
           overflow: "hidden",
-          position: "relative",
-          "&::after": {
-            content: '""',
-            position: "absolute",
-            bottom: 0,
-            left: 0,
-            width: "100%",
-            height: "30px",
-            background:
-              "linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(255, 255, 255, 1))",
-            pointerEvents: "none",
-          },
+          display: "-webkit-box",
+          WebkitLineClamp: 4,
+          lineClamp: 4,
+          WebkitBoxOrient: "vertical",
+          textOverflow: "ellipsis",
+          marginBottom: "8px",
         };
 
         const tripDateOverlayStyle = {
@@ -412,12 +406,25 @@
           boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
         };
 
+        const learnMoreLinkStyle = {
+          color: buttonColor,
+          textDecoration: "none",
+          fontWeight: "500",
+          cursor: "pointer",
+          transition: "opacity 0.2s ease",
+        };
         // Button style for grid and carousel views
         const outlineButtonStyle = {
           ...buttonStyle,
           backgroundColor: "transparent",
           color: buttonColor,
         };
+
+        // Plugin base URL for referencing bundled preview images
+        const pluginUrl =
+          (window.wetravelTripsSettings &&
+            window.wetravelTripsSettings.pluginUrl) ||
+          "";
 
         // Create trip items
         const tripItems = [];
@@ -477,7 +484,22 @@
                       minHeight: "200px",
                     },
                   },
-                  "Trip Image"
+                  createElement("img", {
+                    src:
+                      pluginUrl +
+                      "assets/images/trip" +
+                      ((i % 6) + 1) +
+                      ".avif",
+                    alt: tripTitle,
+                    style: {
+                      width: "100%",
+                      height: "200px",
+                      objectFit: "cover",
+                      borderRadius: "4px",
+                      display: "block",
+                    },
+                    loading: "lazy",
+                  })
                 ),
                 createElement(
                   "div",
@@ -504,6 +526,22 @@
                         style: tripDescriptionStyle,
                       },
                       tripDescription
+                    ),
+                    createElement(
+                      "a",
+                      {
+                        className: "learn-more-link",
+                        href: "#",
+                        style: learnMoreLinkStyle,
+                      },
+                      "See More ",
+                      createElement("span", {
+                        className: "dashicons dashicons-arrow-right-alt",
+                        style: {
+                          verticalAlign: "middle",
+                          textDecoration: "none",
+                        },
+                      })
                     )
                   ),
                   createElement(
@@ -608,7 +646,22 @@
                       height: "180px",
                     },
                   },
-                  "Trip Image",
+                  createElement("img", {
+                    src:
+                      pluginUrl +
+                      "assets/images/trip" +
+                      ((i % 6) + 1) +
+                      ".avif",
+                    alt: tripTitle,
+                    style: {
+                      width: "100%",
+                      height: "180px",
+                      objectFit: "cover",
+                      borderRadius: "4px",
+                      display: "block",
+                    },
+                    loading: "lazy",
+                  }),
                   // Add date overlay for grid view
                   createElement(
                     "div",
@@ -645,6 +698,22 @@
                         style: tripDescriptionStyle,
                       },
                       tripDescription
+                    ),
+                    createElement(
+                      "a",
+                      {
+                        className: "learn-more-link",
+                        href: "#",
+                        style: learnMoreLinkStyle,
+                      },
+                      "See More ",
+                      createElement("span", {
+                        className: "dashicons dashicons-arrow-right-alt",
+                        style: {
+                          verticalAlign: "middle",
+                          textDecoration: "none",
+                        },
+                      })
                     )
                   ),
                   createElement(
@@ -740,7 +809,22 @@
                       height: "180px",
                     },
                   },
-                  "Trip Image",
+                  createElement("img", {
+                    src:
+                      pluginUrl +
+                      "assets/images/trip" +
+                      ((i % 6) + 1) +
+                      ".avif",
+                    alt: tripTitle,
+                    style: {
+                      width: "100%",
+                      height: "180px",
+                      objectFit: "cover",
+                      borderRadius: "4px",
+                      display: "block",
+                    },
+                    loading: "lazy",
+                  }),
                   // Add date overlay for carousel view
                   createElement(
                     "div",
@@ -777,6 +861,22 @@
                         style: tripDescriptionStyle,
                       },
                       tripDescription
+                    ),
+                    createElement(
+                      "a",
+                      {
+                        className: "learn-more-link",
+                        href: "#",
+                        style: learnMoreLinkStyle,
+                      },
+                      "See More ",
+                      createElement("span", {
+                        className: "dashicons dashicons-arrow-right-alt",
+                        style: {
+                          verticalAlign: "middle",
+                          textDecoration: "none",
+                        },
+                      })
                     )
                   ),
                   createElement(
