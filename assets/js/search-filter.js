@@ -72,12 +72,12 @@
 
   // Filter locations in dropdown
   function filterLocations(blockId) {
-    const searchTerm = $(`#search-filter-${blockId} #location-search`)
-      .val()
-      .toLowerCase();
+    const rawSearch = $(`#search-filter-${blockId} #location-search`).val();
+    const searchTerm = (rawSearch || "").toString().toLowerCase();
 
     $(`#search-filter-${blockId} .location-item`).each(function () {
-      const locationName = $(this).find(".location-name").text().toLowerCase();
+      const rawLocation = $(this).find(".location-name").text();
+      const locationName = (rawLocation || "").toString().toLowerCase();
       $(this).toggle(locationName.includes(searchTerm));
     });
   }
@@ -85,9 +85,8 @@
   // Filter trips based on search text, selected locations, and date range
   function filterTrips(blockId) {
     const container = $(`#trips-container-${blockId}`);
-    const searchText = $(`#search-filter-${blockId} .search-input`)
-      .val()
-      .toLowerCase();
+    const rawSearch = $(`#search-filter-${blockId} .search-input`).val();
+    const searchText = (rawSearch || "").toString().toLowerCase();
     const selectedLocs = state.selectedLocations[blockId] || [];
     const dateStart = $(`#search-filter-${blockId} .date-start-input`).val();
     const dateEnd = $(`#search-filter-${blockId} .date-end-input`).val();
@@ -98,8 +97,10 @@
     // Apply filters
     container.find(".trip-item").each(function () {
       const tripItem = $(this);
-      const title = tripItem.find("h3").text().toLowerCase();
-      const location = tripItem.find(".trip-location").text().toLowerCase();
+      const rawTitle = tripItem.find("h3").text();
+      const rawLocation = tripItem.find(".trip-location").text();
+      const title = (rawTitle || "").toString().toLowerCase();
+      const location = (rawLocation || "").toString().toLowerCase();
 
       const matchesSearch =
         !searchText ||
@@ -107,7 +108,10 @@
         location.includes(searchText);
       const matchesLocation =
         selectedLocs.length === 0 ||
-        selectedLocs.some((loc) => location.includes(loc.toLowerCase()));
+        selectedLocs.some((loc) => {
+          const normalized = (loc || "").toString().toLowerCase();
+          return normalized && location.includes(normalized);
+        });
 
       // Date filtering logic - this is a basic implementation
       // You may need to adjust this based on your specific date format and requirements
@@ -116,7 +120,7 @@
         // Extract date from trip item - you'll need to adjust this based on your HTML structure
         const tripDateElement = tripItem.find(".trip-date, .trip-tag");
         if (tripDateElement.length > 0) {
-          const tripDateText = tripDateElement.text().trim();
+          const tripDateText = (tripDateElement.text() || "").toString().trim();
           // Basic date matching - you may want to implement more sophisticated date parsing
           if (dateStart && tripDateText < dateStart) {
             matchesDate = false;
@@ -169,12 +173,15 @@
     const dateStartInput = $(`#search-filter-${blockId} .date-start-input`);
     const dateEndInput = $(`#search-filter-${blockId} .date-end-input`);
 
-    const hasValue = searchInput.val().trim().length > 0;
+    const searchVal = (searchInput.length ? searchInput.val() : "").toString();
+    const hasValue = searchVal.trim().length > 0;
     const hasLocationFilters =
       (state.selectedLocations[blockId] || []).length > 0;
     const hasDateFilters =
-      (dateStartInput.length && dateStartInput.val().trim().length > 0) ||
-      (dateEndInput.length && dateEndInput.val().trim().length > 0);
+      (dateStartInput.length &&
+        (dateStartInput.val() || "").toString().trim().length > 0) ||
+      (dateEndInput.length &&
+        (dateEndInput.val() || "").toString().trim().length > 0);
     const hasAnyFilters = hasValue || hasLocationFilters || hasDateFilters;
 
     clearBtn.toggle(hasValue);

@@ -477,7 +477,10 @@ function wtwidget_render_trips_html( $trips, $options ) {
         ),
         'h3' => array(),
         'p' => array(),
-        'span' => array(),
+        'span' => array(
+            'class' => true,
+            'style' => true,
+        ),
         'button' => array(
             'class' => true,
             'style' => true,

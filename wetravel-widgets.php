@@ -83,7 +83,11 @@ function wtwidget_enqueue_frontend_scripts() {
 	     ! has_blocks( $post->post_content ) ) {
 		return;
 	}
-	// Register main stylesheet.
+
+	// Ensure Dashicons is available on the frontend for icons used in markup
+	wp_enqueue_style('dashicons');
+
+    // Register main stylesheet.
 	wp_register_style(
 		'wetravel-trips-styles',
 		WETRAVEL_WIDGETS_PLUGIN_URL . 'assets/css/wetravel-trips.css',
@@ -95,6 +99,9 @@ function wtwidget_enqueue_frontend_scripts() {
 		'wetravel-trips-styles',
 		':root { --button-color: ' . esc_attr( get_option( 'wetravel_trips_button_color', '#33ae3f' ) ) . '; --items-per-row: ' . esc_attr( get_option( 'wetravel_trips_items_per_row', 3 ) ) . '; }'
 	);
+
+	// Enqueue the stylesheet after registration and inline vars
+	wp_enqueue_style('wetravel-trips-styles');
 
 }
 add_action( 'wp_enqueue_scripts', 'wtwidget_enqueue_frontend_scripts' );

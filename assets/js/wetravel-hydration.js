@@ -64,14 +64,6 @@
             blockId: blockId,
             tripsCount: data.trips_count,
           });
-
-          console.log(
-            "WeTravel Hydration: Successfully updated block " +
-              blockId +
-              " with " +
-              data.trips_count +
-              " trips"
-          );
         } else {
           console.warn(
             "WeTravel Hydration: Invalid response data for block " + blockId
@@ -111,12 +103,13 @@
 
     // Initialize search filters if needed
     if (config.searchVisibility) {
-      initializeSearchFilters(config.blockId);
-    }
-
-    // Apply description fades if function is available
-    if (window.applyDescriptionFades) {
-      window.applyDescriptionFades();
+      const containerBlockId =
+        container && container.id
+          ? container.id.replace("trips-container-", "")
+          : null;
+      if (containerBlockId) {
+        initializeSearchFilters(containerBlockId);
+      }
     }
 
     // Restore opacity with smooth transition

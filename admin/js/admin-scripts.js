@@ -5,7 +5,20 @@
   function initColorPicker() {
     $(".color-picker").wpColorPicker({
       change: function (event, ui) {
-        updatePreview();
+        // Ensure the input reflects the newly selected color immediately
+        var color =
+          ui && ui.color ? ui.color.toString() : $(event.target).val();
+        $(event.target).val(color);
+        // Trigger a standard change so our unified handler updates the preview with the new value
+        setTimeout(function () {
+          $("#button_color").trigger("change");
+        }, 0);
+      },
+      clear: function (event) {
+        $(event.target).val("");
+        setTimeout(function () {
+          $("#button_color").trigger("change");
+        }, 0);
       },
     });
   }

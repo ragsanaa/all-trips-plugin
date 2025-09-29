@@ -147,7 +147,6 @@ function wtwidget_trips_block_render( $attributes ) {
 		$locations = $design['locations'];
 	}
 
-
 	// Check if this is mock data request
 	$is_mock_data = isset($attributes['mockData']) && $attributes['mockData'];
 
@@ -162,6 +161,7 @@ function wtwidget_trips_block_render( $attributes ) {
 	$cache_key = 'wetravel_enhanced_' . md5($api_url . serialize($locations) . $trip_type);
 	$cached_enhanced_trips = get_transient($cache_key);
 
+	$trips = array();
 	$enhanced_trips = array();
 	$is_using_cache = false;
 
@@ -188,11 +188,6 @@ function wtwidget_trips_block_render( $attributes ) {
 			});
 		}
 	}
-
-		// Handle case when trips data is false (error occurred)
-		if (false === $trips) {
-			$trips = array(); // Set to empty array to show "No trips found" message
-		}
 
 		// Apply all filtering
 		if (!empty($locations)) {
@@ -224,7 +219,6 @@ function wtwidget_trips_block_render( $attributes ) {
 	// Cache complete enhanced and filtered result for 5 minutes
 	// Shorter cache = fresher data while still reducing API calls significantly
 	set_transient($cache_key, $enhanced_trips, 300); // 5 minutes
-	}
 
 	// Enqueue necessary assets based on display type.
 	if ( 'carousel' === $display_type ) {
