@@ -1,6 +1,6 @@
 <?php
 /**
- * Admin settings page for WeTravel Widgets Plugin
+ * Admin setup page for WeTravel Widgets Plugin
  *
  * @package WordPress
  */
@@ -45,7 +45,7 @@ function wetravel_trips_handle_reset_embed() {
 	$page = sanitize_text_field( wp_unslash( $_GET['page'] ) );
 	$reset_embed = sanitize_text_field( wp_unslash( $_GET['reset_embed'] ) );
 
-	if ( $page !== 'wetravel-trips-settings' ) {
+	if ( $page !== 'wetravel-trips-setup' ) {
 		return;
 	}
 
@@ -53,7 +53,8 @@ function wetravel_trips_handle_reset_embed() {
 		return;
 	}
 
-	// Check for widget usage
+	// Clear cache and check for widget usage to ensure fresh results
+	wtwidget_clear_usage_cache();
 	$widget_usage = wtwidget_check_widget_usage();
 
 	// Check if widgets are in use
@@ -63,7 +64,7 @@ function wetravel_trips_handle_reset_embed() {
 				'error' => 'widgets_in_use',
 				'error_nonce' => wp_create_nonce( 'wetravel_error_message' )
 			),
-			admin_url( 'admin.php?page=wetravel-trips-settings' )
+			admin_url( 'admin.php?page=wetravel-trips-setup' )
 		);
 		wp_safe_redirect( $error_redirect_url );
 		exit;
@@ -76,31 +77,64 @@ function wetravel_trips_handle_reset_embed() {
 	delete_option( 'wetravel_trips_env' );
 	delete_option( 'wetravel_trips_user_id' );
 
-	wp_safe_redirect( admin_url( 'admin.php?page=wetravel-trips-settings' ) );
+	$has_consent = get_option( 'wetravel_consent_given', false );
+	if ( $has_consent && function_exists( 'wetravel_track_user_state' ) ) {
+		$wt_user_id = get_option( 'wetravel_trips_user_id', '' );
+		$wt_user_slug = get_option( 'wetravel_trips_slug', '' );
+		wetravel_track_user_state( $wt_user_id, $wt_user_slug, true, false, array() );
+	}
+
+	wp_safe_redirect( admin_url( 'admin.php?page=wetravel-trips-setup' ) );
 	exit;
 }
 add_action( 'admin_init', 'wetravel_trips_handle_reset_embed' );
 
 /** Render Setting page */
-function wetravel_trips_settings_page() {
+function wetravel_trips_setup_page() {
 	$embed_code     = get_option( 'wetravel_trips_embed_code', '' );
 	$last_saved     = get_option( 'wetravel_trips_last_saved', '' );
 	$has_embed_code = ! empty( $embed_code );
 
-	// Check for widget usage
+	// Clear cache and check for widget usage to ensure fresh results
+	wtwidget_clear_usage_cache();
 	$widget_usage = wtwidget_check_widget_usage();
 	?>
 	<div class="wrap">
-		<h1>WeTravel Widgets Plugin - Settings</h1>
+		<h1>WeTravel Widgets Plugin - Setup</h1>
+
+		<?php
+		// Display consent message if user just completed consent
+		$consent_param = isset( $_GET['consent'] ) ? sanitize_text_field( wp_unslash( $_GET['consent'] ) ) : '';
+
+		if ( $consent_param === 'allowed' ) : ?>
+			<div class="notice notice-success is-dismissible" id="wetravel-consent-notice">
+				<p>
+					<strong>Thank you!</strong> You've opted in to help us improve WeTravel Widgets.
+					We'll collect usage data to understand how you use the plugin and identify areas for improvement.
+				</p>
+				<button type="button" class="notice-dismiss" onclick="dismissConsentNotice()">
+					<span class="screen-reader-text">Dismiss this notice.</span>
+				</button>
+			</div>
+		<?php elseif ( $consent_param === 'skipped' ) : ?>
+			<div class="notice notice-info is-dismissible" id="wetravel-consent-notice">
+				<p>
+					<strong>Consent skipped.</strong> You can always opt in later through the plugin settings if you change your mind.
+				</p>
+				<button type="button" class="notice-dismiss" onclick="dismissConsentNotice()">
+					<span class="screen-reader-text">Dismiss this notice.</span>
+				</button>
+			</div>
+		<?php endif; ?>
 
 		<div class="nav-tab-wrapper">
 			<a href="?page=wetravel-trips-instructions" class="nav-tab">Instructions</a>
-			<a href="?page=wetravel-trips-settings" class="nav-tab nav-tab-active">Settings</a>
+			<a href="?page=wetravel-trips-setup" class="nav-tab nav-tab-active">Setup</a>
 			<a href="?page=wetravel-trips-design-library" class="nav-tab">Widget Library</a>
 			<a href="?page=wetravel-trips-create-design" class="nav-tab">Create Widget</a>
 		</div>
 
-		<div class="wetravel-trips-settings-container">
+		<div class="wetravel-trips-setup-container">
 			<h2>WeTravel Embed Code</h2>
 			<p>Configure your WeTravel integration by pasting your <b>All Trips</b> embed code below.</p>
 			<?php
@@ -162,39 +196,24 @@ function wetravel_trips_settings_page() {
 							<p><strong>Environment:</strong> <?php echo esc_html( get_option( 'wetravel_trips_env', '' ) ); ?></p>
 							<p><strong>WeTravel User ID:</strong> <?php echo esc_html( get_option( 'wetravel_trips_user_id', '' ) ); ?></p>
 						</div>
-						<?php if (!$widget_usage['has_usage']) : ?>
-							<?php
-							// Create a reset link with a proper nonce.
-							$reset_url = wp_nonce_url(
-								admin_url( 'admin.php?page=wetravel-trips-settings&reset_embed=true' ),
-								'wetravel_trips_reset_nonce',
-								'_wpnonce'
-							);
-							?>
-							<a href="<?php echo esc_url( $reset_url ); ?>" class="button button-secondary">Re-enter Embed Code</a>
-						<?php else : ?>
-							<p class="description">
-								<span class="dashicons dashicons-info"></span>
-								Cannot re-enter embed code while WeTravel widgets are in use. Please remove all widgets from your content first.
-							</p>
-						<?php endif; ?>
 					</div>
-				<?php else : ?>
-					<form method="post" action="options.php" class="wetravel-trips-embed-form">
-						<?php
-						settings_fields( 'wetravel_trips_options' );
-						do_settings_sections( 'wetravel_trips_options' );
-						wp_nonce_field('wetravel_trips_settings_nonce', 'wetravel_trips_settings_nonce');
-						?>
-						<div class="wetravel-trips-embed-input-container">
-							<textarea id="wetravel_trips_embed_code" name="wetravel_trips_embed_code" class="large-text code" rows="4" placeholder='Paste your WeTravel "All Trips" embed script here...'><?php echo esc_textarea( $embed_code ); ?></textarea>
-							<p class="description"><?php esc_html_e('The plugin will extract the necessary details automatically.', 'wetravel-widgets'); ?></p>
-						</div>
-						<div class="wetravel-trips-embed-button-container">
-							<?php submit_button(); ?>
-						</div>
-					</form>
 				<?php endif; ?>
+
+				<!-- Always show the form to embed new all trips widget code -->
+				<form method="post" action="options.php" class="wetravel-trips-embed-form">
+					<?php
+					settings_fields( 'wetravel_trips_options' );
+					do_settings_sections( 'wetravel_trips_options' );
+					wp_nonce_field('wetravel_trips_settings_nonce', 'wetravel_trips_settings_nonce');
+					?>
+					<div class="wetravel-trips-embed-input-container">
+						<textarea id="wetravel_trips_embed_code" name="wetravel_trips_embed_code" rows="4" placeholder='Paste your WeTravel "All Trips" embed script here...'></textarea>
+						<p class="description"><?php esc_html_e('The plugin will extract the necessary details automatically.', 'wetravel-widgets'); ?></p>
+					</div>
+					<div class="wetravel-trips-embed-button-container">
+						<?php submit_button(); ?>
+					</div>
+				</form>
 			</div>
 		</div>
 	</div>
@@ -209,7 +228,7 @@ function wetravel_trips_main_page() {
 
 	if ( empty( $embed_code ) ) {
 		// No embed code set up, redirect to settings
-		wp_safe_redirect( admin_url( 'admin.php?page=wetravel-trips-settings' ) );
+		wp_safe_redirect( admin_url( 'admin.php?page=wetravel-trips-setup' ) );
 		exit;
 	} else {
 		// Embed code exists, redirect to design library
@@ -225,6 +244,11 @@ function wetravel_trips_handle_main_redirect() {
 	// Only run on our main menu page - safely check the page parameter
 	$page = isset( $_GET['page'] ) ? sanitize_text_field( wp_unslash( $_GET['page'] ) ) : '';
 	if ( $page !== 'wetravel-trips-main' ) {
+		return;
+	}
+
+	// Verify user has admin capabilities
+	if ( ! current_user_can( 'manage_options' ) ) {
 		return;
 	}
 
@@ -277,11 +301,11 @@ function wetravel_trips_add_admin_menu() {
 	// Add Settings as submenu.
 	add_submenu_page(
 		'wetravel-trips-main',
-		'Settings',
-		'Settings',
+		'Setup',
+		'Setup',
 		'manage_options',
-		'wetravel-trips-settings',
-		'wetravel_trips_settings_page'
+		'wetravel-trips-setup',
+		'wetravel_trips_setup_page'
 	);
 }
 add_action( 'admin_menu', 'wetravel_trips_add_admin_menu' );
@@ -292,7 +316,7 @@ add_action( 'admin_menu', 'wetravel_trips_add_admin_menu' );
  * @param string $hook Get all trips hook.
  */
 function wetravel_trips_admin_enqueue_scripts( $hook ) {
-	if ( strpos( $hook, 'wetravel-trips' ) !== false ) {
+	if ( strpos( $hook, 'wetravel-trips' ) !== false || strpos( $hook, 'wetravel-consent' ) !== false ) {
 		wp_enqueue_style( 'wp-color-picker' );
 		wp_enqueue_script( 'wp-color-picker' );
 		wp_enqueue_style( 'wetravel-trips-admin-styles', WETRAVEL_WIDGETS_PLUGIN_URL . 'admin/css/admin-styles.css', array(), filemtime( WETRAVEL_WIDGETS_PLUGIN_DIR . 'admin/css/admin-styles.css' ) );
@@ -300,4 +324,30 @@ function wetravel_trips_admin_enqueue_scripts( $hook ) {
 	}
 }
 add_action( 'admin_enqueue_scripts', 'wetravel_trips_admin_enqueue_scripts' );
+
+/**
+ * Add JavaScript for consent notice dismissal and plugin state checking
+ */
+function wetravel_consent_notice_script() {
+    // Only output script on our admin page for authorized users
+    if (
+        isset( $_GET['page'], $_GET['display_nonce'] ) &&
+        sanitize_text_field( wp_unslash( $_GET['page'] ) ) === 'wetravel-trips-setup' &&
+        wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['display_nonce'] ) ), 'wetravel_display_message' ) &&
+        current_user_can( 'manage_options' )
+    ) {
+        ?>
+        <script type="text/javascript">
+        function dismissConsentNotice() {
+            var notice = document.getElementById('wetravel-consent-notice');
+            if (notice) {
+                notice.style.display = 'none';
+            }
+        }
+
+        </script>
+        <?php
+    }
+}
+add_action( 'admin_footer', 'wetravel_consent_notice_script' );
 ?>

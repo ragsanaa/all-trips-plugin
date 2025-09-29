@@ -70,7 +70,6 @@
         type: "number",
         default: 6,
       },
-      // Removed loadMoreText attribute as it's no longer needed
     },
 
     edit: function (props) {

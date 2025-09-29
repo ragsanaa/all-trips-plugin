@@ -36,9 +36,10 @@ function wtwidget_trips_block_render( $attributes ) {
 	$items_per_page         = intval( $attributes['itemsPerPage'] ?? get_option( 'wetravel_trips_items_per_page', 10 ) );
 	$items_per_row          = intval( $attributes['itemsPerRow'] ?? get_option( 'wetravel_trips_items_per_row', 3 ) );
 	$items_per_slide        = intval( $attributes['itemsPerSlide'] ?? get_option( 'wetravel_trips_items_per_slide', 1 ) );
-	$load_more_text         = $attributes['loadMoreText'] ?? get_option( 'wetravel_trips_load_more_text', 'Load More' );
 	$search_visibility      = $attributes['searchVisibility'] ?? get_option( 'wetravel_trips_search_visibility', false );
 	$border_radius          = intval( $attributes['borderRadius'] ?? get_option( 'wetravel_trips_border_radius', 6 ) );
+	$integration_type       = $attributes['integrationType'] ?? 'block';
+	$wt_widget_type            = $attributes['wtWidgetType'] ?? get_option( 'wetravel_trips_wt_widget_type', 'all-trips' );
 
 	// Override with design settings if a design is selected.
 	if ( ! empty( $selected_design_id ) ) {
@@ -96,6 +97,9 @@ function wtwidget_trips_block_render( $attributes ) {
 			}
 			if ( empty( $attributes['itemsPerPage'] ) && isset( $design['itemsPerPage'] ) ) {
 				$items_per_page = intval( $design['itemsPerPage'] );
+			}
+			if ( empty( $attributes['wtWidgetType'] ) && isset( $design['wtWidgetType'] ) ) {
+				$wt_widget_type = $design['wtWidgetType'];
 			}
 			// If the design has custom CSS, we'll add it later.
 			$custom_css_design = isset( $design['customCSS'] ) ? $design['customCSS'] : '';
@@ -186,7 +190,7 @@ function wtwidget_trips_block_render( $attributes ) {
 	}
 
 	// Fetch enhanced trip data with additional details since we need it for display
-	if (!empty($trips)) {
+	if ( ! empty($trips) && is_array( $trips ) ) {
 		if ($is_mock_data) {
 			// For mock data, skip enhancement since data is already complete
 			$enhanced_trips = $trips;
@@ -228,20 +232,22 @@ function wtwidget_trips_block_render( $attributes ) {
 		);
 	}
 
-	// Enqueue Select2 for location filter
-	wp_enqueue_style(
-		'select2-css',
-		plugins_url( 'assets/css/select2.min.css', dirname( __FILE__ ) ),
-		array(),
-		filemtime( plugin_dir_path( dirname( __FILE__ ) ) . 'assets/css/select2.min.css' )
-	);
-	wp_enqueue_script(
-		'select2-js',
-		plugins_url( 'assets/js/select2.min.js', dirname( __FILE__ ) ),
-		array('jquery'),
-		filemtime( plugin_dir_path( dirname( __FILE__ ) ) . 'assets/js/select2.min.js' ),
-		true
-	);
+	// Only enqueue Select2 when search is enabled.
+	if ( $search_visibility ) {
+		wp_enqueue_style(
+			'select2-css',
+			plugins_url( 'assets/css/select2.min.css', dirname( __FILE__ ) ),
+			array(),
+			filemtime( plugin_dir_path( dirname( __FILE__ ) ) . 'assets/css/select2.min.css' )
+		);
+		wp_enqueue_script(
+			'select2-js',
+			plugins_url( 'assets/js/select2.min.js', dirname( __FILE__ ) ),
+			array('jquery'),
+			filemtime( plugin_dir_path( dirname( __FILE__ ) ) . 'assets/js/select2.min.js' ),
+			true
+		);
+	}
 
 	// Enqueue search filter script
 	wp_enqueue_script(
@@ -426,6 +432,9 @@ function wtwidget_trips_block_render( $attributes ) {
 			id="trips-container-<?php echo esc_attr( $block_id ); ?>"
 			data-slug="<?php echo esc_attr( $slug ); ?>"
 			data-env="<?php echo esc_attr( $env ); ?>"
+			data-trip-type="<?php echo esc_attr( $trip_type ); ?>"
+			data-date-start="<?php echo esc_attr( $date_start ); ?>"
+			data-date-end="<?php echo esc_attr( $date_end ); ?>"
 			data-wetravel-user-id="<?php echo esc_attr( $wetravel_trips_user_id ); ?>"
 			data-nonce="<?php echo esc_attr( $nonce ); ?>"
 			data-items-per-page="<?php echo esc_attr( $items_per_page ); ?>"
@@ -441,6 +450,9 @@ function wtwidget_trips_block_render( $attributes ) {
 			data-trip-type="<?php echo esc_attr( $trip_type ); ?>"
 			data-date-start="<?php echo esc_attr( $date_start ); ?>"
 			data-date-end="<?php echo esc_attr( $date_end ); ?>"
+			data-wetravel-widget-type="<?php echo esc_attr( $wt_widget_type ); ?>"
+			data-integration-type="<?php echo esc_attr( $integration_type ); ?>"
+			data-tracked-server-side="true"
 			<?php if (!empty($locations)) : ?>
 			data-locations="<?php echo esc_attr( implode(';', $locations) ); ?>"
 			<?php endif; ?>
@@ -453,6 +465,7 @@ function wtwidget_trips_block_render( $attributes ) {
 							'data-version' => true,
 							'data-uid' => true,
 							'data-uuid' => true,
+							'data-trip-uuid' => true,
 							'href' => true,
 							'style' => true,
 					),
@@ -485,6 +498,7 @@ function wtwidget_trips_block_render( $attributes ) {
 						'style' => true,
 						'href' => true,
 						'target' => true,
+						'data-trip-uuid' => true,
 					),
 				);
 			?>
@@ -636,6 +650,19 @@ function wtwidget_trips_block_render( $attributes ) {
 		filemtime( plugin_dir_path( dirname( __FILE__ ) ) . 'assets/js/trips-loader.js' ), true );
 	wp_add_inline_script( 'wetravel-trips-loading', $inline_script );
 	wp_enqueue_script( 'wetravel-trips-loading' );
+
+	if ( function_exists( 'wetravel_track_widget_view' ) ) {
+		$event_data = array(
+			'wt_user_id' => $wetravel_trips_user_id,
+			'wt_widget_type' => $wt_widget_type,
+			'display_type' => $display_type,
+			'button_type' => $button_type,
+			'integration_type' => $integration_type,
+			'trip_type' => $trip_type,
+		);
+		wetravel_track_widget_view( $event_data );
+	}
+
 	return ob_get_clean();
 }
 
@@ -652,11 +679,14 @@ function wtwidget_get_button_url( $trip, $options ) {
 
 	// Set up button URL based on button type.
 	if ( 'book_now' === $options['buttonType'] ) {
-		$button_url = $env . '/checkout_embed?uuid=' . $trip['uuid'];
+		$button_url = $env . '/checkout_embed?uuid=' . $trip['uuid'] . '&source=wp_widget_book_now';
 	} else {
-		$button_url = $env . '/trips/' . $trip['uuid'];
+		$button_url = $env . '/trips/' . $trip['uuid'] . '?source=wp_widget_trip_link';
 		if ( isset( $trip['href'] ) ) {
 			$button_url = $trip['href'];
+			// Add source parameter to existing href URL
+			$separator = strpos( $button_url, '?' ) !== false ? '&' : '?';
+			$button_url .= $separator . 'source=wp_widget_trip_link';
 		}
 	}
 
@@ -676,7 +706,7 @@ function wtwidget_render_trip_item( $trip, $options, $visibility_class = '' ) {
 	$button_url = wtwidget_get_button_url( $trip, $options );
 
 	if ( 'vertical' === $options['displayType'] || ('grid' === $options['displayType'] && 'trip_link' === $options['buttonType'])) {
-		$html .= '<div class="trip-item ' . esc_attr( $visibility_class ) . '">';
+		$html .= '<div class="trip-item ' . esc_attr( $visibility_class ) . '" data-trip-uuid="' . esc_attr( $trip['uuid'] ) . '">';
 	} elseif ( 'book_now' === $options['buttonType'] && ('grid' === $options['displayType'] || 'carousel' === $options['displayType']) ) {
 		$html .= sprintf(
 			'<div class="trip-item wtrvl-checkout_button %s" data-env="%s" data-version="v0.3" data-uid="%s" data-uuid="%s" href="%s" style="cursor: pointer;">',
@@ -688,13 +718,14 @@ function wtwidget_render_trip_item( $trip, $options, $visibility_class = '' ) {
 		);
 	} elseif ( 'carousel' === $options['displayType'] && 'trip_link' === $options['buttonType'] ) {
 		$html .= sprintf(
-			'<div class="trip-item %s" target="_blank" href="%s" style="cursor: pointer;">',
+			'<div class="trip-item %s" data-trip-uuid="%s" target="_blank" href="%s" style="cursor: pointer;">',
 			esc_attr( $visibility_class ),
+			esc_attr( $trip['uuid'] ),
 			esc_url( $button_url )
 		);
 	} else {
 		// Fallback for any other cases
-		$html .= '<div class="trip-item ' . esc_attr( $visibility_class ) . '">';
+		$html .= '<div class="trip-item ' . esc_attr( $visibility_class ) . '" data-trip-uuid="' . esc_attr( $trip['uuid'] ) . '">';
 	}
 
 	// Image.
@@ -818,8 +849,9 @@ function wtwidget_render_trip_item( $trip, $options, $visibility_class = '' ) {
 			);
 		} else {
 			$html .= sprintf(
-				'<a href="%s" class="trip-button" target="_blank" style="%s">%s</a>',
+				'<a href="%s" class="trip-button" data-trip-uuid="%s" target="_blank" style="%s">%s</a>',
 				esc_url( $button_url ),
+				esc_attr( $trip['uuid'] ),
 				$button_style,
 				esc_html( $options['buttonText'] )
 			);

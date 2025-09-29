@@ -48,8 +48,26 @@ if ( ! defined( 'WETRAVEL_WIDGETS_PLUGIN_FILE' ) ) {
 define( 'WETRAVEL_WIDGETS_PLUGIN_DIR', plugin_dir_path( WETRAVEL_WIDGETS_PLUGIN_FILE ) );
 define( 'WETRAVEL_WIDGETS_PLUGIN_URL', plugin_dir_url( WETRAVEL_WIDGETS_PLUGIN_FILE ) );
 
+// Define plugin version constant for tracking
+if ( ! defined( 'WETRAVEL_PLUGIN_VERSION' ) ) {
+	$plugin_file = WP_PLUGIN_DIR . '/wetravel-widgets/wetravel-widgets.php';
+	$plugin_data = get_file_data( $plugin_file, [ 'Version' => 'Version' ], 'plugin' );
+	define( 'WETRAVEL_PLUGIN_VERSION', $plugin_data['Version'] );
+}
+
+// Define plugin name and slug constants
+if ( ! defined( 'WETRAVEL_PLUGIN_NAME' ) ) {
+	define( 'WETRAVEL_PLUGIN_NAME', 'WeTravel Widgets' );
+}
+if ( ! defined( 'WETRAVEL_PLUGIN_SLUG' ) ) {
+	define( 'WETRAVEL_PLUGIN_SLUG', 'wetravel-widgets' );
+}
+
 // Include admin settings page.
 require_once WETRAVEL_WIDGETS_PLUGIN_DIR . 'admin/settings-page.php';
+
+// Include consent page.
+require_once WETRAVEL_WIDGETS_PLUGIN_DIR . 'admin/consent-page.php';
 
 // Include fetch trips functionality.
 require_once WETRAVEL_WIDGETS_PLUGIN_DIR . 'includes/fetch-trips.php';
@@ -59,6 +77,12 @@ require_once WETRAVEL_WIDGETS_PLUGIN_DIR . 'includes/functions.php';
 
 /** Enqueue styles and scripts for frontend. */
 function wtwidget_enqueue_frontend_scripts() {
+	// Only load if page has widgets
+	global $post;
+	if ( $post && ! has_shortcode( $post->post_content, 'wetravel_trips' ) &&
+	     ! has_blocks( $post->post_content ) ) {
+		return;
+	}
 	// Register main stylesheet.
 	wp_register_style(
 		'wetravel-trips-styles',
@@ -67,36 +91,13 @@ function wtwidget_enqueue_frontend_scripts() {
 		filemtime( WETRAVEL_WIDGETS_PLUGIN_DIR . 'assets/css/wetravel-trips.css' )
 	);
 
-	// Enqueue main stylesheet.
-	wp_enqueue_style( 'wetravel-trips-styles' );
-
 	wp_add_inline_style(
 		'wetravel-trips-styles',
 		':root { --button-color: ' . esc_attr( get_option( 'wetravel_trips_button_color', '#33ae3f' ) ) . '; --items-per-row: ' . esc_attr( get_option( 'wetravel_trips_items_per_row', 3 ) ) . '; }'
 	);
 
-	// Register and enqueue trips loader script
-	wp_register_script(
-		'wetravel-trips-loader',
-		WETRAVEL_WIDGETS_PLUGIN_URL . 'assets/js/trips-loader.js',
-		array('jquery'),
-		filemtime( WETRAVEL_WIDGETS_PLUGIN_DIR . 'assets/js/trips-loader.js' ),
-		true
-	);
-
-	wp_enqueue_script('wetravel-trips-loader');
-
-	// Localize the trips loader script
-	wp_localize_script(
-		'wetravel-trips-loader',
-		'wetravelTripsData',
-		array(
-			'ajaxurl' => admin_url('admin-ajax.php'),
-			'nonce' => wp_create_nonce('wetravel_trips_ajax_nonce'),
-			'security_error' => esc_html__('Security check failed', 'wetravel-widgets'),
-			'loading_error' => esc_html__('Error loading trips', 'wetravel-widgets')
-		)
-	);
+	// Removed trips-loader.js since widgets are server-side rendered
+	// This prevents AJAX conflicts and improves performance
 }
 add_action( 'wp_enqueue_scripts', 'wtwidget_enqueue_frontend_scripts' );
 
@@ -144,8 +145,16 @@ add_action( 'enqueue_block_editor_assets', 'wtwidget_enqueue_block_assets' );
 
 /**  Register block. */
 function wtwidget_register_block() {
-	// Skip block registration if Gutenberg is not available.
+	// Check if Gutenberg blocks are available
 	if ( ! function_exists( 'register_block_type' ) ) {
+		// Show notice that Gutenberg blocks are not available but shortcodes still work
+		add_action( 'admin_notices', function() {
+			?>
+			<div class="notice notice-warning is-dismissible">
+				<p><?php esc_html_e( 'WeTravel Widgets: Gutenberg blocks are not available. You can still use shortcodes or upgrade WordPress/install Gutenberg plugin for block support.', 'wetravel-widgets' ); ?></p>
+			</div>
+			<?php
+		});
 		return;
 	}
 
@@ -220,6 +229,14 @@ function wtwidget_register_block() {
 					'type'    => 'number',
 					'default' => 6,
 				),
+				'integrationType' => array(
+					'type'    => 'string',
+					'default' => 'block',
+				),
+				'wtWidgetType'      => array(
+					'type'    => 'string',
+					'default' => 'all-trips',
+				),
 			),
 		)
 	);
@@ -241,11 +258,29 @@ require_once WETRAVEL_WIDGETS_PLUGIN_DIR . 'admin/create-design-page.php';
 // Include admin instructions page.
 require_once WETRAVEL_WIDGETS_PLUGIN_DIR . 'admin/instructions-page.php';
 
-/**  Register shortcode. */
-function wtwidget_register_shortcode() {
-	add_shortcode( 'wetravel_trips', 'wtwidget_trips_shortcode' );
+// Include tracking functionality.
+require_once WETRAVEL_WIDGETS_PLUGIN_DIR . 'includes/tracking.php';
+
+// Include deactivation form.
+require_once WETRAVEL_WIDGETS_PLUGIN_DIR . 'admin/deactivation-form.php';
+
+/**
+ * Add database indexes for better performance
+ */
+function wtwidget_add_database_indexes() {
+	global $wpdb;
+
+	// Check if indexes already exist to avoid errors
+	$indexes = $wpdb->get_results("SHOW INDEX FROM {$wpdb->posts} WHERE Key_name IN ('idx_post_content_wetravel', 'idx_post_status_type')");
+
+	if (empty($indexes)) {
+		// Add index for post_content searches (first 100 characters)
+		$wpdb->query("ALTER TABLE {$wpdb->posts} ADD INDEX idx_post_content_wetravel (post_content(100))");
+
+		// Add composite index for post_status and post_type
+		$wpdb->query("ALTER TABLE {$wpdb->posts} ADD INDEX idx_post_status_type (post_status, post_type)");
+	}
 }
-add_action( 'init', 'wtwidget_register_shortcode' );
 
 /**  Add this function to clear transient timeouts. */
 function wtwidget_clear_transients() {
@@ -289,6 +324,11 @@ function wtwidget_activation() {
 		}
 	}
 
+	// Clear any previous deactivation data when reactivating
+	delete_transient( 'wetravel_deactivation_reason' );
+	delete_transient( 'wetravel_deactivation_reason_details' );
+	delete_option( 'wetravel_deactivation_feedback' );
+
 	// Initialize default plugin settings in the database
 	$default_settings = array(
 		'wetravel_trips_button_color' => '#33ae3f',
@@ -306,6 +346,28 @@ function wtwidget_activation() {
 			add_option($key, $value);
 		}
 	}
+
+	// Set activation flag to show consent notice
+	set_transient( 'wetravel_activation_consent_notice', true, 60 * 60 * 24 * 7 ); // 1 week
+
+	// Trigger plugin activation action for tracking
+	do_action( 'wetravel_plugin_activated' );
+
+	// Add database indexes for better performance
+	wtwidget_add_database_indexes();
+
+	// Track plugin activation state
+	if ( function_exists( 'wetravel_track_plugin_state' ) ) {
+		wetravel_track_plugin_state( 'activated' );
+	}
+
+	// Update user state to reflect activation (clear deactivation reasons and update status)
+	if ( function_exists( 'wetravel_track_user_state' ) ) {
+		wetravel_track_user_state( null, null, true ); // Force plugin state to active (true)
+	}
+
+	// Clear any existing cache on activation to ensure fresh data
+	wp_cache_flush();
 }
 register_activation_hook( __FILE__, 'wtwidget_activation' );
 
@@ -313,6 +375,36 @@ register_activation_hook( __FILE__, 'wtwidget_activation' );
 function wtwidget_deactivation() {
 	// Clean up transients
 	wtwidget_clear_transients();
+
+	// Track deactivation state
+	if ( function_exists( 'wetravel_track_user_state' ) ) {
+		$wt_user_id = get_option( 'wetravel_trips_user_id', '' );
+		$wt_user_slug = get_option( 'wetravel_trips_slug', '' );
+		$consent_given = get_option( 'wetravel_consent_given', false );
+
+		// Get deactivation reason if available
+		$deactivation_reason = get_transient( 'wetravel_deactivation_reason' ) ?: 'unspecified';
+		$deactivation_reason_details = get_transient( 'wetravel_deactivation_reason_details' ) ?: '';
+
+		// Prepare deactivation data
+		$deactivation_data = array(
+			'deactivation_reason' => $deactivation_reason,
+			'deactivation_reason_details' => $deactivation_reason_details
+		);
+
+		// Track based on consent status - bypass consent check for deactivation
+		if ( $consent_given ) {
+			// User gave consent - track with full user data
+			wetravel_track_user_state( $wt_user_id, $wt_user_slug, false, false, $deactivation_data, true );
+		} else {
+			// User skipped consent - track with anonymous data
+			wetravel_track_user_state( $wt_user_id, $wt_user_slug, false, true, $deactivation_data, true );
+		}
+	}
+
+	if ( function_exists( 'wetravel_track_plugin_state' ) ) {
+		wetravel_track_plugin_state( 'deactivated' );
+	}
 }
 register_deactivation_hook( __FILE__, 'wtwidget_deactivation' );
 
@@ -331,6 +423,9 @@ function wtwidget_uninstall() {
 		'wetravel_trips_button_type',
 		'wetravel_trips_load_more_text',
 		'wetravel_trips_search_visibility',
+		'wetravel_consent_given',
+		'wetravel_consent_timestamp',
+		'wetravel_consent_type',
 	);
 
 	foreach ($options as $option) {

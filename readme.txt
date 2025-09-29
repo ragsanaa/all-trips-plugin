@@ -51,6 +51,31 @@ For more information about how WeTravel handles data and provides services, plea
 - Terms of Service: https://www.wetravel.com/terms
 - Privacy Policy: https://www.wetravel.com/privacy
 
+== Privacy and Consent ==
+
+This plugin includes an optional consent system to help improve the plugin experience:
+
+**What We Track (Only with Your Consent)**
+When you opt-in to data sharing, the plugin may collect:
+- User state information (plugin configuration and usage patterns)
+- Plugin state data (plugin version, configuration status)
+- Plugin events (widget loads, user interactions, feature usage)
+
+**Purpose of Data Collection**
+This information helps us:
+- Generate usage statistics to understand how the plugin is used
+- Identify areas for plugin improvement and new features
+- Enhance compatibility with different WordPress environments
+- Improve overall user experience and functionality
+
+**Your Control**
+- Consent is completely optional - you can use the plugin fully without opting in
+- You can change your consent preferences anytime through the plugin's Instructions/Privacy page
+- You can opt-out at any time, and no tracking data will be collected
+- All consent-related data is automatically removed when you uninstall the plugin
+
+For complete information about data handling and privacy practices, please review our Privacy Policy at: https://www.wetravel.com/privacy
+
 == Installation ==
 
 1. Upload the plugin files to the `/wp-content/plugins/wetravel-widgets` directory, or install the plugin through the WordPress plugins screen directly

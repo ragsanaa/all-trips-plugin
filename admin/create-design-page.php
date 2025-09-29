@@ -227,6 +227,7 @@ function wtwidget_process_form_submission() {
 		'tripType'       => isset( $_POST['trip_type'] ) ? sanitize_text_field( wp_unslash( $_POST['trip_type'] ) ) : '',
 		'dateRangeStart' => $date_range_start,
 		'dateRangeEnd'   => $date_range_end,
+		'wtWidgetType'     => isset( $_POST['wt_widget_type'] ) ? sanitize_text_field( wp_unslash( $_POST['wt_widget_type'] ) ) : 'all-trips',
 		'created'        => $current_design['created'],
 		'modified'       => time(),
 		'locations'      => isset($_POST['trip_location']) ? array_map('sanitize_text_field', wp_unslash($_POST['trip_location'])) : array(),
@@ -244,6 +245,15 @@ function wtwidget_process_form_submission() {
 
 	$designs[$design_id] = $new_design;
 	update_option( 'wetravel_trips_designs', $designs );
+
+	// Track widget creation/update with WeTravel user state tracking
+	$has_consent = get_option( 'wetravel_consent_given', false );
+	if ( $has_consent && function_exists( 'wetravel_track_user_state' ) ) {
+		$wt_user_id = get_option( 'wetravel_trips_user_id', '' );
+		$wt_user_slug = get_option( 'wetravel_trips_slug', '' );
+
+		wetravel_track_user_state( $wt_user_id, $wt_user_slug, true, false, array() );
+	}
 
 	// If editing, redirect back to edit the same widget
 	if ( $editing ) {
@@ -288,6 +298,7 @@ function wtwidget_trip_create_design_page() {
 		'tripType'       => 'all',
 		'dateRangeStart' => '',
 		'dateRangeEnd'   => '',
+		'wtWidgetType'     => 'all-trips',
 		'searchVisibility' => false,
 		'itemsPerSlide'  => get_option('wetravel_trips_items_per_slide', 1),
 		'itemsPerRow'    => get_option('wetravel_trips_items_per_row', 3),
@@ -359,7 +370,7 @@ function wtwidget_trip_create_design_page() {
 
 		<div class="nav-tab-wrapper">
 			<a href="?page=wetravel-trips-instructions" class="nav-tab">Instructions</a>
-			<a href="?page=wetravel-trips-settings" class="nav-tab">Settings</a>
+			<a href="?page=wetravel-trips-setup" class="nav-tab">Setup</a>
 			<a href="?page=wetravel-trips-design-library" class="nav-tab">Widget Library</a>
 			<a href="?page=wetravel-trips-create-design" class="nav-tab nav-tab-active"><?php echo $editing ? 'Edit Widget' : 'Create Widget'; ?></a>
 		</div>
@@ -447,7 +458,7 @@ function wtwidget_trip_create_design_page() {
 									<?php endforeach; ?>
 								<?php endif; ?>
 							</select>
-							<p class="description"><?php echo empty($locations) ? 'Please configure your WeTravel embed code in Settings first.' : 'Select one or more locations. Leave empty to show all locations.'; ?></p>
+							<p class="description"><?php echo empty($locations) ? 'Please configure your WeTravel embed code in Setup first.' : 'Select one or more locations. Leave empty to show all locations.'; ?></p>
 						</div>
 
 						<div class="wetravel-trips-form-field">
@@ -490,6 +501,10 @@ function wtwidget_trip_create_design_page() {
 							<label for="button_color">Button Color</label>
 							<input type="text" id="button_color" name="button_color" class="color-picker" value="<?php echo esc_attr( $design['buttonColor'] ); ?>">
 						</div>
+
+						<!-- Widget Type field - System defined, not user editable -->
+						<!-- This field is managed by the system for future button design implementations -->
+						<input type="hidden" id="wt_widget_type" name="wt_widget_type" value="<?php echo esc_attr( isset( $design['wtWidgetType'] ) ? $design['wtWidgetType'] : 'all-trips' ); ?>">
 
 						<div class="wetravel-trips-form-field">
 							<label for="search_visibility">Display Search Bar</label>

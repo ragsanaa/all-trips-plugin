@@ -64,13 +64,18 @@ function wtwidget_save_embed_code() {
 		// Save the timestamp of the last update.
 		update_option( 'wetravel_trips_last_saved', gmdate( 'F j, Y \a\t g:i a' ) );
 
+		$has_consent = get_option( 'wetravel_consent_given', false );
+		if ( $has_consent && function_exists( 'wetravel_track_user_state' ) ) {
+			wetravel_track_user_state( $extracted_values['wetravel_trips_user_id'], $extracted_values['slug'], true, false, array() );
+		}
+
 		// Redirect to prevent resubmission.
 		$redirect_url = add_query_arg(
 			array(
 				'saved' => 'true',
 				'display_nonce' => wp_create_nonce( 'wetravel_display_message' )
 			),
-			admin_url( 'admin.php?page=wetravel-trips-settings' )
+			admin_url( 'admin.php?page=wetravel-trips-setup' )
 		);
 		wp_safe_redirect( $redirect_url );
 		exit;
@@ -116,16 +121,8 @@ function wtwidget_check_keyword_unique() {
  * Enqueue scripts and styles for the plugin
  */
 function wtwidget_enqueue_scripts() {
-	// Enqueue editor fix script
-	wp_register_script(
-		'wetravel-trips-editor-fix',
-		plugins_url( 'assets/js/editor-fix.js', dirname( __FILE__ ) ),
-		array( 'jquery' ),
-		filemtime( plugin_dir_path( dirname( __FILE__ ) ) . 'assets/js/editor-fix.js' ),
-		true
-	);
-
-	wp_enqueue_script( 'wetravel-trips-editor-fix' );
+	// Removed editor-fix.js since widgets are server-side rendered
+	// This prevents AJAX conflicts in editors
 }
 add_action( 'wp_enqueue_scripts', 'wtwidget_enqueue_scripts' );
 
@@ -184,13 +181,6 @@ function wtwidget_get_cdn_url( $env ) {
 }
 
 /**
- * Fix trips loading in editor
- */
-function wtwidget_fix_trips_loading_in_editor() {
-	// ... existing code ...
-}
-
-/**
  * Check if WeTravel widgets are being used in any posts or pages
  *
  * @return array Array containing usage information
@@ -207,43 +197,114 @@ function wtwidget_check_widget_usage() {
 			'shortcodes' => array()
 		);
 
-		// Check for Gutenberg blocks
-		$block_posts = get_posts(array(
-			'post_type' => 'any',
-			'post_status' => 'publish',
-			'posts_per_page' => -1,
-			's' => '<!-- wp:wetravel-trips/block'
-		));
+		// Get all possible post statuses for comprehensive search
+		$post_statuses = array('publish', 'draft', 'private', 'future', 'pending');
 
-		if (!empty($block_posts)) {
-			$usage['has_usage'] = true;
-			foreach ($block_posts as $post) {
-				$usage['blocks'][] = array(
-					'id' => $post->ID,
-					'title' => $post->post_title,
-					'type' => $post->post_type,
-					'edit_url' => get_edit_post_link($post->ID)
-				);
+		// Include specific post types that might contain widgets
+		$post_types = array('post', 'page', 'wp_template', 'wp_template_part', 'wp_block');
+
+		// Get all available post types to ensure we don't miss any
+		$all_post_types = get_post_types(array('public' => true));
+		$post_types = array_merge($post_types, array_keys($all_post_types));
+		$post_types = array_unique($post_types);
+
+		// Check for Gutenberg blocks using direct content search
+		global $wpdb;
+
+		// Search for blocks in post_content directly
+		// Prepare and execute the query with proper placeholders
+		$block_results = array();
+
+		$args = array(
+			'post_type'      => $post_types,
+			'post_status'    => $post_statuses,
+			'posts_per_page' => -1,
+			'fields'         => 'ids',
+			'suppress_filters' => false,
+		);
+
+		$query = new WP_Query( $args );
+
+		if ( $query->have_posts() ) {
+			foreach ( $query->posts as $post_id ) {
+				$post = get_post( $post_id );
+				if ( false !== strpos( $post->post_content, '<!-- wp:wetravel-trips/block' ) ) {
+					$block_results[] = (object) array(
+						'ID'          => $post->ID,
+						'post_title'  => $post->post_title,
+						'post_type'   => $post->post_type,
+						'post_content'=> $post->post_content,
+					);
+				}
+			}
+		}
+		wp_reset_postdata();
+
+		if (!empty($block_results)) {
+			foreach ($block_results as $post) {
+				// Check if this is actual widget usage or just design storage
+				$is_actual_usage = wtwidget_is_actual_widget_usage($post->post_content, $post->post_type);
+
+				if ($is_actual_usage) {
+					$usage['has_usage'] = true;
+					$edit_url = get_edit_post_link($post->ID);
+					// For FSE templates, use site editor URL
+					if ($post->post_type === 'wp_template' || $post->post_type === 'wp_template_part') {
+						$edit_url = admin_url('site-editor.php?postId=' . $post->ID . '&postType=' . $post->post_type);
+					}
+
+					$usage['blocks'][] = array(
+						'id' => $post->ID,
+						'title' => !empty($post->post_title) ? $post->post_title : 'Template: ' . $post->ID,
+						'type' => $post->post_type,
+						'edit_url' => $edit_url
+					);
+				}
 			}
 		}
 
-		// Check for shortcodes
-		$shortcode_posts = get_posts(array(
-			'post_type' => 'any',
-			'post_status' => 'publish',
-			'posts_per_page' => -1,
-			's' => '[wetravel_trips'
-		));
+		// Search for shortcodes in post_content directly
+		// Use caching for better performance
+		$cache_key = 'wetravel_widget_shortcode_usage_' . md5( serialize( array( $post_statuses, $post_types ) ) );
+		$shortcode_results = wp_cache_get( $cache_key );
 
-		if (!empty($shortcode_posts)) {
+		if ( false === $shortcode_results ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Necessary for widget usage analysis with caching
+			$shortcode_results = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT ID, post_title, post_type, post_content FROM {$wpdb->posts} WHERE post_content LIKE %s AND post_status IN (" . implode(',', array_fill(0, count($post_statuses), '%s')) . ") AND post_type IN (" . implode(',', array_fill(0, count($post_types), '%s')) . ")",
+					array_merge(['%[wetravel_trips%'], $post_statuses, $post_types)
+				)
+			);
+			wp_cache_set( $cache_key, $shortcode_results, '', HOUR_IN_SECONDS );
+		}
+
+		if (!empty($shortcode_results)) {
 			$usage['has_usage'] = true;
-			foreach ($shortcode_posts as $post) {
-				$usage['shortcodes'][] = array(
-					'id' => $post->ID,
-					'title' => $post->post_title,
-					'type' => $post->post_type,
-					'edit_url' => get_edit_post_link($post->ID)
-				);
+			foreach ($shortcode_results as $post) {
+				// Skip if this post was already added as a block to avoid duplicates
+				$already_added = false;
+				foreach ($usage['blocks'] as $block_post) {
+					if ($block_post['id'] === $post->ID) {
+						$already_added = true;
+						break;
+					}
+				}
+
+				if (!$already_added) {
+					$edit_url = get_edit_post_link($post->ID);
+					// For FSE templates, use site editor URL
+					if ($post->post_type === 'wp_template' || $post->post_type === 'wp_template_part') {
+						$edit_url = admin_url('site-editor.php?postId=' . $post->ID . '&postType=' . $post->post_type);
+					}
+
+					$usage['shortcodes'][] = array(
+						'id' => $post->ID,
+						'title' => !empty($post->post_title) ? $post->post_title : 'Template: ' . $post->ID,
+						'type' => $post->post_type,
+						'edit_url' => $edit_url
+					);
+				}
 			}
 		}
 
@@ -252,6 +313,76 @@ function wtwidget_check_widget_usage() {
 	}
 
 	return $usage;
+}
+
+/**
+ * Determine if block content represents actual widget usage vs design storage
+ *
+ * @param string $content Post content to check
+ * @param string $post_type Type of post being checked
+ * @return bool True if actual widget usage, false if just design storage
+ */
+function wtwidget_is_actual_widget_usage($content, $post_type) {
+	// Extract all WeTravel block instances from content
+	if (preg_match_all('/<!-- wp:wetravel-trips\/block\s+({.*?})\s*(?:\/-->|-->)/s', $content, $matches)) {
+		foreach ($matches[1] as $json_str) {
+			// Clean up the JSON string
+			$json_str = trim($json_str);
+
+			// Try to decode the JSON attributes
+			$attributes = json_decode($json_str, true);
+
+			if (is_array($attributes)) {
+				// Check for design storage indicators
+				$has_designs_object = isset($attributes['designs']) && is_array($attributes['designs']);
+				$designs_count = $has_designs_object ? count($attributes['designs']) : 0;
+
+				// Check for actual widget configuration - these indicate active widget usage
+				$has_widget_config = (
+					isset($attributes['widget']) || // Has widget identifier
+					isset($attributes['selectedDesign']) || // Has selected design
+					isset($attributes['displayType']) || // Has display configuration
+					isset($attributes['itemsPerPage']) || // Has pagination
+					isset($attributes['itemsPerRow']) || // Has grid configuration
+					isset($attributes['itemsPerSlide']) // Has carousel configuration
+				);
+
+				// For template parts, be more strict about what constitutes design storage
+				if ($post_type === 'wp_template_part' || $post_type === 'wp_template') {
+					// If it has designs object but no widget config, it's likely design storage
+					if ($has_designs_object && !$has_widget_config) {
+						continue; // Skip this block, it's design storage
+					}
+				}
+
+				// If we find any block that looks like actual usage, return true
+				if ($has_widget_config) {
+					return true;
+				}
+
+				// For non-template posts, any block without designs object is likely usage
+				if (!($post_type === 'wp_template_part' || $post_type === 'wp_template') && !$has_designs_object) {
+					return true;
+				}
+			} else {
+				// If we can't parse JSON but block exists, check for design storage patterns
+				if (($post_type === 'wp_template_part' || $post_type === 'wp_template') &&
+					strpos($json_str, '"designs":{') !== false) {
+					continue; // Skip what appears to be design storage
+				}
+				return true; // Conservative: assume it's usage if we can't determine otherwise
+			}
+		}
+	}
+
+	return false; // No actual widget usage found
+}
+
+/**
+ * Clear widget usage cache - useful for testing or when content changes
+ */
+function wtwidget_clear_usage_cache() {
+	wp_cache_delete('wetravel_widget_usage');
 }
 
 /**
@@ -291,3 +422,35 @@ function wtwidget_generate_shortcode_with_params($design, $design_id) {
 	$shortcode .= ']';
 	return $shortcode;
 }
+
+/**
+ * Update existing designs to include wtWidgetType field for backward compatibility
+ * This function should be called once to migrate existing designs
+ */
+function wtwidget_update_existing_designs_with_wt_widget_type() {
+	$designs = get_option( 'wetravel_trips_designs', array() );
+	$updated = false;
+
+	foreach ( $designs as $design_id => $design ) {
+		// Check if design already has wtWidgetType field
+		if ( ! isset( $design['wtWidgetType'] ) ) {
+			// Add default wtWidgetType for legacy designs
+			$designs[ $design_id ]['wtWidgetType'] = 'all-trips';
+			$updated = true;
+		}
+	}
+
+	// Save updated designs if any changes were made
+	if ( $updated ) {
+		update_option( 'wetravel_trips_designs', $designs );
+	}
+
+	return $updated;
+}
+
+/**
+ * Hook to run the design update on plugin activation or admin init
+ */
+add_action( 'admin_init', 'wtwidget_update_existing_designs_with_wt_widget_type' );
+
+
