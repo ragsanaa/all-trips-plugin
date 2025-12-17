@@ -36,6 +36,7 @@ function wtwidget_trips_shortcode( $atts ) {
 		'items_per_slide'        => get_option( 'wetravel_trips_items_per_slide', 1 ),
 		'load_more_text'         => get_option( 'wetravel_trips_load_more_text', 'Load More' ),
 		'trip_type'              => 'all',
+		'category'               => '', // Trip date category: upcoming, past, or empty for all
 		'date_start'             => '',
 		'date_end'               => '',
 		'locations'              => '', // Semicolon-separated list of locations to filter by
@@ -80,6 +81,9 @@ function wtwidget_trips_shortcode( $atts ) {
 			if (!empty($design['tripType'])) {
 				$default_atts['trip_type'] = $design['tripType'];
 			}
+			if (isset($design['category'])) {
+				$default_atts['category'] = $design['category'];
+			}
 			if (!empty($design['dateRangeStart'])) {
 				$default_atts['date_start'] = $design['dateRangeStart'];
 			}
@@ -112,6 +116,7 @@ function wtwidget_trips_shortcode( $atts ) {
 	$atts['button_type'] = in_array($atts['button_type'], ['book_now', 'trip_link']) ? $atts['button_type'] : 'book_now';
 	$atts['button_color'] = sanitize_hex_color($atts['button_color']) ?: '#33ae3f';
 	$atts['trip_type'] = in_array($atts['trip_type'], ['all', 'one-time', 'recurring']) ? $atts['trip_type'] : 'all';
+	$atts['category'] = in_array($atts['category'], ['', 'upcoming', 'past']) ? $atts['category'] : '';
 	$atts['border_radius'] = max(0, min(100, intval($atts['border_radius'])));
 	$atts['search_visibility'] = (bool) $atts['search_visibility'];
 
@@ -128,6 +133,7 @@ function wtwidget_trips_shortcode( $atts ) {
 		'itemsPerRow'    => intval($atts['items_per_row']),
 		'itemsPerSlide'  => intval($atts['items_per_slide']),
 		'tripType'       => $atts['trip_type'],
+		'category'       => $atts['category'],
 		'dateStart'      => $atts['date_start'],
 		'dateEnd'        => $atts['date_end'],
 		'locations'      => $atts['locations'],

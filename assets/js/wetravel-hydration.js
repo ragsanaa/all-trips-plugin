@@ -83,6 +83,12 @@
           blockId: blockId,
           error: error.message,
         });
+
+        // Ensure spinner is not left visible on error
+        const $spinner = $("#loading-" + blockId);
+        if ($spinner.length) {
+          $spinner.fadeOut();
+        }
       });
   };
 
@@ -100,6 +106,20 @@
 
     // Always trigger the shared event for both carousel and non-carousel views
     $container.trigger("tripsRendered");
+
+    // Hide loading spinner for this block (also covers Elementor preview)
+    try {
+      const id =
+        container && container.id
+          ? container.id.replace("trips-container-", "")
+          : null;
+      if (id) {
+        const $spinner = $("#loading-" + id);
+        if ($spinner.length) {
+          $spinner.fadeOut();
+        }
+      }
+    } catch (e) {}
 
     // Initialize search filters if needed
     if (config.searchVisibility) {

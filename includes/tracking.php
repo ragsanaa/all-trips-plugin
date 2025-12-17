@@ -90,6 +90,7 @@ class WetravelTracking {
 	 * Enqueue tracking scripts
 	 */
 	public function enqueue_tracking_scripts() {
+		return; // TODO: Uncomment this when tracking is ready
 		// Skip if tracking is disabled
 		if ( ! $this->is_tracking_enabled() ) {
 			return;

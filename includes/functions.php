@@ -13,6 +13,73 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
+ * Advanced sanitization function for WeTravel embed code
+ *
+ * @param  string $embed_code WeTravel All Trips widget code.
+ * @return string Sanitized embed code
+ */
+function wtwidget_advanced_sanitize_embed_code( $embed_code ) {
+	// Define allowed HTML with all WeTravel attributes
+	$allowed_html = array(
+		'div'    => array(),
+		'script' => array(
+			'src'          => array(),
+			'id'           => array(),
+			'data-env'     => array(),
+			'data-version' => array(),
+			'data-uid'     => array(),
+			'data-slug'    => array(),
+			'data-color'   => array(),
+			'data-text'    => array(),
+			'data-name'    => array(),
+		),
+	);
+
+	// Try wp_kses first
+	$sanitized = wp_kses( $embed_code, $allowed_html );
+
+	// Check if the full structure was preserved
+	if ( strpos( $sanitized, '<script' ) === false && strpos( $embed_code, '<script' ) !== false ) {
+		// wp_kses stripped the script tag, reconstruct the full structure
+		// Extract the div wrapper
+		$div_wrapper = '';
+		if ( preg_match( '/<div[^>]*>/', $embed_code, $div_match ) ) {
+			$div_wrapper = $div_match[0];
+		} else {
+			$div_wrapper = '<div>';
+		}
+
+		// Extract the script tag with all its attributes
+		if ( preg_match( '/<script[^>]*>.*?<\/script>/is', $embed_code, $matches ) ) {
+			$script_tag = $matches[0];
+
+			// Clean up the script tag - remove any potentially dangerous attributes
+			$script_tag = preg_replace( '/\s*on\w+\s*=\s*["\'][^"\']*["\']/i', '', $script_tag );
+			$script_tag = preg_replace( '/\s*javascript\s*:/i', '', $script_tag );
+
+			// Preserve only safe attributes
+			$safe_attributes = array( 'src', 'id', 'data-env', 'data-version', 'data-uid', 'data-slug', 'data-color', 'data-text', 'data-name' );
+			$cleaned_script = '<script';
+
+			foreach ( $safe_attributes as $attr ) {
+				if ( preg_match( '/\s+' . preg_quote( $attr ) . '\s*=\s*["\']([^"\']*)["\']/', $script_tag, $attr_matches ) ) {
+					$cleaned_script .= ' ' . $attr . '="' . esc_attr( $attr_matches[1] ) . '"';
+				}
+			}
+			$cleaned_script .= '></script>';
+
+			// Reconstruct the full structure: <div><script ...></script></div>
+			$sanitized = $div_wrapper . $cleaned_script . '</div>';
+		} else {
+			// Fallback to basic sanitization
+			$sanitized = wp_kses_post( $embed_code );
+		}
+	}
+
+	return $sanitized;
+}
+
+/**
  * Function to extract slug, env, and src from the embed script.
  *
  * @param  string $embed_code WeTravel All Trips widget code.
@@ -36,26 +103,13 @@ function wtwidget_save_embed_code() {
 	if ( isset( $_POST['wetravel_trips_embed_code'] ) ) {
 		check_admin_referer( 'wetravel_trips_options-options' ); // Verify nonce.
 
-		$allowed_html = array(
-			'div'    => array(),
-			'script' => array(
-				'src'          => array(),
-				'id'           => array(),
-				'data-env'     => array(),
-				'data-version' => array(),
-				'data-uid'     => array(),
-				'data-slug'    => array(),
-				'data-color'   => array(),
-				'data-text'    => array(),
-				'data-name'    => array(),
-			),
-		);
-
-		$new_embed_code = wp_kses( wp_unslash( $_POST['wetravel_trips_embed_code'] ), $allowed_html );
+		$original_embed_code = wp_unslash( $_POST['wetravel_trips_embed_code'] );
+		$new_embed_code = wtwidget_advanced_sanitize_embed_code( $original_embed_code );
 		update_option( 'wetravel_trips_embed_code', $new_embed_code );
 
 		// Extract and save the details.
 		$extracted_values = wtwidget_extract_settings( $new_embed_code );
+
 		update_option( 'wetravel_trips_slug', $extracted_values['slug'] );
 		update_option( 'wetravel_trips_env', $extracted_values['env'] );
 		update_option( 'wetravel_trips_src', $extracted_values['src'] );

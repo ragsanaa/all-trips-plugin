@@ -77,12 +77,8 @@ require_once WETRAVEL_WIDGETS_PLUGIN_DIR . 'includes/functions.php';
 
 /** Enqueue styles and scripts for frontend. */
 function wtwidget_enqueue_frontend_scripts() {
-	// Only load if page has widgets
-	global $post;
-	if ( $post && ! has_shortcode( $post->post_content, 'wetravel_trips' ) &&
-	     ! has_blocks( $post->post_content ) ) {
-		return;
-	}
+	// Always enqueue on the frontend so builders like Elementor (which store
+	// content in post meta, not post_content) also receive styles in preview.
 
 	// Ensure Dashicons is available on the frontend for icons used in markup
 	wp_enqueue_style('dashicons');

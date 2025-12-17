@@ -150,75 +150,72 @@ function wtwidget_trips_block_render( $attributes ) {
 	// Check if this is mock data request
 	$is_mock_data = isset($attributes['mockData']) && $attributes['mockData'];
 
-	// Build API URL with parameters
-	$api_url = wtwidget_build_api_url($env, $slug, array(
+	// Get pagination settings
+	$current_page = isset($attributes['currentPage']) ? intval($attributes['currentPage']) : 1;
+
+	// Get category from attributes or design settings (no default - optional filter)
+	$category = ! empty( $attributes['category'] ) ? $attributes['category'] : ( ! empty( $design['category'] ) ? $design['category'] : '' );
+
+	// Build API URL with all parameters including filters and pagination
+	$api_url = wtwidget_build_api_url($env, $wetravel_trips_user_id, array(
+		'category'   => $category, // Optional - from admin settings
 		'trip_type'  => $trip_type,
 		'date_start' => $date_start,
-		'date_end'   => $date_end
+		'date_end'   => $date_end,
+		'locations'  => $locations, // API handles location filtering
+		'page'       => $current_page,
+		'per_page'   => $items_per_page,
 	));
 
-	// Single optimized cache: stores complete enhanced trips with all filtering applied
-	$cache_key = 'wetravel_enhanced_' . md5($api_url . serialize($locations) . $trip_type);
-	$cached_enhanced_trips = get_transient($cache_key);
+	// Cache key includes all filter parameters
+	$cache_key = 'wetravel_trips_' . md5($api_url);
+	$cached_response = get_transient($cache_key);
 
 	$trips = array();
 	$enhanced_trips = array();
+	$pagination = array(
+		'total_count'  => 0,
+		'page'         => $current_page,
+		'per_page'     => $items_per_page,
+		'total_pages'  => 1,
+		'has_previous' => false,
+		'has_next'     => false,
+	);
 	$is_using_cache = false;
 
 	if ($is_mock_data) {
 		// Use mock data instead of API, skip cache
 		$trips = wtwidget_get_mock_trips_data($attributes);
-	} elseif (false !== $cached_enhanced_trips) {
-		// Use cached enhanced data - fastest path
-		$enhanced_trips = $cached_enhanced_trips;
+		$enhanced_trips = $trips;
+		$pagination['total_count'] = count($trips);
+		$pagination['total_pages'] = ceil(count($trips) / $items_per_page);
+	} elseif (false !== $cached_response && isset($cached_response['trips'])) {
+		// Use cached data - fastest path
+		$enhanced_trips = $cached_response['trips'];
+		$pagination = $cached_response['pagination'] ?? $pagination;
 		$is_using_cache = true;
 	} else {
-		// Cache miss: fetch fresh data
-		$trips = wtwidget_get_trips_data($api_url);
+		// Cache miss: fetch fresh data from API
+		$api_response = wtwidget_get_fresh_trips_data($api_url);
 
-		// Handle case when trips data is false (error occurred)
-		if (false === $trips) {
+		if (false === $api_response) {
 			$trips = array(); // Set to empty array to show "No trips found" message
-		}
-
-		// Filter trips by location if locations are specified
-		if (!empty($locations)) {
-			$trips = array_filter($trips, function($trip) use ($locations) {
-				return !empty($trip['location']) && in_array($trip['location'], $locations);
-			});
-		}
-	}
-
-		// Apply all filtering
-		if (!empty($locations)) {
-			$trips = array_filter($trips, function($trip) use ($locations) {
-				return !empty($trip['location']) && in_array($trip['location'], $locations);
-			});
-		}
-
-	// If trip_type is 'recurring', filter for all-year trips
-	if ( 'recurring' === $trip_type ) {
-		$trips = array_filter(
-			$trips,
-			function ( $trip ) {
-				return ! empty( $trip['all_year'] ) && true === $trip['all_year'];
-			}
-		);
-	}
-
-	// Fetch enhanced trip data with additional details since we need it for display
-	if ( ! empty($trips) && is_array( $trips ) ) {
-		if ( isset($is_mock_data) && $is_mock_data ) {
-			// For mock data, skip enhancement since data is already complete
-			$enhanced_trips = $trips;
 		} else {
-			$enhanced_trips = wtwidget_enhance_trips_with_details($trips, $env);
+			// API already handles filtering and pagination
+			$trips = $api_response['trips'];
+			$pagination = $api_response['pagination'];
+		}
+
+		$enhanced_trips = $trips;
+
+		// Cache complete response for 5 minutes
+		if (!empty($trips)) {
+			set_transient($cache_key, array(
+				'trips'      => $enhanced_trips,
+				'pagination' => $pagination,
+			), 300);
 		}
 	}
-
-	// Cache complete enhanced and filtered result for 5 minutes
-	// Shorter cache = fresher data while still reducing API calls significantly
-	set_transient($cache_key, $enhanced_trips, 300); // 5 minutes
 
 	// Enqueue necessary assets based on display type.
 	if ( 'carousel' === $display_type ) {
@@ -394,13 +391,11 @@ function wtwidget_trips_block_render( $attributes ) {
 													<div class="location-list" id="location-list">
 															<?php
 															// Get unique locations from trips
-															$locations = array();
-															if (is_array($enhanced_trips)) {
-																	$locations = array_unique(array_filter(array_map(function($trip) {
-																			return isset($trip['location']) ? $trip['location'] : '';
-																	}, $enhanced_trips)));
-																	sort($locations);
-															}
+														$locations = array();
+														if (is_array($enhanced_trips)) {
+																$locations = wtwidget_get_trip_locations($enhanced_trips);
+																sort($locations);
+														}
 
 															foreach ($locations as $location) {
 																	if (!empty($location)) {
@@ -567,44 +562,84 @@ function wtwidget_trips_block_render( $attributes ) {
 										<div class="swiper-button-next"></div>
 								</div>
 						</div>
-				<?php else : ?>
-					<?php
-					$counter = 0;
-					foreach ( $enhanced_trips as $trip ) :
-						$visibility_class = $counter < $items_per_page ? 'visible-item' : 'hidden-item';
-						// The output contains trusted, controlled HTML (e.g., iframe, div, etc.)
-						// Escaping it with esc_html() breaks embed functionality
-						// So we sanitize with wp_kses_post() to allow only safe HTML
-						echo wp_kses(wtwidget_render_trip_item(
-							$trip,
-							array(
-								'env'            => $env,
-								'wetravelUserID' => $wetravel_trips_user_id,
-								'displayType'    => $display_type,
-								'buttonType'     => $button_type,
-								'buttonText'     => $button_text,
-								'buttonColor'    => $button_color,
-								'itemsPerPage'   => $items_per_page,
-							),
-							$visibility_class
-						), $allowed_html_tags );
-						++$counter;
-					endforeach;
-					?>
-				<?php endif; ?>
+			<?php else : ?>
+				<?php
+				// With server-side pagination, all returned trips are visible
+				// No need for visibility classes - API already paginated the results
+				foreach ( $enhanced_trips as $trip ) :
+					// The output contains trusted, controlled HTML (e.g., iframe, div, etc.)
+					// Escaping it with esc_html() breaks embed functionality
+					// So we sanitize with wp_kses_post() to allow only safe HTML
+					echo wp_kses(wtwidget_render_trip_item(
+						$trip,
+						array(
+							'env'            => $env,
+							'wetravelUserID' => $wetravel_trips_user_id,
+							'displayType'    => $display_type,
+							'buttonType'     => $button_type,
+							'buttonText'     => $button_text,
+							'buttonColor'    => $button_color,
+							'itemsPerPage'   => $items_per_page,
+						),
+						'visible-item' // All items visible with server-side pagination
+					), $allowed_html_tags );
+				endforeach;
+				?>
+			<?php endif; ?>
 
 			<?php endif; ?>
 		</div>
 
-		<?php if ( ! empty( $enhanced_trips ) && 'carousel' !== $display_type && count( $enhanced_trips ) > $items_per_page ) : ?>
-			<!-- Numbered pagination container -->
-			<div id="pagination-<?php echo esc_attr( $block_id ); ?>" class="wetravel-trips-pagination">
+		<?php if ( ! empty( $enhanced_trips ) && 'carousel' !== $display_type && $pagination['total_pages'] > 1 ) : ?>
+			<!-- Server-side pagination container -->
+			<div id="pagination-<?php echo esc_attr( $block_id ); ?>"
+				 class="wetravel-trips-pagination"
+				 data-current-page="<?php echo esc_attr( $pagination['page'] ); ?>"
+				 data-total-pages="<?php echo esc_attr( $pagination['total_pages'] ); ?>"
+				 data-per-page="<?php echo esc_attr( $pagination['per_page'] ); ?>"
+				 data-total-items="<?php echo esc_attr( $pagination['total_count'] ); ?>">
 				<div class="pagination-controls">
 					<?php
-					$total_pages = ceil( count( $enhanced_trips ) / $items_per_page );
-					for ( $i = 1; $i <= $total_pages; $i++ ) {
-						$active_class = 1 === $i ? 'active' : '';
-						echo '<span class="page-number ' . esc_attr( $active_class ) . '" data-page="' . esc_attr( $i ) . '">' . esc_html( $i ) . '</span>';
+					$total_pages = intval( $pagination['total_pages'] );
+					$current_page_num = intval( $pagination['page'] );
+
+					// Previous button
+					if ( $current_page_num > 1 ) {
+						echo '<span class="page-nav page-prev" data-page="' . esc_attr( $current_page_num - 1 ) . '">&laquo;</span>';
+					}
+
+					// Page numbers with ellipsis for large page counts
+					$show_pages = array();
+					if ( $total_pages <= 7 ) {
+						// Show all pages if 7 or fewer
+						$show_pages = range( 1, $total_pages );
+					} else {
+						// Show first, last, current and neighbors
+						$show_pages[] = 1;
+						if ( $current_page_num > 3 ) {
+							$show_pages[] = '...';
+						}
+						for ( $i = max( 2, $current_page_num - 1 ); $i <= min( $total_pages - 1, $current_page_num + 1 ); $i++ ) {
+							$show_pages[] = $i;
+						}
+						if ( $current_page_num < $total_pages - 2 ) {
+							$show_pages[] = '...';
+						}
+						$show_pages[] = $total_pages;
+					}
+
+					foreach ( $show_pages as $page ) {
+						if ( '...' === $page ) {
+							echo '<span class="page-ellipsis">...</span>';
+						} else {
+							$active_class = $page === $current_page_num ? 'active' : '';
+							echo '<span class="page-number ' . esc_attr( $active_class ) . '" data-page="' . esc_attr( $page ) . '">' . esc_html( $page ) . '</span>';
+						}
+					}
+
+					// Next button
+					if ( $current_page_num < $total_pages ) {
+						echo '<span class="page-nav page-next" data-page="' . esc_attr( $current_page_num + 1 ) . '">&raquo;</span>';
 					}
 					?>
 				</div>
@@ -744,9 +779,10 @@ function wtwidget_get_button_url( $trip, $options ) {
 		$button_url = $env . '/checkout_embed?uuid=' . $trip['uuid'] . '&source=wp_widget_book_now';
 	} else {
 		$button_url = $env . '/trips/' . $trip['uuid'] . '?source=wp_widget_trip_link';
-		if ( isset( $trip['href'] ) ) {
-			$button_url = $trip['href'];
-			// Add source parameter to existing href URL
+		// Use 'url' field from new API if available
+		if ( isset( $trip['url'] ) ) {
+			$button_url = $trip['url'];
+			// Add source parameter to existing URL
 			$separator = strpos( $button_url, '?' ) !== false ? '&' : '?';
 			$button_url .= $separator . 'source=wp_widget_trip_link';
 		}
@@ -766,6 +802,14 @@ function wtwidget_get_button_url( $trip, $options ) {
 function wtwidget_render_trip_item( $trip, $options, $visibility_class = '' ) {
 	$html       = '';
 	$button_url = wtwidget_get_button_url( $trip, $options );
+
+	// Get values using helper functions (supports both new API and mock data formats)
+	$trip_image    = wtwidget_get_trip_image( $trip );
+	$trip_location = wtwidget_get_trip_location( $trip );
+	$trip_price    = wtwidget_get_trip_price( $trip );
+	$trip_dates    = wtwidget_get_trip_dates( $trip );
+	$is_recurring  = wtwidget_is_trip_recurring( $trip );
+	$trip_length   = wtwidget_get_trip_length( $trip );
 
 	if ( 'vertical' === $options['displayType'] || ('grid' === $options['displayType'] && 'trip_link' === $options['buttonType'])) {
 		$html .= '<div class="trip-item ' . esc_attr( $visibility_class ) . '" data-trip-uuid="' . esc_attr( $trip['uuid'] ) . '">';
@@ -791,32 +835,32 @@ function wtwidget_render_trip_item( $trip, $options, $visibility_class = '' ) {
 	}
 
 	// Image.
-	if ( ! empty( $trip['default_image'] ) ) {
-		$trip_image = wtwidget_render_external_image(
-			$trip['default_image'],
-			$trip['title'],
+	if ( ! empty( $trip_image ) ) {
+		$rendered_image = wtwidget_render_external_image(
+			$trip_image,
+			$trip['title'] ?? '',
 			array(
 				'class' => 'trip-image-thumbnail',
-				'width' => 400, // Set appropriate size.
-				'height' => 300 // Set appropriate size.
+				'width' => 400,
+				'height' => 300
 			)
 		);
 
 		// Add date overlay for carousel and grid display types.
 		if ( in_array( $options['displayType'], array( 'carousel', 'grid' ) ) ) {
 			$date_overlay = '';
-			if ( ! $trip['all_year'] ) {
-				$date_overlay = '<div class="trip-date-overlay trip-tag">' . esc_html( $trip['start_end_dates'] ) . '</div>';
-			} elseif ( ! empty( $trip['custom_duration'] ) ) {
+			if ( ! $is_recurring && ! empty( $trip_dates ) ) {
+				$date_overlay = '<div class="trip-date-overlay trip-tag">' . esc_html( $trip_dates ) . '</div>';
+			} elseif ( $is_recurring && ! empty( $trip_length ) ) {
 				$date_overlay = sprintf(
 					'<div class="trip-date-overlay trip-tag">%s days</div>',
-					esc_html( $trip['custom_duration'] )
+					esc_html( $trip_length )
 				);
 			}
 
-			$html .= '<div class="trip-image">' . $trip_image . $date_overlay . '</div>';
+			$html .= '<div class="trip-image">' . $rendered_image . $date_overlay . '</div>';
 		} else {
-			$html .= '<div class="trip-image">' . $trip_image . '</div>';
+			$html .= '<div class="trip-image">' . $rendered_image . '</div>';
 		}
 	} else {
 		$html .= '<div class="no-image-placeholder"><span>No Image Available</span></div>';
@@ -825,12 +869,13 @@ function wtwidget_render_trip_item( $trip, $options, $visibility_class = '' ) {
 	// Content.
 	$html .= '<div class="trip-content">';
 	$html .= '<div class="trip-title-desc">';
-	$html .= '<h3>' . esc_html( $trip['title'] ) . '</h3>';
+	$html .= '<h3>' . esc_html( $trip['title'] ?? '' ) . '</h3>';
 
 	// Description with See More functionality.
-	if ( ! empty( $trip['full_description'] ) ) {
+	$description = $trip['description'] ?? '';
+	if ( ! empty( $description ) ) {
 		// Remove emojis from description to prevent layout issues.
-		$clean_description = wtwidget_remove_emojis_comprehensive($trip['full_description']);
+		$clean_description = wtwidget_remove_emojis_comprehensive( $description );
 
 		// Generate trip URL for See More link
 		$trip_url = wtwidget_get_button_url( $trip, array(
@@ -854,16 +899,16 @@ function wtwidget_render_trip_item( $trip, $options, $visibility_class = '' ) {
 	$html .= '<div class="trip-loc-duration">';
 
 	if ( 'vertical' === $options['displayType'] ) {
-		if ( ! $trip['all_year'] ) {
-			$html .= '<div class="trip-date trip-tag">' . esc_html( $trip['start_end_dates'] ) . '</div>';
-		} elseif ( ! empty( $trip['custom_duration'] ) ) {
+		if ( ! $is_recurring && ! empty( $trip_dates ) ) {
+			$html .= '<div class="trip-date trip-tag">' . esc_html( $trip_dates ) . '</div>';
+		} elseif ( $is_recurring && ! empty( $trip_length ) ) {
 			$html .= sprintf(
 				'<div class="trip-duration trip-tag">%s days</div>',
-				esc_html( $trip['custom_duration'] )
+				esc_html( $trip_length )
 			);
 		}
 	}
-	$html .= '<div class="trip-location trip-tag">' . esc_html( $trip['location'] ) . '</div>';
+	$html .= '<div class="trip-location trip-tag">' . esc_html( $trip_location ) . '</div>';
 	$html .= '</div>'; // Close trip-loc-duration.
 
 	if ( 'carousel' !== $options['displayType'] ) {
@@ -874,11 +919,11 @@ function wtwidget_render_trip_item( $trip, $options, $visibility_class = '' ) {
 	$html .= '<div class="trip-price-button">';
 
 	// Price.
-	if ( ! empty( $trip['price'] ) ) {
+	if ( ! empty( $trip_price ) ) {
 		$html .= sprintf(
 			'<div class="trip-price"><p>From</p> <span>%s%s</span></div>',
-			esc_html( $trip['price']['currencySymbol'] ),
-			esc_html( $trip['price']['amount'] )
+			esc_html( $trip_price['currencySymbol'] ),
+			esc_html( $trip_price['amount'] )
 		);
 	}
 
@@ -1062,41 +1107,47 @@ function wtwidget_get_mock_trips_data($attributes) {
 		return array();
 	}
 
-	if (!isset($json_data['trips']) || !is_array($json_data['trips'])) {
+	// Support new format ('data') - same as API response
+	if (!isset($json_data['data']) || !is_array($json_data['data'])) {
 		error_log('WeTravel Widgets: Invalid JSON structure in mock trips file');
 		return array();
 	}
 
-	$mock_trips = $json_data['trips'];
+	$mock_trips = $json_data['data'];
 
-	// Convert image paths to full URLs
+	// Convert image paths to full URLs (images array format)
 	$plugin_url = plugins_url('', dirname(__FILE__));
 	foreach ($mock_trips as &$trip) {
-		if (isset($trip['default_image'])) {
-			$trip['default_image'] = $plugin_url . '/' . $trip['default_image'];
+		if (isset($trip['images']) && is_array($trip['images'])) {
+			foreach ($trip['images'] as &$image) {
+				if (isset($image['url']) && strpos($image['url'], 'http') !== 0) {
+					$image['url'] = $plugin_url . '/' . $image['url'];
+				}
+			}
+			unset($image);
 		}
 	}
 	unset($trip); // Break the reference
 
-	// Filter by trip type
+	// Filter by trip type using helper function
 	$trip_type = isset($attributes['mockTripType']) ? $attributes['mockTripType'] : 'all';
 	if ('recurring' === $trip_type) {
 		$mock_trips = array_filter($mock_trips, function($trip) {
-			return $trip['all_year'] === true;
+			return wtwidget_is_trip_recurring($trip);
 		});
 	} elseif ('one-time' === $trip_type) {
 		$mock_trips = array_filter($mock_trips, function($trip) {
-			return $trip['all_year'] === false;
+			return !wtwidget_is_trip_recurring($trip);
 		});
 	}
 
-	// Handle location assignment
+	// Handle location assignment (update destination.title)
 	$selected_locations = isset($attributes['mockLocations']) ? $attributes['mockLocations'] : array();
 	if (!empty($selected_locations)) {
 		// Assign selected locations to trips randomly
 		$mock_trips = array_map(function($trip, $index) use ($selected_locations) {
 			$random_location_index = $index % count($selected_locations);
-			$trip['location'] = $selected_locations[$random_location_index];
+			$trip['destination']['title'] = $selected_locations[$random_location_index];
 			return $trip;
 		}, array_values($mock_trips), array_keys($mock_trips));
 	}

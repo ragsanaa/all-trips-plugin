@@ -23,7 +23,7 @@ add_action( 'rest_api_init', 'wtwidget_register_rest_endpoints' );
  * version wtwidget_get_fresh_trips_data() is now preferred for better performance.
  *
  * @param string $api_url The API URL to fetch data from.
- * @return array|false The trips data or false on error.
+ * @return array|false Array with 'trips' and 'pagination' keys, or false on error.
  */
 function wtwidget_get_trips_data( $api_url ) {
 	// For backward compatibility, just call the fresh data function
@@ -31,99 +31,6 @@ function wtwidget_get_trips_data( $api_url ) {
 	return wtwidget_get_fresh_trips_data( $api_url );
 }
 
-/**
- * Enhance trips with detailed information including SEO config
- *
- * @param array  $trips The basic trips data.
- * @param string $env The environment URL base.
- * @return array Enhanced trips data with details.
- */
-function wtwidget_enhance_trips_with_details( $trips, $env ) {
-	$enhanced_trips = array();
-
-	foreach ( $trips as $trip ) {
-		// Skip if no UUID.
-		if ( empty( $trip['uuid'] ) ) {
-			$enhanced_trips[] = $trip;
-			continue;
-		}
-
-		// Build detail endpoint URL.
-		$seo_config_url = "{$env}/api/v2/user/trips/{$trip['uuid']}/seo_config";
-
-		// Try to get cached seo config first
-		$cache_key = 'wetravel_trip_seo_' . $trip['uuid'];
-		$seo_config_data = get_transient($cache_key);
-
-		if (false === $seo_config_data) {
-			// Fetch trip seo_configs.
-			$response = wp_remote_get(
-				$seo_config_url,
-				array(
-					'timeout' => 15,
-					'headers' => array(
-						'Accept' => 'application/json',
-					),
-				)
-			);
-
-			if ( is_wp_error( $response ) ) {
-				$enhanced_trips[] = $trip;
-				continue;
-			}
-
-			$body = wp_remote_retrieve_body( $response );
-			$seo_config_data = json_decode( $body, true );
-
-			// Cache individual trip SEO data for 15 minutes (trip details rarely change)
-			set_transient($cache_key, $seo_config_data, 900);
-		}
-
-		// Check if we have valid detailed data.
-		if ( ! isset( $seo_config_data['data'] ) ) {
-			$enhanced_trips[] = $trip;
-			continue;
-		}
-
-		// Extract trip seo_configs.
-		$trip_details = $seo_config_data['data'];
-
-		// Find specific paragraphs.
-		$full_description = isset( $trip_details['description'] ) ? $trip_details['description'] : array();
-
-		// Enhance trip data with detailed information.
-		$trip['full_description'] = $full_description;
-		$trip['custom_duration']  = $trip['trip_length'] ?? '';
-
-		// If banner image is available in details, use it.
-		if ( ! empty( $trip_details['image'] ) ) {
-			$trip['banner_image'] = $trip_details['image'];
-		}
-
-		// If detailed price is available, use it.
-		if ( isset( $trip_details['price'] ) ) {
-			// Price might be in cents, convert to dollars for display.
-			$formatted_price = (int) $trip_details['price'];
-
-			// If trip already has price, update it with the detailed format.
-			if ( isset( $trip['price'] ) && is_array( $trip['price'] ) ) {
-				$trip['price']['amount']     = number_format( $formatted_price, 2 );
-				$trip['price']['raw_amount'] = $formatted_price;
-			} else {
-				// Create a price object if it doesn't exist.
-				$trip['price'] = array(
-					'amount'         => $formatted_price,
-					'raw_amount'     => $formatted_price,
-					'currencySymbol' => isset( $trip_details['currency'] ) ? wtwidget_get_currency_symbol( $trip_details['currency'] ) : '$',
-				);
-			}
-		}
-
-		$enhanced_trips[] = $trip;
-	}
-
-	return $enhanced_trips;
-}
 
 /**
  * Get currency symbol for a given currency code
@@ -171,15 +78,21 @@ function wtwidget_get_currency_symbol($currency_code) {
  * Build WeTravel API URL with parameters
  *
  * @param string $env Environment URL.
- * @param string $slug WeTravel slug.
+ * @param string $wetravel_user_id WeTravel user ID.
  * @param array  $params Additional query parameters.
  * @return string Complete API URL.
  */
-function wtwidget_build_api_url($env, $slug, $params = array()) {
-    $api_url = rtrim($env, '/') . '/api/v2/embeds/all_trips';
-    $query_params = array_merge(array('slug' => $slug), $params);
+function wtwidget_build_api_url($env, $wetravel_user_id, $params = array()) {
+    // New API endpoint: v1/trips/{wetravel_user_id}/public
+    $api_url = rtrim($env, '/') . '/v1/trips/' . $wetravel_user_id . '/public';
+    $query_params = array();
 
-    // Format dates if they exist
+    // Category filter (upcoming or past) - optional, no default
+    if (!empty($params['category'])) {
+        $query_params['category'] = $params['category'];
+    }
+
+    // Date range filters (from_date and to_date)
     if (!empty($params['date_start'])) {
         $date_obj = date_create($params['date_start']);
         if ($date_obj) {
@@ -194,17 +107,38 @@ function wtwidget_build_api_url($env, $slug, $params = array()) {
         }
     }
 
-    // Set recurring/one-time parameters
+    // Recurring filter (true/false)
     if (isset($params['trip_type'])) {
         if ('recurring' === $params['trip_type']) {
-            $query_params['all_year'] = 1;
+            $query_params['recurring'] = 'true';
         } elseif ('one-time' === $params['trip_type']) {
-            $query_params['all_year'] = 0;
+            $query_params['recurring'] = 'false';
         }
-        // For 'all' trip type, no all_year parameter is set
+        // For 'all' trip type, no recurring parameter is set
     }
 
-    return add_query_arg($query_params, $api_url);
+    // Location filter (array of strings, case-insensitive, matches from start)
+    if (!empty($params['locations']) && is_array($params['locations'])) {
+        // API expects location[] array format
+        foreach ($params['locations'] as $index => $location) {
+            $query_params['location[' . $index . ']'] = $location;
+        }
+    }
+
+    // Pagination parameters
+    if (!empty($params['page']) && is_numeric($params['page'])) {
+        $query_params['page'] = intval($params['page']);
+    }
+
+    if (!empty($params['per_page']) && is_numeric($params['per_page'])) {
+        $query_params['per_page'] = intval($params['per_page']);
+    }
+
+    if (!empty($query_params)) {
+        return add_query_arg($query_params, $api_url);
+    }
+
+    return $api_url;
 }
 
 /**
@@ -214,19 +148,122 @@ function wtwidget_build_api_url($env, $slug, $params = array()) {
  * @return array<string> Array of unique locations.
  */
 function wtwidget_get_trip_locations(array $trips): array {
-    // Extract all locations using array_column and filter out empty ones
-    $locations = array_filter(
-        array_column($trips, 'location'),
-        function($location) {
-            return !empty($location) && is_string($location);
+    // Extract all locations from destination.title and filter out empty ones
+    $locations = array();
+    foreach ($trips as $trip) {
+        if (!empty($trip['destination']['title'])) {
+            $locations[] = $trip['destination']['title'];
         }
-    );
+    }
 
     // Get unique values and sort them
     $unique_locations = array_unique($locations);
     sort($unique_locations, SORT_STRING);
 
     return $unique_locations;
+}
+
+/**
+ * Helper function to get trip image URL from images array
+ *
+ * @param array $trip Trip data from API.
+ * @return string Image URL or empty string.
+ */
+function wtwidget_get_trip_image($trip) {
+    if (!empty($trip['images']) && is_array($trip['images']) && !empty($trip['images'][0]['url'])) {
+        return $trip['images'][0]['url'];
+    }
+    return '';
+}
+
+/**
+ * Helper function to get trip location from destination object
+ *
+ * @param array $trip Trip data from API.
+ * @return string Location title or empty string.
+ */
+function wtwidget_get_trip_location($trip) {
+    if (!empty($trip['destination']['title'])) {
+        return $trip['destination']['title'];
+    }
+    return '';
+}
+
+/**
+ * Helper function to get minimum price from trip_options
+ *
+ * @param array $trip Trip data from API.
+ * @return array|null Price array with amount, raw_amount, currencySymbol or null.
+ */
+function wtwidget_get_trip_price($trip) {
+    if (empty($trip['trip_options']) || !is_array($trip['trip_options'])) {
+        return null;
+    }
+
+    $prices = array_column($trip['trip_options'], 'price');
+    $prices = array_filter($prices, function($p) {
+        return is_numeric($p) && $p > 0;
+    });
+
+    if (empty($prices)) {
+        return null;
+    }
+
+    $min_price = min($prices);
+    $currency_code = $trip['currency'] ?? 'USD';
+
+    return array(
+        'amount'         => number_format($min_price, 2),
+        'raw_amount'     => $min_price,
+        'currencySymbol' => wtwidget_get_currency_symbol($currency_code),
+    );
+}
+
+/**
+ * Helper function to format trip dates for display
+ *
+ * @param array $trip Trip data from API.
+ * @return string Formatted date string.
+ */
+function wtwidget_get_trip_dates($trip) {
+    // For one-time trips: start_date and end_date
+    if (!empty($trip['start_date']) && !empty($trip['end_date'])) {
+        $start = date_create($trip['start_date']);
+        $end = date_create($trip['end_date']);
+        if ($start && $end) {
+            return date_format($start, 'M j') . ' - ' . date_format($end, 'M j, Y');
+        }
+    }
+
+    // For recurring trips: next_departure_date
+    if (!empty($trip['next_departure_date'])) {
+        $next = date_create($trip['next_departure_date']);
+        if ($next) {
+            return 'Next: ' . date_format($next, 'M j, Y');
+        }
+    }
+
+    return '';
+}
+
+/**
+ * Helper function to check if trip is recurring
+ *
+ * @param array $trip Trip data from API.
+ * @return bool True if recurring, false otherwise.
+ */
+function wtwidget_is_trip_recurring($trip) {
+    return isset($trip['recurring']) && (bool) $trip['recurring'];
+}
+
+/**
+ * Helper function to get trip duration/length
+ *
+ * @param array $trip Trip data from API.
+ * @return string|int Trip length or empty string.
+ */
+function wtwidget_get_trip_length($trip) {
+    return $trip['length'] ?? '';
 }
 
 /**
@@ -242,13 +279,18 @@ function wtwidget_register_rest_endpoints() {
                 'required' => true,
                 'sanitize_callback' => 'sanitize_text_field',
             ),
-            'slug' => array(
-                'required' => false,
+            'wetravel_user_id' => array(
+                'required' => true,
                 'sanitize_callback' => 'sanitize_text_field',
             ),
             'env' => array(
                 'required' => false,
                 'sanitize_callback' => 'sanitize_text_field',
+            ),
+            'category' => array(
+                'required' => false,
+                'sanitize_callback' => 'sanitize_text_field',
+                'default' => '', // No default - comes from admin settings
             ),
             'trip_type' => array(
                 'required' => false,
@@ -296,10 +338,16 @@ function wtwidget_register_rest_endpoints() {
                 'sanitize_callback' => 'absint',
                 'default' => 3,
             ),
-            'wetravel_user_id' => array(
+            'page' => array(
                 'required' => false,
-                'sanitize_callback' => 'sanitize_text_field',
+                'sanitize_callback' => 'absint',
+                'default' => 1,
             ),
+            'per_page' => array(
+                'required' => false,
+                'sanitize_callback' => 'absint',
+                'default' => 25,
+            )
         ),
     ));
 }
@@ -312,8 +360,9 @@ function wtwidget_register_rest_endpoints() {
  */
 function wtwidget_rest_get_fresh_trips( $request ) {
     $block_id = $request->get_param('block_id');
-    $slug = $request->get_param('slug') ?: get_option('wetravel_trips_slug', '');
+    $wetravel_user_id = $request->get_param('wetravel_user_id') ?: get_option('wetravel_trips_user_id', '');
     $env = $request->get_param('env') ?: get_option('wetravel_trips_env', 'https://pre.wetravel.to');
+    $category = $request->get_param('category');
     $trip_type = $request->get_param('trip_type');
     $date_start = $request->get_param('date_start');
     $date_end = $request->get_param('date_end');
@@ -322,30 +371,40 @@ function wtwidget_rest_get_fresh_trips( $request ) {
     $button_type = $request->get_param('button_type');
     $button_text = $request->get_param('button_text');
     $button_color = $request->get_param('button_color');
-    $items_per_page = $request->get_param('items_per_page');
+    $page = $request->get_param('page');
+    $per_page = $request->get_param('per_page');
     $items_per_row = $request->get_param('items_per_row');
-    $wetravel_user_id = $request->get_param('wetravel_user_id') ?: get_option('wetravel_trips_user_id', '');
 
     // Validate required parameters
-    if (empty($slug) || empty($env)) {
+    if (empty($wetravel_user_id) || empty($env)) {
         return new WP_Error(
             'missing_params',
-            'Missing required parameters: slug and env are required',
+            'Missing required parameters: wetravel_user_id and env are required',
             array('status' => 400)
         );
     }
 
-    // Build API URL with parameters
-    $api_url = wtwidget_build_api_url($env, $slug, array(
-        'trip_type' => $trip_type,
+    // Parse locations from semicolon-separated string to array
+    $locations_array = array();
+    if (!empty($locations_param)) {
+        $locations_array = array_filter(array_map('trim', explode(';', $locations_param)));
+    }
+
+    // Build API URL with all parameters including pagination
+    $api_url = wtwidget_build_api_url($env, $wetravel_user_id, array(
+        'category'   => $category,
+        'trip_type'  => $trip_type,
         'date_start' => $date_start,
-        'date_end' => $date_end
+        'date_end'   => $date_end,
+        'locations'  => $locations_array,
+        'page'       => $page,
+        'per_page'   => $per_page,
     ));
 
-    // Get fresh trips data (bypassing cache by using a different function)
-    $trips = wtwidget_get_fresh_trips_data($api_url);
+    // Get fresh trips data with pagination
+    $api_response = wtwidget_get_fresh_trips_data($api_url);
 
-    if (false === $trips) {
+    if (false === $api_response) {
         return new WP_Error(
             'api_error',
             'Failed to fetch trips from WeTravel API',
@@ -353,38 +412,17 @@ function wtwidget_rest_get_fresh_trips( $request ) {
         );
     }
 
-    // Filter trips by location if locations are specified
-    if (!empty($locations_param)) {
-        $locations = array_map('trim', explode(';', $locations_param));
-        $locations = array_filter($locations);
-
-        if (!empty($locations)) {
-            $trips = array_filter($trips, function($trip) use ($locations) {
-                return !empty($trip['location']) && in_array($trip['location'], $locations);
-            });
-        }
-    }
-
-    // Filter by trip type
-    if ('recurring' === $trip_type) {
-        $trips = array_filter($trips, function($trip) {
-            return !empty($trip['all_year']) && true === $trip['all_year'];
-        });
-    }
-
-    // Enhance trips with detailed information
-    $enhanced_trips = array();
-    if (!empty($trips)) {
-        $enhanced_trips = wtwidget_enhance_trips_with_details($trips, $env);
-    }
+    // Extract trips and pagination from response
+    $trips = $api_response['trips'];
+    $pagination = $api_response['pagination'];
 
     // Set default button text based on button type if not provided
     if (empty($button_text)) {
         $button_text = 'book_now' === $button_type ? 'Book Now' : 'View Trip';
     }
 
-    // Render the trips HTML
-    $html = wtwidget_render_trips_html($enhanced_trips, array(
+    // Render the trips HTML (all items visible since API handles pagination)
+    $html = wtwidget_render_trips_html($trips, array(
         'block_id' => $block_id,
         'env' => $env,
         'wetravelUserID' => $wetravel_user_id,
@@ -392,18 +430,20 @@ function wtwidget_rest_get_fresh_trips( $request ) {
         'buttonType' => $button_type,
         'buttonText' => $button_text,
         'buttonColor' => $button_color,
-        'itemsPerPage' => $items_per_page,
+        'itemsPerPage' => $per_page,
         'itemsPerRow' => $items_per_row,
+        'serverPagination' => true,
     ));
 
-    // Cache the fresh results for next server render using same key format as SSR
-    $cache_key = 'wetravel_enhanced_' . md5($api_url . serialize($locations_param) . $trip_type);
-    set_transient($cache_key, $enhanced_trips, 300); // Cache for 5 minutes
+    // Cache the fresh results for next server render
+    $cache_key = 'wetravel_trips_' . md5($api_url);
+    set_transient($cache_key, $api_response, 300); // Cache for 5 minutes
 
     return rest_ensure_response(array(
         'success' => true,
         'html' => $html,
-        'trips_count' => count($enhanced_trips),
+        'trips_count' => count($trips),
+        'pagination' => $pagination,
     ));
 }
 
@@ -411,7 +451,7 @@ function wtwidget_rest_get_fresh_trips( $request ) {
  * Get fresh trips data without caching (for hydration)
  *
  * @param string $api_url The API URL to fetch data from.
- * @return array|false The trips data or false on error.
+ * @return array|false Array with 'trips' and 'pagination' keys, or false on error.
  */
 function wtwidget_get_fresh_trips_data( $api_url ) {
     // Fetch from API without caching
@@ -432,12 +472,16 @@ function wtwidget_get_fresh_trips_data( $api_url ) {
     $body = wp_remote_retrieve_body( $response );
     $data = json_decode( $body, true );
 
-    // Check if we have valid data
-    if ( ! isset( $data['trips'] ) || ! is_array( $data['trips'] ) ) {
+    // Check if we have valid data - new API uses 'data' array
+    if ( ! isset( $data['data'] ) || ! is_array( $data['data'] ) ) {
         return false;
     }
 
-    return $data['trips'];
+    // Return trips data with pagination
+    return array(
+        'trips'      => $data['data'],
+        'pagination' => $data['pagination'],
+    );
 }
 
 /**
@@ -454,7 +498,8 @@ function wtwidget_render_trips_html( $trips, $options ) {
 
     $html = '';
     $display_type = $options['displayType'];
-    $items_per_page = $options['itemsPerPage'];
+    $items_per_page = $options['itemsPerPage'] ?? 10;
+    $server_pagination = $options['serverPagination'] ?? false;
 
     $allowed_html_tags = array(
         'div' => array(
@@ -520,7 +565,9 @@ function wtwidget_render_trips_html( $trips, $options ) {
     } else {
         $counter = 0;
         foreach ( $trips as $trip ) {
-            $visibility_class = $counter < $items_per_page ? 'visible-item' : 'hidden-item';
+            // With server-side pagination, all items are visible (API already paginated)
+            // Only use visibility classes for client-side pagination fallback
+            $visibility_class = $server_pagination ? 'visible-item' : ($counter < $items_per_page ? 'visible-item' : 'hidden-item');
             $html .= wp_kses( wtwidget_render_trip_item( $trip, $options, $visibility_class ), $allowed_html_tags );
             ++$counter;
         }

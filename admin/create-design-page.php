@@ -97,6 +97,37 @@ add_action( 'wp_ajax_render_mock_preview', 'wtwidget_render_mock_preview' );
 
 
 /**
+ * Get locations for a specific trip type
+ *
+ * @param string $trip_type The trip type to filter by ('all', 'recurring', 'one-time').
+ * @return array Array of unique location strings.
+ */
+function wtwidget_get_locations_by_trip_type( $trip_type = 'all' ) {
+	$env = get_option( 'wetravel_trips_env', 'https://pre.wetravel.to' );
+	$user_id = get_option( 'wetravel_trips_user_id', '' );
+
+	$locations = array();
+
+	if ( ! empty( $user_id ) && function_exists( 'wtwidget_build_api_url' ) && function_exists( 'wtwidget_get_trips_data' ) && function_exists( 'wtwidget_get_trip_locations' ) ) {
+		try {
+			$api_url = wtwidget_build_api_url( $env, $user_id, array(
+				'trip_type' => $trip_type
+			) );
+
+			$trips = wtwidget_get_trips_data( $api_url )['trips'];
+
+			if ( is_array( $trips ) ) {
+				$locations = wtwidget_get_trip_locations( $trips );
+			}
+		} catch ( Exception $e ) {
+			$locations = array();
+		}
+	}
+
+	return $locations;
+}
+
+/**
  * AJAX handler to fetch locations based on trip type
  */
 function wtwidget_fetch_locations_by_trip_type() {
@@ -113,28 +144,7 @@ function wtwidget_fetch_locations_by_trip_type() {
 	}
 
 	$trip_type = isset( $_POST['trip_type'] ) ? sanitize_text_field( wp_unslash( $_POST['trip_type'] ) ) : 'all';
-	$env = get_option( 'wetravel_trips_env', 'https://pre.wetravel.to' );
-	$slug = get_option( 'wetravel_trips_slug', '' );
-
-	$locations = array();
-
-	// Only try to fetch locations if slug is configured
-	if ( ! empty( $slug ) && function_exists( 'wtwidget_build_api_url' ) && function_exists( 'wtwidget_get_trips_data' ) && function_exists( 'wtwidget_get_trip_locations' ) ) {
-		try {
-			// Get trips data based on trip type
-			$api_url = wtwidget_build_api_url( $env, $slug, array(
-				'trip_type' => $trip_type
-			) );
-
-			$trips = wtwidget_get_trips_data( $api_url );
-
-			if ( is_array( $trips ) ) {
-				$locations = wtwidget_get_trip_locations( $trips );
-			}
-		} catch ( Exception $e ) {
-			$locations = array();
-		}
-	}
+	$locations = wtwidget_get_locations_by_trip_type( $trip_type );
 
 	wp_send_json_success( array(
 		'locations' => $locations,
@@ -225,6 +235,7 @@ function wtwidget_process_form_submission() {
 		'buttonColor'    => isset( $_POST['button_color'] ) ? sanitize_hex_color( wp_unslash( $_POST['button_color'] ) ) : '',
 		'keyword'        => $keyword,
 		'tripType'       => isset( $_POST['trip_type'] ) ? sanitize_text_field( wp_unslash( $_POST['trip_type'] ) ) : '',
+		'category'       => isset( $_POST['trip_date_category'] ) ? sanitize_text_field( wp_unslash( $_POST['trip_date_category'] ) ) : '',
 		'dateRangeStart' => $date_range_start,
 		'dateRangeEnd'   => $date_range_end,
 		'wtWidgetType'     => isset( $_POST['wt_widget_type'] ) ? sanitize_text_field( wp_unslash( $_POST['wt_widget_type'] ) ) : 'all-trips',
@@ -296,6 +307,7 @@ function wtwidget_trip_create_design_page() {
 		'buttonColor'    => '#33ae3f',
 		'keyword'        => '',
 		'tripType'       => 'all',
+		'category'       => '', // Trip date category: upcoming, past, or empty for all
 		'dateRangeStart' => '',
 		'dateRangeEnd'   => '',
 		'wtWidgetType'     => 'all-trips',
@@ -420,31 +432,9 @@ function wtwidget_trip_create_design_page() {
 						<div class="wetravel-trips-form-field">
 							<label for="trip_location">Trip Locations</label>
 							<?php
-								$env = get_option('wetravel_trips_env', 'https://pre.wetravel.to');
-								$slug = get_option('wetravel_trips_slug', '');
-
-								// Get unique locations
-								$locations = array();
-
-								// Only try to fetch locations if slug is configured
-								if (!empty($slug) && function_exists('wtwidget_build_api_url') && function_exists('wtwidget_get_trips_data') && function_exists('wtwidget_get_trip_locations')) {
-									try {
-										// Get trips data (we only need basic data for locations)
-										$api_url = wtwidget_build_api_url($env, $slug, array(
-											'trip_type' => isset($design['tripType']) ? $design['tripType'] : 'all'
-										));
-										$trips = wtwidget_get_trips_data($api_url);
-
-										if (is_array($trips)) {
-											$locations = wtwidget_get_trip_locations($trips);
-										}
-									} catch (Exception $e) {
-										$locations = array();
-									}
-								}
-
-								// Get selected locations from design
-								$selected_locations = isset($design['locations']) ? (array)$design['locations'] : array();
+								$trip_type = isset( $design['tripType'] ) ? $design['tripType'] : 'all';
+								$locations = wtwidget_get_locations_by_trip_type( $trip_type );
+								$selected_locations = isset( $design['locations'] ) ? (array) $design['locations'] : array();
 							?>
 							<select id="trip_location" name="trip_location[]" multiple="multiple" class="wetravel-select2">
 								<?php if (empty($locations)) : ?>
@@ -468,6 +458,16 @@ function wtwidget_trip_create_design_page() {
 								<option value="recurring" <?php selected( isset( $design['tripType'] ) ? $design['tripType'] : '', 'recurring' ); ?>>Recurring Trips</option>
 								<option value="one-time" <?php selected( isset( $design['tripType'] ) ? $design['tripType'] : '', 'one-time' ); ?>>One-Time Trips</option>
 							</select>
+						</div>
+
+						<div class="wetravel-trips-form-field">
+							<label for="trip_date_category">Trip Date Category</label>
+							<select id="trip_date_category" name="trip_date_category">
+								<option value="" <?php selected( isset( $design['category'] ) ? $design['category'] : '', '' ); ?>>All (No Filter)</option>
+								<option value="upcoming" <?php selected( isset( $design['category'] ) ? $design['category'] : '', 'upcoming' ); ?>>Upcoming Trips</option>
+								<option value="past" <?php selected( isset( $design['category'] ) ? $design['category'] : '', 'past' ); ?>>Past Trips</option>
+							</select>
+							<p class="description">Filter trips based on their end date relative to today.</p>
 						</div>
 
 						<div id="date-range-container" class="wetravel-trips-form-field" style="display: none;">
