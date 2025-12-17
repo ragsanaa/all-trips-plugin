@@ -135,9 +135,16 @@
     // Restore opacity with smooth transition
     $container.animate({ opacity: 1 }, 300);
 
-    // Re-initialize WeTravel embed checkout if needed
-    if (config.buttonType === "book_now" && window.wtrvl) {
-      window.wtrvl.init();
+    // Re-initialize WeTravel embed checkout for the newly added buttons
+    if (config.buttonType === "book_now") {
+      // Small delay to ensure DOM is fully updated
+      setTimeout(function () {
+        if (window.wtrvl && window.wtrvl.init) {
+          window.wtrvl.init();
+        }
+        // Trigger a custom event that the embed_checkout script might listen to
+        document.dispatchEvent(new Event("DOMContentLoaded"));
+      }, 100);
     }
   }
 
