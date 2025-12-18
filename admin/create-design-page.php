@@ -235,7 +235,6 @@ function wtwidget_process_form_submission() {
 		'buttonColor'    => isset( $_POST['button_color'] ) ? sanitize_hex_color( wp_unslash( $_POST['button_color'] ) ) : '',
 		'keyword'        => $keyword,
 		'tripType'       => isset( $_POST['trip_type'] ) ? sanitize_text_field( wp_unslash( $_POST['trip_type'] ) ) : '',
-		'category'       => isset( $_POST['trip_date_category'] ) ? sanitize_text_field( wp_unslash( $_POST['trip_date_category'] ) ) : '',
 		'dateRangeStart' => $date_range_start,
 		'dateRangeEnd'   => $date_range_end,
 		'wtWidgetType'     => isset( $_POST['wt_widget_type'] ) ? sanitize_text_field( wp_unslash( $_POST['wt_widget_type'] ) ) : 'all-trips',
@@ -307,7 +306,6 @@ function wtwidget_trip_create_design_page() {
 		'buttonColor'    => '#33ae3f',
 		'keyword'        => '',
 		'tripType'       => 'all',
-		'category'       => '', // Trip date category: upcoming, past, or empty for all
 		'dateRangeStart' => '',
 		'dateRangeEnd'   => '',
 		'wtWidgetType'     => 'all-trips',
@@ -458,16 +456,6 @@ function wtwidget_trip_create_design_page() {
 								<option value="recurring" <?php selected( isset( $design['tripType'] ) ? $design['tripType'] : '', 'recurring' ); ?>>Recurring Trips</option>
 								<option value="one-time" <?php selected( isset( $design['tripType'] ) ? $design['tripType'] : '', 'one-time' ); ?>>One-Time Trips</option>
 							</select>
-						</div>
-
-						<div class="wetravel-trips-form-field">
-							<label for="trip_date_category">Trip Date Category</label>
-							<select id="trip_date_category" name="trip_date_category">
-								<option value="" <?php selected( isset( $design['category'] ) ? $design['category'] : '', '' ); ?>>All (No Filter)</option>
-								<option value="upcoming" <?php selected( isset( $design['category'] ) ? $design['category'] : '', 'upcoming' ); ?>>Upcoming Trips</option>
-								<option value="past" <?php selected( isset( $design['category'] ) ? $design['category'] : '', 'past' ); ?>>Past Trips</option>
-							</select>
-							<p class="description">Filter trips based on their end date relative to today.</p>
 						</div>
 
 						<div id="date-range-container" class="wetravel-trips-form-field" style="display: none;">

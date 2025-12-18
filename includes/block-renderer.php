@@ -153,12 +153,8 @@ function wtwidget_trips_block_render( $attributes ) {
 	// Get pagination settings
 	$current_page = isset($attributes['currentPage']) ? intval($attributes['currentPage']) : 1;
 
-	// Get category from attributes or design settings (no default - optional filter)
-	$category = ! empty( $attributes['category'] ) ? $attributes['category'] : ( ! empty( $design['category'] ) ? $design['category'] : '' );
-
 	// Build API URL with all parameters including filters and pagination
 	$api_url = wtwidget_build_api_url($env, $wetravel_trips_user_id, array(
-		'category'   => $category, // Optional - from admin settings
 		'trip_type'  => $trip_type,
 		'date_start' => $date_start,
 		'date_end'   => $date_end,

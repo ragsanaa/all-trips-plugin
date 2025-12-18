@@ -13,7 +13,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 // Register REST API endpoints for hybrid SSR + hydration.
 add_action( 'rest_api_init', 'wtwidget_register_rest_endpoints' );
 
-// Note: Legacy AJAX handlers have been removed as they were unused.
 // All frontend functionality now uses the REST API endpoint '/wp-json/wetravel/v1/trips'
 
 /**
@@ -86,11 +85,6 @@ function wtwidget_build_api_url($env, $wetravel_user_id, $params = array()) {
     // New API endpoint: v1/trips/{wetravel_user_id}/public
     $api_url = rtrim($env, '/') . '/v1/trips/' . $wetravel_user_id . '/public';
     $query_params = array();
-
-    // Category filter (upcoming or past) - optional, no default
-    if (!empty($params['category'])) {
-        $query_params['category'] = $params['category'];
-    }
 
     // Date range filters (from_date and to_date)
     if (!empty($params['date_start'])) {
@@ -287,11 +281,6 @@ function wtwidget_register_rest_endpoints() {
                 'required' => false,
                 'sanitize_callback' => 'sanitize_text_field',
             ),
-            'category' => array(
-                'required' => false,
-                'sanitize_callback' => 'sanitize_text_field',
-                'default' => '', // No default - comes from admin settings
-            ),
             'trip_type' => array(
                 'required' => false,
                 'sanitize_callback' => 'sanitize_text_field',
@@ -362,7 +351,6 @@ function wtwidget_rest_get_fresh_trips( $request ) {
     $block_id = $request->get_param('block_id');
     $wetravel_user_id = $request->get_param('wetravel_user_id') ?: get_option('wetravel_trips_user_id', '');
     $env = $request->get_param('env') ?: get_option('wetravel_trips_env', 'https://pre.wetravel.to');
-    $category = $request->get_param('category');
     $trip_type = $request->get_param('trip_type');
     $date_start = $request->get_param('date_start');
     $date_end = $request->get_param('date_end');
@@ -392,7 +380,6 @@ function wtwidget_rest_get_fresh_trips( $request ) {
 
     // Build API URL with all parameters including pagination
     $api_url = wtwidget_build_api_url($env, $wetravel_user_id, array(
-        'category'   => $category,
         'trip_type'  => $trip_type,
         'date_start' => $date_start,
         'date_end'   => $date_end,
