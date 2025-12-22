@@ -12,6 +12,81 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// Define plugin constants for magic numbers
+if ( ! defined( 'WETRAVEL_CACHE_DURATION' ) ) {
+	define( 'WETRAVEL_CACHE_DURATION', 5 * MINUTE_IN_SECONDS ); // 5 minutes
+}
+if ( ! defined( 'WETRAVEL_USAGE_CACHE_DURATION' ) ) {
+	define( 'WETRAVEL_USAGE_CACHE_DURATION', HOUR_IN_SECONDS ); // 1 hour
+}
+if ( ! defined( 'WETRAVEL_MAX_VISIBLE_PAGES' ) ) {
+	define( 'WETRAVEL_MAX_VISIBLE_PAGES', 5 ); // Pagination display
+}
+if ( ! defined( 'WETRAVEL_API_TIMEOUT' ) ) {
+	define( 'WETRAVEL_API_TIMEOUT', 15 ); // API request timeout in seconds
+}
+if ( ! defined( 'WETRAVEL_HYDRATION_DELAY' ) ) {
+	define( 'WETRAVEL_HYDRATION_DELAY', 1000 ); // Hydration delay in milliseconds
+}
+
+/**
+ * Helper function to verify admin nonce from GET or POST requests
+ *
+ * @param string $action The nonce action name.
+ * @param string $nonce_key The nonce key name (default: '_wpnonce').
+ * @return bool True if nonce is valid, false otherwise.
+ */
+function wtwidget_verify_nonce( $action, $nonce_key = '_wpnonce' ) {
+	$nonce = '';
+
+	// Check POST first, then GET
+	if ( isset( $_POST[ $nonce_key ] ) ) {
+		$nonce = sanitize_text_field( wp_unslash( $_POST[ $nonce_key ] ) );
+	} elseif ( isset( $_GET[ $nonce_key ] ) ) {
+		$nonce = sanitize_text_field( wp_unslash( $_GET[ $nonce_key ] ) );
+	}
+
+	return wp_verify_nonce( $nonce, $action );
+}
+
+/**
+ * Helper function to get sanitized GET parameter
+ *
+ * @param string $key The parameter key.
+ * @param string $default Default value if not set.
+ * @return string Sanitized parameter value.
+ */
+function wtwidget_get_param( $key, $default = '' ) {
+	return isset( $_GET[ $key ] ) ? sanitize_text_field( wp_unslash( $_GET[ $key ] ) ) : $default;
+}
+
+/**
+ * Helper function to get sanitized POST parameter
+ *
+ * @param string $key The parameter key.
+ * @param string $default Default value if not set.
+ * @return string Sanitized parameter value.
+ */
+function wtwidget_post_param( $key, $default = '' ) {
+	return isset( $_POST[ $key ] ) ? sanitize_text_field( wp_unslash( $_POST[ $key ] ) ) : $default;
+}
+
+/**
+ * Helper function to log errors consistently
+ *
+ * @param string $message Error message.
+ * @param mixed  $context Additional context data.
+ */
+function wtwidget_log_error( $message, $context = null ) {
+	if ( defined( 'WP_DEBUG' ) && WP_DEBUG === true ) {
+		$log_message = 'WeTravel Widgets: ' . $message;
+		if ( $context !== null ) {
+			$log_message .= ' | Context: ' . wp_json_encode( $context );
+		}
+		error_log( $log_message );
+	}
+}
+
 /**
  * Advanced sanitization function for WeTravel embed code
  *
@@ -172,15 +247,6 @@ function wtwidget_check_keyword_unique() {
 }
 
 /**
- * Enqueue scripts and styles for the plugin
- */
-function wtwidget_enqueue_scripts() {
-	// Removed editor-fix.js since widgets are server-side rendered
-	// This prevents AJAX conflicts in editors
-}
-add_action( 'wp_enqueue_scripts', 'wtwidget_enqueue_scripts' );
-
-/**
  * Get the appropriate CDN URL based on environment
  *
  * @param string $env The environment URL (e.g., 'https://pre.wetravel.to').
@@ -323,6 +389,7 @@ function wtwidget_check_widget_usage() {
 		$shortcode_results = wp_cache_get( $cache_key );
 
 		if ( false === $shortcode_results ) {
+			$cache_duration = defined( 'WETRAVEL_USAGE_CACHE_DURATION' ) ? WETRAVEL_USAGE_CACHE_DURATION : HOUR_IN_SECONDS;
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Necessary for widget usage analysis with caching
 			$shortcode_results = $wpdb->get_results(
 				$wpdb->prepare(
@@ -330,7 +397,7 @@ function wtwidget_check_widget_usage() {
 					array_merge(['%[wetravel_trips%'], $post_statuses, $post_types)
 				)
 			);
-			wp_cache_set( $cache_key, $shortcode_results, '', HOUR_IN_SECONDS );
+			wp_cache_set( $cache_key, $shortcode_results, '', $cache_duration );
 		}
 
 		if (!empty($shortcode_results)) {
@@ -362,8 +429,9 @@ function wtwidget_check_widget_usage() {
 			}
 		}
 
-		// Cache the results for 1 hour
-		wp_cache_set($cache_key, $usage, '', HOUR_IN_SECONDS);
+		// Cache the results
+		$cache_duration = defined( 'WETRAVEL_USAGE_CACHE_DURATION' ) ? WETRAVEL_USAGE_CACHE_DURATION : HOUR_IN_SECONDS;
+		wp_cache_set($cache_key, $usage, '', $cache_duration);
 	}
 
 	return $usage;
@@ -438,6 +506,23 @@ function wtwidget_is_actual_widget_usage($content, $post_type) {
 function wtwidget_clear_usage_cache() {
 	wp_cache_delete('wetravel_widget_usage');
 }
+
+/**
+ * Clear widget usage cache when posts are saved
+ * This ensures widget usage detection is always accurate
+ *
+ * @param int $post_id The post ID.
+ */
+function wtwidget_invalidate_cache_on_save( $post_id ) {
+	// Skip autosaves and revisions
+	if ( wp_is_post_autosave( $post_id ) || wp_is_post_revision( $post_id ) ) {
+		return;
+	}
+
+	// Clear the widget usage cache
+	wtwidget_clear_usage_cache();
+}
+add_action( 'save_post', 'wtwidget_invalidate_cache_on_save' );
 
 /**
  * Generate shortcode with appropriate parameters based on display type

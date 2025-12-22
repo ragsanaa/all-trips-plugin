@@ -409,42 +409,4 @@ function wtwidget_deactivation() {
 }
 register_deactivation_hook( __FILE__, 'wtwidget_deactivation' );
 
-// Add uninstall hook to clean up when plugin is deleted
-function wtwidget_uninstall() {
-	// Remove all plugin options
-	$options = array(
-		'wetravel_trips_src',
-		'wetravel_trips_slug',
-		'wetravel_trips_env',
-		'wetravel_trips_user_id',
-		'wetravel_trips_button_color',
-		'wetravel_trips_items_per_row',
-		'wetravel_trips_items_per_page',
-		'wetravel_trips_display_type',
-		'wetravel_trips_button_type',
-		'wetravel_trips_load_more_text',
-		'wetravel_trips_search_visibility',
-		'wetravel_consent_given',
-		'wetravel_consent_timestamp',
-		'wetravel_consent_type',
-	);
-
-	foreach ($options as $option) {
-		delete_option($option);
-	}
-
-	// Optionally remove the uploads directory
-	$upload_dir = wp_upload_dir();
-	$wetravel_upload_dir = $upload_dir['basedir'] . '/wetravel-widgets';
-
-	if (file_exists($wetravel_upload_dir)) {
-		require_once ABSPATH . 'wp-admin/includes/file.php';
-		WP_Filesystem();
-		global $wp_filesystem;
-
-		if ($wp_filesystem) {
-			$wp_filesystem->rmdir($wetravel_upload_dir, true);
-		}
-	}
-}
-register_uninstall_hook( __FILE__, 'wtwidget_uninstall' );
+// Note: Uninstall logic is handled in uninstall.php as per WordPress best practices

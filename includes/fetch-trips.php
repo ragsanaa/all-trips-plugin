@@ -424,7 +424,8 @@ function wtwidget_rest_get_fresh_trips( $request ) {
 
     // Cache the fresh results for next server render
     $cache_key = 'wetravel_trips_' . md5($api_url);
-    set_transient($cache_key, $api_response, 300); // Cache for 5 minutes
+    $cache_duration = defined( 'WETRAVEL_CACHE_DURATION' ) ? WETRAVEL_CACHE_DURATION : ( 5 * MINUTE_IN_SECONDS );
+    set_transient($cache_key, $api_response, $cache_duration);
 
     return rest_ensure_response(array(
         'success' => true,
@@ -445,7 +446,7 @@ function wtwidget_get_fresh_trips_data( $api_url ) {
     $response = wp_remote_get(
         $api_url,
         array(
-            'timeout' => 15,
+            'timeout' => defined( 'WETRAVEL_API_TIMEOUT' ) ? WETRAVEL_API_TIMEOUT : 15,
             'headers' => array(
                 'Accept' => 'application/json',
             ),
@@ -453,6 +454,29 @@ function wtwidget_get_fresh_trips_data( $api_url ) {
     );
 
     if ( is_wp_error( $response ) ) {
+        if ( function_exists( 'wtwidget_log_error' ) ) {
+            wtwidget_log_error(
+                'API request failed',
+                array(
+                    'error' => $response->get_error_message(),
+                    'url'   => $api_url,
+                )
+            );
+        }
+        return false;
+    }
+
+    $response_code = wp_remote_retrieve_response_code( $response );
+    if ( $response_code !== 200 ) {
+        if ( function_exists( 'wtwidget_log_error' ) ) {
+            wtwidget_log_error(
+                'API returned non-200 status code',
+                array(
+                    'status_code' => $response_code,
+                    'url'         => $api_url,
+                )
+            );
+        }
         return false;
     }
 
@@ -461,6 +485,16 @@ function wtwidget_get_fresh_trips_data( $api_url ) {
 
     // Check if we have valid data - new API uses 'data' array
     if ( ! isset( $data['data'] ) || ! is_array( $data['data'] ) ) {
+        if ( function_exists( 'wtwidget_log_error' ) ) {
+            wtwidget_log_error(
+                'API returned invalid data structure',
+                array(
+                    'url'      => $api_url,
+                    'has_data' => isset( $data['data'] ),
+                    'is_array' => isset( $data['data'] ) ? is_array( $data['data'] ) : false,
+                )
+            );
+        }
         return false;
     }
 

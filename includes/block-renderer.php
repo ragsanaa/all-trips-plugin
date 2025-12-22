@@ -204,12 +204,13 @@ function wtwidget_trips_block_render( $attributes ) {
 
 		$enhanced_trips = $trips;
 
-		// Cache complete response for 5 minutes
+		// Cache complete response
 		if (!empty($trips)) {
+			$cache_duration = defined( 'WETRAVEL_CACHE_DURATION' ) ? WETRAVEL_CACHE_DURATION : ( 5 * MINUTE_IN_SECONDS );
 			set_transient($cache_key, array(
 				'trips'      => $enhanced_trips,
 				'pagination' => $pagination,
-			), 300);
+			), $cache_duration);
 		}
 	}
 

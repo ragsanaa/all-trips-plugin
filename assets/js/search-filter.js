@@ -425,13 +425,11 @@
     });
 
     // Initialize clear button state on page load
-    $(document).ready(function () {
-      $(".search-input").each(function () {
-        const blockId = $(this).data("block-id");
-        if (blockId) {
-          updateClearButton(blockId);
-        }
-      });
+    $(".search-input").each(function () {
+      const blockId = $(this).data("block-id");
+      if (blockId) {
+        updateClearButton(blockId);
+      }
     });
   });
 })(jQuery);

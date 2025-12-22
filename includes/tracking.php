@@ -90,7 +90,6 @@ class WetravelTracking {
 	 * Enqueue tracking scripts
 	 */
 	public function enqueue_tracking_scripts() {
-		return; // TODO: Uncomment this when tracking is ready
 		// Skip if tracking is disabled
 		if ( ! $this->is_tracking_enabled() ) {
 			return;
@@ -393,6 +392,8 @@ class WetravelTracking {
 	/**
 	 * Get widget counts by widget type and display type, dynamically.
 	 * Returns array: [ 'all-trips' => [ 'vertical' => 2, 'carousel' => 1, ... ], ... ]
+	 *
+	 * @todo Consider consolidating with get_active_widget_counts() to reduce code duplication
 	 */
 	private function get_widget_counts() {
 		$designs = get_option( 'wetravel_trips_designs', array() );
@@ -466,6 +467,7 @@ class WetravelTracking {
 				$pattern_count = wp_cache_get( $cache_key );
 
 				if ( false === $pattern_count ) {
+					$cache_duration = defined( 'WETRAVEL_USAGE_CACHE_DURATION' ) ? WETRAVEL_USAGE_CACHE_DURATION : HOUR_IN_SECONDS;
 					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Necessary for content analysis with caching
 					$pattern_count = $wpdb->get_var( $wpdb->prepare(
 						"SELECT COUNT(DISTINCT ID) FROM {$wpdb->posts}
@@ -473,7 +475,7 @@ class WetravelTracking {
 						 AND post_content LIKE %s",
 						'%' . $wpdb->esc_like( $pattern ) . '%'
 					) );
-					wp_cache_set( $cache_key, $pattern_count, '', HOUR_IN_SECONDS );
+					wp_cache_set( $cache_key, $pattern_count, '', $cache_duration );
 				}
 				$shortcode_count = max( $shortcode_count, intval( $pattern_count ) );
 			}
@@ -497,6 +499,7 @@ class WetravelTracking {
 				$pattern_count = wp_cache_get( $cache_key );
 
 				if ( false === $pattern_count ) {
+					$cache_duration = defined( 'WETRAVEL_USAGE_CACHE_DURATION' ) ? WETRAVEL_USAGE_CACHE_DURATION : HOUR_IN_SECONDS;
 					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Necessary for content analysis with caching implemented
 					$pattern_count = $wpdb->get_var( $wpdb->prepare(
 						"SELECT COUNT(DISTINCT ID) FROM {$wpdb->posts}
@@ -506,7 +509,7 @@ class WetravelTracking {
 						'%' . $wpdb->esc_like( $pattern ) . '%',
 						'%wetravel-trips/block%'
 					) );
-					wp_cache_set( $cache_key, $pattern_count, '', HOUR_IN_SECONDS );
+					wp_cache_set( $cache_key, $pattern_count, '', $cache_duration );
 				}
 				$block_count = max( $block_count, intval( $pattern_count ) );
 			}
