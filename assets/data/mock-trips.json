@@ -18,7 +18,7 @@
         "title": "Costa Rica"
       },
       "trip_options": [
-        { "id": "opt-001", "name": "Standard", "price": 1299 }
+        { "id": "opt-001", "name": "Standard", "price": 129900 }
       ]
     },
     {
@@ -39,7 +39,7 @@
         "title": "Iceland"
       },
       "trip_options": [
-        { "id": "opt-002", "name": "Standard", "price": 1899 }
+        { "id": "opt-002", "name": "Standard", "price": 189900 }
       ]
     },
     {
@@ -60,7 +60,7 @@
         "title": "Japan"
       },
       "trip_options": [
-        { "id": "opt-003", "name": "Standard", "price": 2499 }
+        { "id": "opt-003", "name": "Standard", "price": 249900 }
       ]
     },
     {
@@ -81,7 +81,7 @@
         "title": "Argentina"
       },
       "trip_options": [
-        { "id": "opt-004", "name": "Standard", "price": 1799 }
+        { "id": "opt-004", "name": "Standard", "price": 179900 }
       ]
     },
     {
@@ -102,7 +102,7 @@
         "title": "Morocco"
       },
       "trip_options": [
-        { "id": "opt-005", "name": "Standard", "price": 1199 }
+        { "id": "opt-005", "name": "Standard", "price": 119900 }
       ]
     },
     {
@@ -123,7 +123,7 @@
         "title": "Nepal"
       },
       "trip_options": [
-        { "id": "opt-006", "name": "Standard", "price": 2299 }
+        { "id": "opt-006", "name": "Standard", "price": 229900 }
       ]
     },
     {
@@ -144,7 +144,7 @@
         "title": "Kenya"
       },
       "trip_options": [
-        { "id": "opt-007", "name": "Standard", "price": 1999 }
+        { "id": "opt-007", "name": "Standard", "price": 199900 }
       ]
     },
     {
@@ -165,7 +165,7 @@
         "title": "Maldives"
       },
       "trip_options": [
-        { "id": "opt-008", "name": "Standard", "price": 3499 }
+        { "id": "opt-008", "name": "Standard", "price": 349900 }
       ]
     },
     {
@@ -186,7 +186,7 @@
         "title": "Norway"
       },
       "trip_options": [
-        { "id": "opt-009", "name": "Standard", "price": 2199 }
+        { "id": "opt-009", "name": "Standard", "price": 219900 }
       ]
     },
     {
@@ -207,7 +207,7 @@
         "title": "Brazil"
       },
       "trip_options": [
-        { "id": "opt-010", "name": "Standard", "price": 1699 }
+        { "id": "opt-010", "name": "Standard", "price": 169900 }
       ]
     },
     {
@@ -228,7 +228,7 @@
         "title": "Egypt"
       },
       "trip_options": [
-        { "id": "opt-011", "name": "Standard", "price": 1899 }
+        { "id": "opt-011", "name": "Standard", "price": 189900 }
       ]
     },
     {
@@ -249,7 +249,7 @@
         "title": "Switzerland"
       },
       "trip_options": [
-        { "id": "opt-012", "name": "Standard", "price": 2599 }
+        { "id": "opt-012", "name": "Standard", "price": 259900 }
       ]
     }
   ]

@@ -7,78 +7,40 @@
     isDropdownOpen: {},
   };
 
-  // Toggle dropdown visibility
-  function toggleDropdown(blockId) {
-    const dropdown = $(`#search-filter-${blockId} .wetravel-dropdown-menu`);
-    const locationButton = $(`#search-filter-${blockId} .location-button`);
-    const arrow = $(`#search-filter-${blockId} .dashicons`);
-
-    state.isDropdownOpen[blockId] = !state.isDropdownOpen[blockId];
-
-    dropdown.toggleClass("open", state.isDropdownOpen[blockId]);
-    locationButton.toggleClass("open", state.isDropdownOpen[blockId]);
-    arrow.toggleClass("open", state.isDropdownOpen[blockId]);
-  }
-
-  // Toggle location selection
-  function toggleLocation(element, location, blockId) {
-    if (!state.selectedLocations[blockId]) {
-      state.selectedLocations[blockId] = [];
+  // Initialize Select2 for location filter with AJAX search
+  // Uses the centralized WeTravelSelect2 utility
+  function initializeLocationSelect2(blockId) {
+    // Check if required dependencies are available
+    if (!wetravelSearchData || typeof window.WeTravelSelect2 === "undefined") {
+      return;
     }
 
-    const checkmark = $(element).find(".checkmark");
-    const isSelected = state.selectedLocations[blockId].includes(location);
+    // Use centralized Select2 initialization
+    window.WeTravelSelect2.initializeLocationSelect2({
+      selector: "#location-filter-" + blockId,
+      blockId: blockId,
+      globalData: wetravelSearchData,
+      allowClear: false,
+      dropdownParent: ".filter-dropdown",
+      placeholder: "Type to search locations (min 3 characters)...",
+      withEventHandlers: true, // Enable frontend-specific event handlers
+      onChange: function ($select, blockId) {
+        const selectedValues = $select.val() || [];
+        state.selectedLocations[blockId] = selectedValues;
 
-    if (isSelected) {
-      state.selectedLocations[blockId] = state.selectedLocations[
-        blockId
-      ].filter((loc) => loc !== location);
-      checkmark.removeClass("checked").html("");
-      $(element).removeClass("selected");
-    } else {
-      state.selectedLocations[blockId].push(location);
-      checkmark.addClass("checked").html("✓");
-      $(element).addClass("selected");
-    }
+        // Update clear button visibility
+        const $clearBtn = $(
+          ".location-clear-btn[data-block-id='" + blockId + "']"
+        );
+        if (selectedValues.length > 0) {
+          $clearBtn.show();
+        } else {
+          $clearBtn.hide();
+        }
 
-    updateSelectedText(blockId);
-    filterTrips(blockId);
-  }
-
-  // Update selected locations text
-  function updateSelectedText(blockId) {
-    const selectedText = $(`#search-filter-${blockId} #selected-text`);
-    const selectedCount = $(`#search-filter-${blockId} #selected-count`);
-    const locationClearBtn = $(`#search-filter-${blockId} .location-clear-btn`);
-    const locations = state.selectedLocations[blockId] || [];
-
-    if (locations.length === 0) {
-      selectedText.text("Select location");
-      selectedCount.hide();
-      locationClearBtn.hide();
-    } else if (locations.length === 1) {
-      selectedText.text(locations[0]);
-      selectedCount.hide();
-      locationClearBtn.show();
-    } else {
-      selectedText.text("Multiple locations");
-      selectedCount.text(locations.length + " selected").show();
-      locationClearBtn.show();
-    }
-
-    // Update clear button visibility
-    updateClearButton(blockId);
-  }
-
-  // Filter locations in dropdown
-  function filterLocations(blockId) {
-    const rawSearch = $(`#search-filter-${blockId} #location-search`).val();
-    const searchTerm = (rawSearch || "").toString().toLowerCase();
-
-    $(`#search-filter-${blockId} .location-item`).each(function () {
-      const rawLocation = $(this).find(".location-name").text();
-      const locationName = (rawLocation || "").toString().toLowerCase();
-      $(this).toggle(locationName.includes(searchTerm));
+        // Don't filter automatically - wait for Apply button
+        updateClearButton(blockId);
+      },
     });
   }
 
@@ -186,6 +148,44 @@
 
     clearBtn.toggle(hasValue);
     clearAllBtn.toggle(hasAnyFilters);
+
+    // Update filter count badge
+    updateFilterCount(blockId);
+  }
+
+  // Update filter count badge
+  function updateFilterCount(blockId) {
+    const filterBadge = $(
+      `.filter-button[data-block-id="${blockId}"] .filter-count-badge`
+    );
+    const dateStartInput = $(`#search-filter-${blockId} .date-start-input`);
+    const dateEndInput = $(`#search-filter-${blockId} .date-end-input`);
+
+    let filterCount = 0;
+
+    // Count location filters
+    const hasLocationFilters =
+      (state.selectedLocations[blockId] || []).length > 0;
+    if (hasLocationFilters) {
+      filterCount++;
+    }
+
+    // Count date range filters (count as one if either start or end date is set)
+    const hasDateFilters =
+      (dateStartInput.length &&
+        (dateStartInput.val() || "").toString().trim().length > 0) ||
+      (dateEndInput.length &&
+        (dateEndInput.val() || "").toString().trim().length > 0);
+    if (hasDateFilters) {
+      filterCount++;
+    }
+
+    // Update badge
+    if (filterCount > 0) {
+      filterBadge.text(filterCount).show();
+    } else {
+      filterBadge.hide();
+    }
   }
 
   // Clear search input
@@ -210,13 +210,13 @@
 
     // Clear location selections
     state.selectedLocations[blockId] = [];
-    $(`#search-filter-${blockId} .location-item .checkmark`)
-      .removeClass("checked")
-      .html("");
-    $(`#search-filter-${blockId} .location-item`).removeClass("selected");
-
-    // Reset dropdown text
-    updateSelectedText(blockId);
+    const $locationSelect = $("#location-filter-" + blockId);
+    if (
+      $locationSelect.length &&
+      $locationSelect.hasClass("select2-hidden-accessible")
+    ) {
+      $locationSelect.val(null).trigger("change");
+    }
 
     // Show all items
     container.find(".trip-item").removeClass("filtered").show();
@@ -228,8 +228,9 @@
       paginationContainer.show();
     }
 
-    // Update clear button
+    // Update clear button and filter count
     updateClearButton(blockId);
+    updateFilterCount(blockId);
 
     // Trigger filter event
     container.trigger("tripsFiltered", {
@@ -292,47 +293,28 @@
 
       // Clear location selections
       state.selectedLocations[blockId] = [];
-      $(`#search-filter-${blockId} .location-item .checkmark`)
-        .removeClass("checked")
-        .html("");
-      $(`#search-filter-${blockId} .location-item`).removeClass("selected");
-
-      // Reset dropdown text
-      updateSelectedText(blockId);
+      const $locationSelect = $("#location-filter-" + blockId);
+      if (
+        $locationSelect.length &&
+        $locationSelect.hasClass("select2-hidden-accessible")
+      ) {
+        $locationSelect.val(null).trigger("change");
+      }
 
       // Hide the clear button
       $(this).hide();
 
-      // Apply filters
-      filterTrips(blockId);
-    });
-
-    // Location button handler
-    $(document).on("click", ".location-button", function (e) {
-      e.preventDefault();
-      e.stopPropagation();
-      toggleDropdown($(this).data("block-id"));
-    });
-
-    // Location item handler
-    $(document).on("click", ".location-item", function (e) {
-      e.preventDefault();
-      e.stopPropagation();
-      const blockId = $(this).data("block-id");
-      toggleLocation(this, $(this).data("location"), blockId);
-    });
-
-    // Location search handler
-    $(document).on("input", "#location-search", function () {
-      filterLocations($(this).data("block-id"));
+      // Don't auto-apply - let user click Apply button to apply filters
+      updateClearButton(blockId);
     });
 
     // Date range filter handlers
     $(document).on("change", ".date-input", function () {
       const blockId = $(this).data("block-id");
       // You can add date filtering logic here if needed
-      // For now, we'll just update the clear button state
+      // For now, we'll just update the clear button state and filter count
       updateClearButton(blockId);
+      updateFilterCount(blockId);
     });
 
     // Reset button handler
@@ -363,34 +345,15 @@
       // Hide the filter dropdown
       $(`#search-filter-${blockId} .filter-dropdown`).hide();
 
+      // Update filter count badge
+      updateFilterCount(blockId);
+
       // Apply filters (you can add date range filtering logic here)
       filterTrips(blockId);
     });
 
-    // Close dropdown when clicking outside
+    // Close filter dropdown when clicking outside
     $(document).on("click", function (event) {
-      // Check all open dropdowns
-      Object.keys(state.isDropdownOpen).forEach(function (blockId) {
-        if (state.isDropdownOpen[blockId]) {
-          const dropdownContainer = $(
-            `#search-filter-${blockId} .location-dropdown`
-          );
-          const locationButton = $(
-            `#search-filter-${blockId} .location-button`
-          );
-
-          // Check if the click target is outside the dropdown container and not on the location button
-          if (
-            dropdownContainer.length &&
-            !dropdownContainer[0].contains(event.target) &&
-            !locationButton[0].contains(event.target)
-          ) {
-            toggleDropdown(blockId);
-          }
-        }
-      });
-
-      // Close filter dropdown when clicking outside
       $(".wetravel-trips-search-filter").each(function () {
         const searchFilter = $(this);
         const blockId = searchFilter.attr("id").replace("search-filter-", "");
@@ -407,11 +370,6 @@
       });
     });
 
-    // Prevent dropdown from closing when clicking inside
-    $(document).on("click", ".wetravel-dropdown-menu", function (e) {
-      e.stopPropagation();
-    });
-
     // Prevent filter dropdown from closing when clicking inside
     $(document).on("click", ".filter-dropdown", function (e) {
       e.stopPropagation();
@@ -420,15 +378,29 @@
     // Initialize filters when trips are loaded
     $(document).on("tripsRendered", ".wetravel-trips-container", function () {
       const blockId = $(this).attr("id").replace("trips-container-", "");
+
+      // Initialize location Select2 for this block
+      initializeLocationSelect2(blockId);
+
       filterTrips(blockId);
       updateClearButton(blockId);
+      updateFilterCount(blockId);
     });
 
-    // Initialize clear button state on page load
+    // Initialize clear button state and location Select2 on page load
     $(".search-input").each(function () {
       const blockId = $(this).data("block-id");
       if (blockId) {
         updateClearButton(blockId);
+        updateFilterCount(blockId);
+      }
+    });
+
+    // Initialize location Select2 for all visible location filters
+    $(".location-filter-select").each(function () {
+      const blockId = $(this).data("block-id");
+      if (blockId) {
+        initializeLocationSelect2(blockId);
       }
     });
   });

@@ -126,11 +126,11 @@ function wtwidget_trips_block_render( $attributes ) {
 	// Create a nonce for AJAX security.
 	$nonce = wp_create_nonce( 'wetravel_trips_nonce' );
 
-	// Get trip_type, date_start and date_end from attributes or design.
+	// Get recurring, and date range from attributes or design.
 	// Prioritize block attributes over design settings.
-	$trip_type  = ! empty( $attributes['tripType'] ) ? $attributes['tripType'] : ( ! empty( $design['tripType'] ) ? $design['tripType'] : 'all' );
-	$date_start = ! empty( $attributes['dateStart'] ) ? $attributes['dateStart'] : ( ! empty( $design['dateRangeStart'] ) ? $design['dateRangeStart'] : '' );
-	$date_end   = ! empty( $attributes['dateEnd'] ) ? $attributes['dateEnd'] : ( ! empty( $design['dateRangeEnd'] ) ? $design['dateRangeEnd'] : '' );
+	$trip_type = isset( $attributes['tripType'] ) ? $attributes['tripType'] : ( isset( $design['tripType'] ) ? $design['tripType'] : '' );
+	$date_start = ! empty( $attributes['dateStart'] ) ? $attributes['dateStart'] : ( ! empty( $design['dateStart'] ) ? $design['dateStart'] : '' );
+	$date_end = ! empty( $attributes['dateEnd'] ) ? $attributes['dateEnd'] : ( ! empty( $design['dateEnd'] ) ? $design['dateEnd'] : '' );
 
 	// Get selected locations - prioritize shortcode attribute over design settings
 	$locations = array();
@@ -154,14 +154,33 @@ function wtwidget_trips_block_render( $attributes ) {
 	$current_page = isset($attributes['currentPage']) ? intval($attributes['currentPage']) : 1;
 
 	// Build API URL with all parameters including filters and pagination
-	$api_url = wtwidget_build_api_url($env, $wetravel_trips_user_id, array(
-		'trip_type'  => $trip_type,
-		'date_start' => $date_start,
-		'date_end'   => $date_end,
-		'locations'  => $locations, // API handles location filtering
+	$api_params = array(
 		'page'       => $current_page,
 		'per_page'   => $items_per_page,
-	));
+	);
+
+	// Add trip type filter (will be transformed to recurring in API)
+	if ($trip_type !== '') {
+		$api_params['trip_type'] = $trip_type;
+	}
+
+	// Add departure date range filters
+	if (!empty($date_start) || !empty($date_end)) {
+		$api_params['departure_date'] = array();
+		if (!empty($date_start)) {
+			$api_params['departure_date']['gte'] = $date_start;
+		}
+		if (!empty($date_end)) {
+			$api_params['departure_date']['lte'] = $date_end;
+		}
+	}
+
+	// Add locations filter (will be transformed to destinations in API)
+	if (!empty($locations)) {
+		$api_params['locations'] = $locations;
+	}
+
+	$api_url = wtwidget_build_api_url($env, $wetravel_trips_user_id, $api_params);
 
 	// Cache key includes all filter parameters
 	$cache_key = 'wetravel_trips_' . md5($api_url);
@@ -262,16 +281,32 @@ function wtwidget_trips_block_render( $attributes ) {
 			filemtime( plugin_dir_path( dirname( __FILE__ ) ) . 'assets/js/select2.min.js' ),
 			true
 		);
+
+		// Enqueue centralized Select2 location initialization utility
+		wp_enqueue_script(
+			'wetravel-select2-locations',
+			plugins_url( 'assets/js/select2-locations.js', dirname( __FILE__ ) ),
+			array( 'jquery', 'select2-js' ),
+			filemtime( plugin_dir_path( dirname( __FILE__ ) ) . 'assets/js/select2-locations.js' ),
+			true
+		);
 	}
 
 	// Enqueue search filter script
 	wp_enqueue_script(
 		'wetravel-trips-search-filter',
 		plugins_url( 'assets/js/search-filter.js', dirname( __FILE__ ) ),
-		array( 'jquery', 'select2-js' ),
+		array( 'jquery', 'select2-js', 'wetravel-select2-locations' ),
 		filemtime( plugin_dir_path( dirname( __FILE__ ) ) . 'assets/js/search-filter.js' ),
 		true
 	);
+
+	// Localize script data for frontend location search
+	wp_localize_script('wetravel-trips-search-filter', 'wetravelSearchData', array(
+		'restUrl' => esc_url_raw( rest_url() ),
+		'organizerId' => $wetravel_trips_user_id,
+		'nonce' => wp_create_nonce('wp_rest')
+	));
 
 	// Initialize Select2 for this specific block
 	wp_add_inline_script('select2-js', sprintf(
@@ -353,7 +388,8 @@ function wtwidget_trips_block_render( $attributes ) {
 					<button type="button" class="filter-button"
 									data-block-id="<?php echo esc_attr( $block_id ); ?>">
 							<span class="dashicons dashicons-admin-settings"></span>
-							<span class="filter-button-text">Filter</span>
+							<span class="filter-button-text">Filters</span>
+							<span class="filter-count-badge" style="display: none;">0</span>
 					</button>
 
 					<!-- Filter Dropdown (hidden until button click) -->
@@ -371,42 +407,13 @@ function wtwidget_trips_block_render( $attributes ) {
 									<button type="button" class="location-clear-btn" data-block-id="<?php echo esc_attr( $block_id ); ?>" style="display: none;">Clear</button>
 								</div>
 								<div class="location-filter-wrapper">
-									<button type="button" class="location-button" data-block-id="<?php echo esc_attr( $block_id ); ?>">
-											<span id="selected-text">Select location</span>
-											<span class="selected-count" id="selected-count" style="display: none;">0 selected</span>
-											<span class="dashicons dashicons-arrow-down-alt2"></span>
-									</button>
-
-									<!-- Custom Location Dropdown -->
-									<div class="location-dropdown">
-											<div class="wetravel-dropdown-menu" id="wetravel-dropdown-menu">
-													<div class="location-search">
-															<input type="text" placeholder="Search Location"
-																			id="location-search"
-																			data-block-id="<?php echo esc_attr( $block_id ); ?>" />
-													</div>
-													<div class="location-list" id="location-list">
-															<?php
-															// Get unique locations from trips
-														$locations = array();
-														if (is_array($enhanced_trips)) {
-																$locations = wtwidget_get_trip_locations($enhanced_trips);
-																sort($locations);
-														}
-
-															foreach ($locations as $location) {
-																	if (!empty($location)) {
-																			$location_id = sanitize_title($location);
-																			echo '<div class="location-item" data-location="' . esc_attr($location) . '" data-block-id="' . esc_attr($block_id) . '">';
-																			echo '<div class="checkmark" id="check-' . esc_attr($location_id) . '"></div>';
-																			echo '<div class="location-name">' . esc_html($location) . '</div>';
-																			echo '</div>';
-																	}
-															}
-															?>
-													</div>
-											</div>
-									</div>
+									<select
+										id="location-filter-<?php echo esc_attr( $block_id ); ?>"
+										class="location-filter-select"
+										data-block-id="<?php echo esc_attr( $block_id ); ?>"
+										multiple="multiple"
+										style="width: 100%;">
+									</select>
 								</div>
 						</div>
 
@@ -460,9 +467,6 @@ function wtwidget_trips_block_render( $attributes ) {
 			<?php if ( ! empty( $selected_design_id ) ) : ?>
 			data-design="<?php echo esc_attr( $selected_design_id ); ?>"
 			<?php endif; ?>
-			data-trip-type="<?php echo esc_attr( $trip_type ); ?>"
-			data-date-start="<?php echo esc_attr( $date_start ); ?>"
-			data-date-end="<?php echo esc_attr( $date_end ); ?>"
 			data-wetravel-widget-type="<?php echo esc_attr( $wt_widget_type ); ?>"
 			data-integration-type="<?php echo esc_attr( $integration_type ); ?>"
 			data-tracked-server-side="true"
@@ -918,8 +922,7 @@ function wtwidget_render_trip_item( $trip, $options, $visibility_class = '' ) {
 	// Price.
 	if ( ! empty( $trip_price ) ) {
 		$html .= sprintf(
-			'<div class="trip-price"><p>From</p> <span>%s%s</span></div>',
-			esc_html( $trip_price['currencySymbol'] ),
+			'<div class="trip-price"><p>From</p> <span>%s</span></div>',
 			esc_html( $trip_price['amount'] )
 		);
 	}

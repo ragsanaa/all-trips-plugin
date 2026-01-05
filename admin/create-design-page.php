@@ -97,63 +97,6 @@ add_action( 'wp_ajax_render_mock_preview', 'wtwidget_render_mock_preview' );
 
 
 /**
- * Get locations for a specific trip type
- *
- * @param string $trip_type The trip type to filter by ('all', 'recurring', 'one-time').
- * @return array Array of unique location strings.
- */
-function wtwidget_get_locations_by_trip_type( $trip_type = 'all' ) {
-	$env = get_option( 'wetravel_trips_env', 'https://pre.wetravel.to' );
-	$user_id = get_option( 'wetravel_trips_user_id', '' );
-
-	$locations = array();
-
-	if ( ! empty( $user_id ) && function_exists( 'wtwidget_build_api_url' ) && function_exists( 'wtwidget_get_trips_data' ) && function_exists( 'wtwidget_get_trip_locations' ) ) {
-		try {
-			$api_url = wtwidget_build_api_url( $env, $user_id, array(
-				'trip_type' => $trip_type
-			) );
-
-			$trips = wtwidget_get_trips_data( $api_url )['trips'];
-
-			if ( is_array( $trips ) ) {
-				$locations = wtwidget_get_trip_locations( $trips );
-			}
-		} catch ( Exception $e ) {
-			$locations = array();
-		}
-	}
-
-	return $locations;
-}
-
-/**
- * AJAX handler to fetch locations based on trip type
- */
-function wtwidget_fetch_locations_by_trip_type() {
-	// Verify nonce
-	if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'wetravel_trips_nonce' ) ) {
-		wp_send_json_error( 'Invalid nonce' );
-		return;
-	}
-
-	// Check user permissions
-	if ( ! current_user_can( 'manage_options' ) ) {
-		wp_send_json_error( 'Insufficient permissions' );
-		return;
-	}
-
-	$trip_type = isset( $_POST['trip_type'] ) ? sanitize_text_field( wp_unslash( $_POST['trip_type'] ) ) : 'all';
-	$locations = wtwidget_get_locations_by_trip_type( $trip_type );
-
-	wp_send_json_success( array(
-		'locations' => $locations,
-		'message' => empty( $locations ) ? 'No locations found for this trip type' : 'Locations loaded successfully'
-	) );
-}
-add_action( 'wp_ajax_fetch_locations_by_trip_type', 'wtwidget_fetch_locations_by_trip_type' );
-
-/**
  * Process the actual form submission
  */
 function wtwidget_process_form_submission() {
@@ -217,13 +160,9 @@ function wtwidget_process_form_submission() {
 	}
 
 	// Get date range values if trip type is one-time
-	$date_range_start = '';
-	$date_range_end = '';
-	if ( isset( $_POST['trip_type'] ) && 'one-time' === $_POST['trip_type'] ) {
-		$date_range_start = isset( $_POST['date_range_start'] ) ? sanitize_text_field( wp_unslash( $_POST['date_range_start'] ) ) : '';
-		$date_range_end = isset( $_POST['date_range_end'] ) ? sanitize_text_field( wp_unslash( $_POST['date_range_end'] ) ) : '';
-	}
-
+	// Get departure date range if provided
+	$date_range_start = isset( $_POST['date_range_start'] ) ? sanitize_text_field( wp_unslash( $_POST['date_range_start'] ) ) : '';
+	$date_range_end = isset( $_POST['date_range_end'] ) ? sanitize_text_field( wp_unslash( $_POST['date_range_end'] ) ) : '';
 	$designs = get_option( 'wetravel_trips_designs', array() );
 	$current_design = isset( $designs[$design_id] ) ? $designs[$design_id] : array( 'created' => time() );
 
@@ -427,27 +366,34 @@ function wtwidget_trip_create_design_page() {
 							</select>
 						</div>
 
-						<div class="wetravel-trips-form-field">
-							<label for="trip_location">Trip Locations</label>
+					<div class="wetravel-trips-form-field">
+						<label for="trip_location">Trip Locations</label>
+						<?php
+							$selected_locations = isset( $design['locations'] ) ? (array) $design['locations'] : (isset( $design['destinations'] ) ? (array) $design['destinations'] : array());
+							$organizer_id = get_option('wetravel_trips_user_id', '');
+						?>
+						<select id="trip_location" name="trip_location[]" multiple="multiple" class="wetravel-select2">
 							<?php
-								$trip_type = isset( $design['tripType'] ) ? $design['tripType'] : 'all';
-								$locations = wtwidget_get_locations_by_trip_type( $trip_type );
-								$selected_locations = isset( $design['locations'] ) ? (array) $design['locations'] : array();
+							// Pre-populate with previously selected locations (for edit mode)
+							if (!empty($selected_locations)) :
+								foreach ($selected_locations as $location) : ?>
+									<option value="<?php echo esc_attr($location); ?>" selected="selected">
+										<?php echo esc_html($location); ?>
+									</option>
+								<?php endforeach;
+							endif;
 							?>
-							<select id="trip_location" name="trip_location[]" multiple="multiple" class="wetravel-select2">
-								<?php if (empty($locations)) : ?>
-									<option value="" disabled>Configure WeTravel settings first to load locations</option>
-								<?php else : ?>
-									<?php foreach ($locations as $location) : ?>
-										<option value="<?php echo esc_attr($location); ?>"
-											<?php selected(in_array($location, $selected_locations), true); ?>>
-											<?php echo esc_html($location); ?>
-										</option>
-									<?php endforeach; ?>
-								<?php endif; ?>
-							</select>
-							<p class="description"><?php echo empty($locations) ? 'Please configure your WeTravel embed code in Setup first.' : 'Select one or more locations. Leave empty to show all locations.'; ?></p>
-						</div>
+						</select>
+						<p class="description">
+							<?php
+							if (empty($organizer_id)) {
+								echo 'Please configure your WeTravel embed code in Setup first.';
+							} else {
+								echo 'Type to search locations (minimum 3 characters). Leave empty to show all locations.';
+							}
+							?>
+						</p>
+					</div>
 
 						<div class="wetravel-trips-form-field">
 							<label for="trip_type">Trip Type</label>
@@ -458,8 +404,8 @@ function wtwidget_trip_create_design_page() {
 							</select>
 						</div>
 
-						<div id="date-range-container" class="wetravel-trips-form-field" style="display: none;">
-							<label>Date Range for Start Date</label>
+						<div id="date-range-container" class="wetravel-trips-form-field">
+							<label>Date Range for Departure Date</label>
 							<div class="date-range-inputs">
 								<div>
 									<label for="date_range_start">From</label>
@@ -519,7 +465,7 @@ function wtwidget_trip_create_design_page() {
 					</form>
 				</div>
 
-				<div class="wetravel-trips-design-preview-container"  style="max-width: 700px; margin: 0 auto; box-sizing: border-box;">
+				<div class="wetravel-trips-design-preview-container"  style="min-width: 700px; margin: 0 auto; box-sizing: border-box;">
 					<h3>Live Preview</h3>
 					<div id="design-preview" class="wetravel-trips-preview">
 							<!-- Preview will be updated by JavaScript -->
@@ -602,11 +548,20 @@ function wtwidget_trip_create_design_page() {
 		true
 	);
 
+	// Enqueue centralized Select2 location initialization utility
+	wp_enqueue_script(
+		'wetravel-select2-locations',
+		plugins_url('assets/js/select2-locations.js', dirname(__FILE__)),
+		array('jquery', 'select2'),
+		filemtime(plugin_dir_path(dirname(__FILE__)) . 'assets/js/select2-locations.js'),
+		true
+	);
+
 	// Enqueue admin scripts
 	wp_enqueue_script(
 		'wetravel-trips-admin-scripts',
 		plugins_url('js/admin-scripts.js', __FILE__),
-		array('jquery', 'select2', 'wetravel-trips-pagination'),
+		array('jquery', 'select2', 'wetravel-select2-locations', 'wetravel-trips-pagination'),
 		filemtime(plugin_dir_path(__FILE__) . 'js/admin-scripts.js'),
 		true
 	);
@@ -614,8 +569,10 @@ function wtwidget_trip_create_design_page() {
 	// Localize script for AJAX - pass data to admin-scripts.js
 	wp_localize_script('wetravel-trips-admin-scripts', 'wetravel_ajax', array(
 		'ajaxurl' => admin_url('admin-ajax.php'),
+		'rest_url' => esc_url_raw( rest_url() ),
 		'nonce' => wp_create_nonce('wetravel_trips_nonce'),
-		'design_id' => $design_id
+		'design_id' => $design_id,
+		'organizer_id' => get_option('wetravel_trips_user_id', '')
 	));
 
 	// Also localize the plugin settings for mock data
@@ -623,48 +580,34 @@ function wtwidget_trip_create_design_page() {
 		'pluginUrl' => plugins_url('', dirname(__FILE__)) . '/'
 	));
 
-	// Initialize Select2
+	// Add custom styles for Select2
 	?>
-	<script type="text/javascript">
-		jQuery(document).ready(function($) {
-			$('.wetravel-select2').select2({
-				placeholder: 'Select locations',
-				allowClear: true,
-				width: '100%'
-			});
-
-			// Add custom styles for Select2
-			$('<style>')
-				.prop('type', 'text/css')
-				.html(`
-					.select2-container--default .select2-selection--multiple {
-						border: 1px solid #8c8f94;
-						border-radius: 4px;
-						min-height: 35px;
-						max-height: 80px;
-						overflow-y: auto;
-					}
-					.select2-container--default.select2-container--focus .select2-selection--multiple {
-						border-color: #2271b1;
-						box-shadow: 0 0 0 1px #2271b1;
-						outline: 2px solid transparent;
-					}
-					.select2-container--default .select2-results>.select2-results__options {
-						max-height: 200px;
-						overflow-y: auto;
-					}
-					.select2-container--default .select2-selection--multiple .select2-selection__rendered {
-						display: flex;
-						flex-wrap: wrap;
-						gap: 4px;
-						padding: 4px;
-					}
-					.select2-container--default .select2-selection--multiple .select2-selection__choice {
-						margin: 0;
-					}
-				`)
-				.appendTo('head');
-		});
-	</script>
+	<style type="text/css">
+		.select2-container--default .select2-selection--multiple {
+			border: 1px solid #8c8f94;
+			border-radius: 4px;
+			min-height: 35px;
+			max-height: 80px;
+			overflow-y: auto;
+		}
+		.select2-container--default.select2-container--focus .select2-selection--multiple {
+			border-color: #2271b1;
+			box-shadow: 0 0 0 1px #2271b1;
+			outline: 2px solid transparent;
+		}
+		.select2-container--default .select2-results>.select2-results__options {
+			max-height: 200px;
+			overflow-y: auto;
+		}
+		.select2-container--default .select2-selection--multiple .select2-selection__rendered {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 4px;
+			padding: 4px;
+		}
+		.select2-container--default .select2-selection--multiple .select2-selection__choice {
+			margin: 0;
+		}
+	</style>
 	<?php
 }

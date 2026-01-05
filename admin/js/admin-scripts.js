@@ -321,26 +321,18 @@
     }
   }
 
-  // Show/hide date range inputs based on trip type selection
-  function toggleDateRangeFields() {
-    var selectedTripType = $("#trip_type").val();
-    if (selectedTripType === "one-time") {
-      $("#date-range-container").show();
-    } else {
-      $("#date-range-container").hide();
-    }
-  }
-
   // Initialize on document ready
   $(document).ready(function ($) {
     // Init color picker
     initColorPicker();
 
+    // Initialize destinations Select2 with AJAX search
+    initializeLocationsSelect2();
+
     // Update preview initially
     updatePreview();
 
     // Run on page load
-    toggleDateRangeFields();
     toggleDisplayTypeFields();
 
     // Update preview when form fields change
@@ -351,11 +343,20 @@
       setTimeout(updatePreview, 0);
     });
 
-    // Run when trip type changes
-    $("#trip_type").on("change", toggleDateRangeFields);
-
     // Run when display type changes
     $("#display_type").on("change", toggleDisplayTypeFields);
+
+    // Reinitialize Select2 when filters change
+    $("#trip_type, #departure_date_gte, #departure_date_lte").on(
+      "change",
+      function () {
+        // Reinitialize the locations select with new filter context
+        initializeLocationsSelect2();
+
+        // Trigger preview update
+        updatePreview();
+      }
+    );
 
     // Init copy shortcode functionality
     initCopyShortcode();
@@ -423,88 +424,45 @@
     });
   });
 
-  // Handle trip type changes to reload locations
-  $("#trip_type").on("change", function () {
-    var tripType = $(this).val();
-    var $locationSelect = $("#trip_location");
+  // Initialize Select2 with AJAX search for locations
+  // Uses the centralized WeTravelSelect2 utility
+  function initializeLocationsSelect2() {
+    // Check if required dependencies are available
+    if (!wetravel_ajax || typeof window.WeTravelSelect2 === "undefined") {
+      return;
+    }
 
-    // Show loading state
-    $locationSelect.prop("disabled", true);
-    $locationSelect.html("<option>🔄 Loading locations...</option>");
-    $locationSelect
-      .next(".description")
-      .html("Fetching locations for " + tripType + " trips...");
+    // Get current filter values for additional AJAX parameters
+    function getAdditionalFilters() {
+      var filters = {
+        trip_type: $("#trip_type").val() || "",
+        date_start: $("#departure_date_gte").val() || "",
+        date_end: $("#departure_date_lte").val() || "",
+      };
 
-    // Make AJAX request to fetch locations for the selected trip type
-    $.ajax({
-      url: wetravel_ajax.ajaxurl,
-      type: "POST",
-      data: {
-        action: "fetch_locations_by_trip_type",
-        trip_type: tripType,
-        nonce: wetravel_ajax.nonce,
-      },
-      success: function (response) {
-        if (response.success) {
-          var locations = response.data.locations;
+      var queryParams = {};
 
-          // Clear and rebuild options
-          $locationSelect.html("");
+      // Add optional filters if they have values
+      if (filters.trip_type !== "") {
+        queryParams.trip_type = filters.trip_type;
+      }
+      if (filters.date_start) {
+        queryParams.date_start = filters.date_start;
+      }
+      if (filters.date_end) {
+        queryParams.date_end = filters.date_end;
+      }
 
-          if (locations.length === 0) {
-            $locationSelect.html(
-              '<option value="" disabled>No locations found for this trip type</option>'
-            );
-            $locationSelect
-              .next(".description")
-              .html("No locations available for " + tripType + " trips.");
-          } else {
-            // Add new location options (no pre-selection)
-            $.each(locations, function (index, location) {
-              $locationSelect.append(
-                '<option value="' + location + '">' + location + "</option>"
-              );
-            });
-          }
+      return queryParams;
+    }
 
-          // Re-enable and refresh Select2
-          $locationSelect.prop("disabled", false);
-          $locationSelect
-            .next(".description")
-            .html(
-              "Select one or more locations. Leave empty to show all locations."
-            );
-          if ($locationSelect.hasClass("select2-hidden-accessible")) {
-            $locationSelect.select2("destroy");
-          }
-          $locationSelect.select2({
-            placeholder: "Select locations...",
-            allowClear: true,
-            width: "100%",
-          });
-        } else {
-          // Handle error
-          $locationSelect.html(
-            '<option value="" disabled>Error loading locations</option>'
-          );
-          $locationSelect.prop("disabled", false);
-          $locationSelect
-            .next(".description")
-            .html("Error loading locations. Please try again.");
-          console.error("Error fetching locations:", response.data);
-        }
-      },
-      error: function (xhr, status, error) {
-        // Handle AJAX error
-        $locationSelect.html(
-          '<option value="" disabled>Error loading locations</option>'
-        );
-        $locationSelect.prop("disabled", false);
-        $locationSelect
-          .next(".description")
-          .html("Network error. Please check your connection and try again.");
-        console.error("AJAX error:", error);
-      },
+    // Use centralized Select2 initialization
+    window.WeTravelSelect2.initializeLocationSelect2({
+      selector: "#trip_location",
+      globalData: wetravel_ajax,
+      allowClear: true,
+      placeholder: "Type to search destinations (min 3 characters)...",
+      getAdditionalFilters: getAdditionalFilters,
     });
-  });
+  }
 })(jQuery);

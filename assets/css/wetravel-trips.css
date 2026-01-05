@@ -158,7 +158,7 @@ a {
 .trip-image {
   min-width: 100px;
   align-self: normal;
-  max-height: 200px;
+  max-height: 240px;
   position: relative;
 }
 
@@ -258,7 +258,7 @@ a {
 }
 
 .wetravel-trips-container.vertical-view .trip-button {
-  min-width: 100px;
+  min-width: 120px;
   align-self: flex-start;
 }
 
@@ -728,168 +728,9 @@ a {
   box-shadow: 0 0 0 3px rgba(108, 117, 125, 0.1);
 }
 
-/* Custom Location Dropdown */
-.location-dropdown {
-  min-width: 300px;
-  position: relative;
-}
-
 /* Location Filter Wrapper */
 .wetravel-trips-search-filter .location-filter-wrapper {
   position: relative;
-}
-
-.wetravel-trips-search-filter .location-dropdown {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  z-index: 1001;
-  margin-top: 4px;
-}
-
-.location-button {
-  padding: 15px 20px;
-  background: var(--button-color);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 16px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  transition: opacity 0.3s ease;
-  outline: none;
-  position: relative;
-}
-
-.location-button:hover {
-  opacity: 0.9;
-}
-
-.location-button:focus {
-  box-shadow: 0 0 0 3px rgba(var(--button-color-rgb), 0.3);
-}
-
-.dropdown-arrow {
-  font-size: 12px;
-  transition: transform 0.3s ease;
-  margin-left: 10px;
-}
-
-.dropdown-arrow.open {
-  transform: rotate(180deg);
-}
-
-.selected-count {
-  background: rgba(255, 255, 255, 0.2);
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 14px;
-  margin-left: 10px;
-}
-
-/* Dropdown Menu */
-.wetravel-dropdown-menu {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background: white;
-  border: 2px solid #e0e0e0;
-  border-radius: 6px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
-  margin-top: 5px;
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(-10px);
-  transition: all 0.3s ease;
-  max-height: 400px;
-  overflow: hidden;
-}
-
-.wetravel-dropdown-menu.open {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
-}
-
-/* Location Search within Dropdown */
-.location-search {
-  padding: 15px 20px;
-  border-bottom: 1px solid #e0e0e0;
-}
-
-.location-search input {
-  width: 100%;
-  padding: 10px;
-  box-sizing: border-box;
-  border: 1px solid #e0e0e0;
-  border-radius: 50px;
-  font-size: 14px;
-  outline: none;
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
-}
-
-.location-search input:focus {
-  border-color: var(--button-color);
-  box-shadow: 0 0 0 2px rgba(var(--button-color-rgb), 0.1);
-}
-
-/* Location List */
-.location-list {
-  max-height: 100px;
-  overflow-y: auto;
-  padding: 5px 0;
-}
-
-.location-item {
-  padding: 12px 20px;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  border: none;
-  background: none;
-  width: 100%;
-  text-align: left;
-}
-
-.location-item:hover {
-  background-color: rgba(var(--button-color-rgb), 0.05);
-}
-
-.location-item.selected {
-  background-color: rgba(var(--button-color-rgb), 0.1);
-  color: var(--button-color);
-}
-
-/* Checkmark */
-.checkmark {
-  width: 18px;
-  height: 18px;
-  border: 2px solid var(--button-color);
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  color: white;
-  background: transparent;
-  flex-shrink: 0;
-  transition: background-color 0.2s ease;
-}
-
-.checkmark.checked {
-  background: var(--button-color);
-}
-
-.location-name {
-  flex: 1;
-  font-size: 14px;
 }
 
 .wetravel-trips-search-filter {
@@ -938,11 +779,33 @@ a {
   align-items: center;
   gap: 6px;
   transition: all 0.2s ease;
+  font-size: 16px;
+  position: relative;
 }
 
 .wetravel-trips-search-filter .filter-button:hover {
   background: var(--button-color, #0073e6);
   color: #fff;
+}
+
+/* Filter count badge */
+.wetravel-trips-search-filter .filter-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  background: var(--button-color, #0073e6);
+  color: #fff;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.wetravel-trips-search-filter .filter-button:hover .filter-count-badge {
+  background: #fff;
+  color: var(--button-color, #0073e6);
 }
 
 /* Filter Dropdown - Modern Design */
@@ -1033,45 +896,6 @@ a {
 .wetravel-trips-search-filter .location-clear-btn:hover {
   color: #1d4ed8;
   text-decoration: underline;
-}
-
-/* Location Button */
-.wetravel-trips-search-filter .location-button {
-  width: 100%;
-  padding: 12px 16px;
-  background: #f9fafb;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  font-size: 14px;
-  color: #6b7280;
-  cursor: pointer;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  transition: border-color 0.2s ease;
-  position: relative;
-}
-
-.wetravel-trips-search-filter .location-button:hover {
-  border-color: #9ca3af;
-}
-
-.wetravel-trips-search-filter .location-button:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.wetravel-trips-search-filter .location-button .dashicons {
-  font-size: 16px;
-  color: #6b7280;
-  transition: transform 0.2s ease;
-  width: 16px;
-  height: 16px;
-}
-
-.wetravel-trips-search-filter .location-button.open .dashicons {
-  transform: rotate(180deg);
 }
 
 /* Date Range Inputs */
@@ -1179,16 +1003,6 @@ a {
     flex-shrink: 0;
   }
 
-  .location-dropdown {
-    min-width: auto;
-    width: 100%;
-  }
-
-  .location-button {
-    width: 100%;
-    box-sizing: border-box;
-  }
-
   .clear-all-filters {
     width: 100%;
     box-sizing: border-box;
@@ -1208,14 +1022,6 @@ a {
     overflow-y: auto;
     z-index: 1000;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-  }
-
-  /* Location dropdown on mobile should stay relative to its button */
-  .wetravel-trips-search-filter .location-dropdown {
-    position: static;
-    margin-top: 8px;
-    box-shadow: none;
-    border-radius: 8px;
   }
 
   .wetravel-trips-search-filter .filter-header,
