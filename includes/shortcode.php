@@ -41,6 +41,7 @@ function wtwidget_trips_shortcode( $atts ) {
 		'locations'              => '', // Semicolon-separated list of locations to filter by
 		'search_visibility'      => get_option( 'wetravel_trips_search_visibility', false ),
 		'border_radius'          => get_option( 'wetravel_trips_border_radius', 6 ),
+		'wt_widget_type'            => get_option( 'wetravel_trips_wt_widget_type', 'all-trips' ),
 	);
 
 	// First, get the design if specified
@@ -88,6 +89,10 @@ function wtwidget_trips_shortcode( $atts ) {
 			if (!empty($design['searchVisibility'])) {
 				$default_atts['search_visibility'] = $design['searchVisibility'];
 			}
+			if (!empty($design['wtWidgetType'])) {
+				$default_atts['wt_widget_type'] = $design['wtWidgetType'];
+			}
+
 			// Fix: Use shortcode attributes as fallback before global options
 			$default_atts['items_per_slide'] = isset($design['itemsPerSlide']) ? $design['itemsPerSlide'] : $default_atts['items_per_slide'];
 			$default_atts['items_per_row'] = isset($design['itemsPerRow']) ? $design['itemsPerRow'] : $default_atts['items_per_row'];
@@ -98,6 +103,17 @@ function wtwidget_trips_shortcode( $atts ) {
 
 	// Now merge with shortcode attributes, allowing them to override both defaults and design values
 	$atts = shortcode_atts($default_atts, $original_atts, 'wetravel_trips');
+
+	// Add validation for shortcode attributes
+	$atts['items_per_page'] = max(1, min(50, intval($atts['items_per_page'])));
+	$atts['items_per_row'] = max(1, min(4, intval($atts['items_per_row'])));
+	$atts['items_per_slide'] = max(1, min(4, intval($atts['items_per_slide'])));
+	$atts['display_type'] = in_array($atts['display_type'], ['vertical', 'grid', 'carousel']) ? $atts['display_type'] : 'vertical';
+	$atts['button_type'] = in_array($atts['button_type'], ['book_now', 'trip_link']) ? $atts['button_type'] : 'book_now';
+	$atts['button_color'] = sanitize_hex_color($atts['button_color']) ?: '#33ae3f';
+	$atts['trip_type'] = in_array($atts['trip_type'], ['all', 'one-time', 'recurring']) ? $atts['trip_type'] : 'all';
+	$atts['border_radius'] = max(0, min(100, intval($atts['border_radius'])));
+	$atts['search_visibility'] = (bool) $atts['search_visibility'];
 
 	// Convert to block attributes format
 	$block_atts = array(
@@ -111,13 +127,14 @@ function wtwidget_trips_shortcode( $atts ) {
 		'itemsPerPage'   => intval($atts['items_per_page']),
 		'itemsPerRow'    => intval($atts['items_per_row']),
 		'itemsPerSlide'  => intval($atts['items_per_slide']),
-		'loadMoreText'   => $atts['load_more_text'],
 		'tripType'       => $atts['trip_type'],
 		'dateStart'      => $atts['date_start'],
 		'dateEnd'        => $atts['date_end'],
 		'locations'      => $atts['locations'],
 		'searchVisibility' => $atts['search_visibility'],
 		'borderRadius'   => $atts['border_radius'],
+		'integrationType' => 'shortcode',
+		'wtWidgetType'     => $atts['wt_widget_type'],
 	);
 
 	// Add the selected design ID if a widget was specified
@@ -128,123 +145,7 @@ function wtwidget_trips_shortcode( $atts ) {
 	// Use the existing block render function to maintain consistency
 	if (function_exists('wtwidget_trips_block_render')) {
 		return wtwidget_trips_block_render($block_atts);
-	} else {
-		// Fallback if block render function doesn't exist
-		return wtwidget_render_trips_fallback($block_atts);
 	}
 }
 add_shortcode( 'wetravel_trips', 'wtwidget_trips_shortcode' );
 
-/**
- * Load trips data with AJAX for shortcode or block
- * This makes the shortcode behave the same as the block renderer
- */
-function wtwidget_register_trips_ajax_handlers() {
-	// Ensure that the AJAX handler from trips-loader.js works correctly.
-	if ( ! function_exists( 'wtwidget_get_trips_ajax' ) ) {
-		/**
-		 * AJAX handler for fetching trips data.
-		 *
-		 * This function handles the AJAX request to fetch trips data based on the provided parameters.
-		 * It checks the nonce, retrieves the parameters, formats the environment URL, builds the API URL,
-		 * and retrieves the trips data.
-		 */
-		function wtwidget_get_trips_ajax() {
-			// Security check.
-			check_ajax_referer( 'wetravel_trips_nonce', 'nonce' );
-
-			// Get parameters from the request.
-			$slug       = isset( $_POST['slug'] ) ? sanitize_text_field( wp_unslash( $_POST['slug'] ) ) : '';
-			$env        = isset( $_POST['env'] ) ? sanitize_text_field( wp_unslash( $_POST['env'] ) ) : 'https://pre.wetravel.to';
-			$trip_type  = isset( $_POST['tripType'] ) ? sanitize_text_field( wp_unslash( $_POST['tripType'] ) ) : 'all';
-			$date_start = isset( $_POST['dateStart'] ) ? sanitize_text_field( wp_unslash( $_POST['dateStart'] ) ) : '';
-			$date_end   = isset( $_POST['dateEnd'] ) ? sanitize_text_field( wp_unslash( $_POST['dateEnd'] ) ) : '';
-			$design_id  = isset( $_POST['designID'] ) ? sanitize_text_field( wp_unslash( $_POST['designID'] ) ) : '';
-			$locations_override = isset( $_POST['locations'] ) ? sanitize_text_field( wp_unslash( $_POST['locations'] ) ) : null;
-
-			// Get design information if design ID is provided
-			$design = null;
-			if (!empty($design_id)) {
-				$designs = get_option('wetravel_trips_designs', array());
-
-				// First try to find design by keyword
-				foreach ($designs as $id => $design_data) {
-					if (isset($design_data['keyword']) && $design_data['keyword'] === $design_id) {
-						$design = $design_data;
-						break;
-					}
-				}
-
-				// If not found by keyword, try to find by design ID
-				if (null === $design && isset($designs[$design_id])) {
-					$design = $designs[$design_id];
-				}
-			}
-
-			// Build API URL with parameters
-			$api_url = wtwidget_build_api_url($env, $slug, array(
-				'trip_type' => $trip_type,
-				'date_start' => $date_start,
-				'date_end' => $date_end
-			));
-
-			// Get trips data
-			$trips = wtwidget_get_trips_data($api_url);
-
-			// Handle case when trips data is false (error occurred)
-			if (false === $trips) {
-				$trips = array(); // Set to empty array to show "No trips found" message
-			}
-
-			if ( 'recurring' === $trip_type ) {
-				// Filter trips where 'all_year' is true.
-				$trips = array_filter(
-					$trips,
-					function ( $trip ) {
-						return ! empty( $trip['all_year'] ) && true === $trip['all_year'];
-					}
-				);
-			}
-
-			// Determine which locations to use for filtering
-			$locations_to_filter = array();
-
-			// Check if locations were overridden in the request
-			if ($locations_override !== null) {
-				if (!empty($locations_override)) {
-					// Parse semicolon-separated locations from override
-					$locations_to_filter = array_map('trim', explode(';', $locations_override));
-					$locations_to_filter = array_filter($locations_to_filter); // Remove empty entries
-				}
-				// If locations_override is empty string, no filtering (shows all)
-			}
-			// If no override, fall back to design locations
-			elseif ($design && !empty($design['locations'])) {
-				$design_locations = is_array($design['locations']) ? $design['locations'] : array($design['locations']);
-				$locations_to_filter = $design_locations;
-			}
-
-			// Apply location filtering if locations are specified
-			if (!empty($locations_to_filter)) {
-				$trips = array_filter(
-					$trips,
-					function($trip) use ($locations_to_filter) {
-						return !empty($trip['location']) && in_array($trip['location'], $locations_to_filter);
-					}
-				);
-			}
-
-			// Enhance trips with details since we need them for display
-			if (!empty($trips)) {
-				$trips = wtwidget_enhance_trips_with_details($trips, $env);
-			}
-
-			// Return the trips data as JSON.
-			wp_send_json_success( $trips );
-		}
-
-		add_action( 'wp_ajax_wetravel_trips_get_trips', 'wtwidget_get_trips_ajax' );
-		add_action( 'wp_ajax_nopriv_wetravel_trips_get_trips', 'wtwidget_get_trips_ajax' );
-	}
-}
-add_action( 'init', 'wtwidget_register_trips_ajax_handlers' );

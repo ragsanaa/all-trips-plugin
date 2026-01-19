@@ -17,7 +17,7 @@ function wetravel_trips_instructions_page() {
 
 		<div class="nav-tab-wrapper" style="margin-bottom: 32px;">
 			<a href="?page=wetravel-trips-instructions" class="nav-tab nav-tab-active">Instructions</a>
-			<a href="?page=wetravel-trips-settings" class="nav-tab">Settings</a>
+			<a href="?page=wetravel-trips-setup" class="nav-tab">Setup</a>
 			<a href="?page=wetravel-trips-design-library" class="nav-tab">Widget Library</a>
 			<a href="?page=wetravel-trips-create-design" class="nav-tab">Create Widget</a>
 		</div>
@@ -45,7 +45,7 @@ function wetravel_trips_instructions_page() {
 
 						<h3>Quick Setup Guide</h3>
 						<ol>
-							<li><strong>Configure Settings:</strong> Go to <strong>WeTravel Widgets > Settings</strong> and paste your WeTravel "All Trips" embed code</li>
+							<li><strong>Configure Settings:</strong> Go to <strong>WeTravel Widgets > Setup</strong> and paste your WeTravel "All Trips" embed code</li>
 							<li><strong>Create Your First Widget:</strong> Navigate to <strong>WeTravel Widgets > Create Widget</strong> to design your custom widget</li>
 							<li><strong>Display Your Widget:</strong> Use the generated shortcode or Gutenberg block to place your widget on any page</li>
 						</ol>
@@ -61,7 +61,7 @@ function wetravel_trips_instructions_page() {
 						<p>Before creating custom widgets, you need to configure your WeTravel embed code:</p>
 
 						<ol>
-							<li>Go to <strong>WeTravel Widgets > Settings</strong></li>
+							<li>Go to <strong>WeTravel Widgets > Setup</strong></li>
 							<li>Paste your WeTravel "All Trips" embed script in the provided text area</li>
 							<li>Click "Save Changes"</li>
 							<li>The plugin will automatically extract the necessary details (slug, environment, user ID)</li>
@@ -299,7 +299,7 @@ function wetravel_trips_instructions_page() {
 
 						<h4>Widget Not Displaying</h4>
 						<ul>
-							<li>Ensure your WeTravel embed code is properly configured in Settings</li>
+							<li>Ensure your WeTravel embed code is properly configured in Setup</li>
 							<li>Check that your shortcode or block is correctly placed</li>
 							<li>Verify that your widget design is saved and active</li>
 						</ul>
@@ -355,6 +355,27 @@ function wetravel_trips_instructions_page() {
 							<li><a href="https://www.wetravel.com/privacy" target="_blank">WeTravel Privacy Policy</a></li>
 						</ul>
 
+						<h2>Consent Management</h2>
+
+													<?php
+							// Add consent management section if user has made a consent decision
+							$consent_given = get_option( 'wetravel_consent_given' );
+							if ( $consent_given !== 0 ) : ?>
+								<?php
+									$button_text = $consent_given ? 'Opt Out' : 'Opt In';
+									$nonce = wp_create_nonce( 'wetravel_consent_action_nonce' );
+									$button_url = $consent_given ?
+										admin_url( 'admin.php?page=wetravel-consent&action=opt_out&return_page=wetravel-trips-instructions&return_tab=privacy-requirements&_wpnonce=' . $nonce ) :
+										admin_url( 'admin.php?page=wetravel-consent&action=opt_in&return_page=wetravel-trips-instructions&return_tab=privacy-requirements&_wpnonce=' . $nonce );
+									$description = $consent_given ? 'You\'ve opted in to help us improve WeTravel Widgets through usage data collection. You can opt out anytime.' : 'You\'ve opted out of usage data collection. You can opt back in anytime to help us improve the plugin.';
+								?>
+								<div>
+									<span class="dashicons dashicons-update"></span>
+									<?php echo esc_html($description); ?>
+									<a href="<?php echo esc_url($button_url); ?>"><?php echo esc_html($button_text); ?></a>
+								</div>
+							<?php endif; ?>
+
 						<h2>System Requirements</h2>
 
 						<ul>
@@ -376,19 +397,36 @@ function wetravel_trips_instructions_page() {
 				const tabButtons = document.querySelectorAll('.tab-button');
 				const tabPanes = document.querySelectorAll('.tab-pane');
 
+				// Function to switch to a specific tab
+				function switchToTab(tabName) {
+					// Remove active class from all buttons and panes
+					tabButtons.forEach(btn => btn.classList.remove('active'));
+					tabPanes.forEach(pane => pane.classList.remove('active'));
+
+					// Add active class to target button and corresponding pane
+					const targetButton = document.querySelector('[data-tab="' + tabName + '"]');
+					const targetPane = document.getElementById(tabName);
+
+					if (targetButton && targetPane) {
+						targetButton.classList.add('active');
+						targetPane.classList.add('active');
+					}
+				}
+
+				// Add click event listeners to tab buttons
 				tabButtons.forEach(button => {
 					button.addEventListener('click', function() {
 						const targetTab = this.getAttribute('data-tab');
-
-						// Remove active class from all buttons and panes
-						tabButtons.forEach(btn => btn.classList.remove('active'));
-						tabPanes.forEach(pane => pane.classList.remove('active'));
-
-						// Add active class to clicked button and corresponding pane
-						this.classList.add('active');
-						document.getElementById(targetTab).classList.add('active');
+						switchToTab(targetTab);
 					});
 				});
+
+				// Check if there's a tab parameter in the URL and switch to it
+				const urlParams = new URLSearchParams(window.location.search);
+				const tabParam = urlParams.get('tab');
+				if (tabParam) {
+					switchToTab(tabParam);
+				}
 			});
 		</script>
 	</div>

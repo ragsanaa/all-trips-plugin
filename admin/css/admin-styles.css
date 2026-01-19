@@ -148,31 +148,143 @@
 
 /* Settings Page Styles */
 
-.wetravel-trips-settings-container {
+.wetravel-trips-setup-container {
   margin-top: 20px;
 }
 
-.wetravel-trips-embed-form {
-  display: flex;
-  align-items: flex-start;
+.wetravel-trips-embed-form-container {
   max-width: 900px;
+}
+
+.wetravel-trips-embed-form {
+  background: #fff;
+  border: 1px solid #e1e1e1;
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .wetravel-trips-embed-input-container {
-  flex: 1;
-  margin-right: 15px;
+  margin-bottom: 12px;
+}
+
+.wetravel-trips-embed-input-container textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 16px;
+  border: 2px solid #e1e1e1;
+  border-radius: 6px;
+  font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  background: #fafafa;
+  transition: all 0.2s ease;
+  resize: vertical;
+}
+
+.wetravel-trips-embed-input-container textarea:focus {
+  outline: none;
+  border-color: #0073aa;
+  background: #fff;
+  box-shadow: 0 0 0 1px #0073aa;
+}
+
+.wetravel-trips-embed-input-container textarea::placeholder {
+  color: #999;
+  font-style: italic;
+}
+
+.wetravel-trips-embed-input-container .description {
+  margin-top: 6px;
+  color: #646970;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.wetravel-trips-embed-input-container .description::before {
+  content: "💡";
+  font-size: 14px;
 }
 
 .wetravel-trips-embed-button-container {
-  padding-top: 4px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.wetravel-trips-embed-button-container .button-primary {
+  background: #0073aa;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 5px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.wetravel-trips-embed-button-container .button-primary:hover {
+  background: #005a87;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 115, 170, 0.3);
+}
+
+.wetravel-trips-embed-button-container .submit {
+  margin: 0;
+  padding: 0;
+}
+
+/* Add a form header style */
+.wetravel-trips-embed-form::before {
+  content: "📝 Embed New Code";
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1d2327;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+/* Responsive design improvements */
+@media (max-width: 768px) {
+  .wetravel-trips-setup-container {
+    margin-left: 10px;
+    margin-right: 10px;
+  }
+
+  .wetravel-trips-embed-form {
+    padding: 16px;
+  }
+
+  .wetravel-trips-embed-info {
+    padding: 16px;
+    margin-left: 10px;
+    margin-right: 10px;
+  }
+
+  .wetravel-trips-extracted-info strong {
+    min-width: auto;
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .wetravel-trips-extracted-info p {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
 }
 
 .wetravel-trips-embed-info {
-  background: #f9f9f9;
-  border: 1px solid #ddd;
-  padding: 15px 20px;
-  border-radius: 4px;
+  background: linear-gradient(135deg, #f8fff9 0%, #f0f8f0 100%);
+  border: 1px solid #d4e8d5;
+  border-left: 4px solid #46b450;
+  padding: 20px 24px;
+  border-radius: 8px;
   max-width: 900px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .wetravel-trips-embed-status {
@@ -190,13 +302,29 @@
 .wetravel-trips-extracted-info {
   background: #fff;
   border: 1px solid #e5e5e5;
-  padding: 10px 15px;
+  padding: 16px 20px;
   margin-bottom: 15px;
-  border-radius: 3px;
+  border-radius: 6px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .wetravel-trips-extracted-info p {
-  margin: 5px 0;
+  margin: 8px 0;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wetravel-trips-extracted-info strong {
+  color: #1d2327;
+  font-weight: 600;
+  min-width: 140px;
+}
+
+.wetravel-trips-extracted-info p:not(:last-child) {
+  border-bottom: 1px solid #f0f0f0;
+  padding-bottom: 8px;
 }
 
 .notice ul {
@@ -227,6 +355,134 @@
   padding: 10px;
   background: #f0f6fc;
   border-left: 4px solid #72aee6;
+}
+
+/* Consent Page Styles */
+.wetravel-consent-page-container {
+  margin-top: 20px;
+}
+
+.consent-container {
+  max-width: 600px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  border: 1px solid #ddd;
+}
+
+.consent-logo {
+  text-align: center;
+  padding: 40px 20px 20px;
+}
+
+.consent-logo-circle {
+  width: 80px;
+  height: 80px;
+  background: #20a0b8;
+  border-radius: 50%;
+  margin: 0 auto 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.consent-logo-circle .dashicons {
+  font-size: 40px;
+  color: white;
+}
+
+.consent-logo h1 {
+  margin: 0;
+  color: #1d2327;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.consent-content {
+  padding: 0 40px 40px;
+}
+
+.consent-description {
+  color: #646970;
+  line-height: 1.6;
+  margin-bottom: 30px;
+  font-size: 16px;
+}
+
+.consent-buttons {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.consent-btn {
+  flex: 1;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  text-align: center;
+}
+
+.consent-btn.allow {
+  background: #0073aa;
+  color: white;
+}
+
+.consent-btn.allow:hover {
+  background: #005a87;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 115, 170, 0.3);
+}
+
+.consent-btn.skip {
+  background: #f6f7f7;
+  color: #646970;
+  border: 1px solid #ddd;
+}
+
+.consent-btn.skip:hover {
+  background: #f0f0f1;
+  border-color: #8c8f94;
+}
+
+.consent-link {
+  text-align: center;
+  color: #646970;
+  font-size: 14px;
+}
+
+.consent-link a {
+  color: #0073aa;
+  text-decoration: none;
+}
+
+.consent-link a:hover {
+  text-decoration: underline;
+}
+
+.global-footer {
+  text-align: center;
+  padding: 20px;
+  color: #646970;
+  font-size: 12px;
+  border-top: 1px solid #ddd;
+  background: #f9f9f9;
+}
+
+.global-footer a {
+  color: #0073aa;
+  text-decoration: none;
+}
+
+.global-footer a:hover {
+  text-decoration: underline;
 }
 
 .toogle-switch {
@@ -403,4 +659,60 @@ input:checked + .toogle-switch-slider:before {
     border-radius: 4px;
     margin-bottom: 2px;
   }
+}
+
+/* Consent Management Styles */
+.wetravel-consent-management-section {
+  margin-top: 30px;
+  padding: 20px;
+  background: #fff;
+  border: 1px solid #ccd0d4;
+  border-radius: 4px;
+}
+
+.wetravel-consent-management-section h2 {
+  color: #23282d;
+  border-bottom: 2px solid #0073aa;
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+}
+
+.wetravel-consent-status {
+  background: #f9f9f9;
+  padding: 15px;
+  border-radius: 4px;
+  border-left: 4px solid #0073aa;
+}
+
+.wetravel-consent-status p {
+  margin: 8px 0;
+}
+
+.wetravel-consent-status .consent-allowed {
+  color: #46b450;
+  font-weight: 600;
+}
+
+.wetravel-consent-status .consent-skipped {
+  color: #dc3232;
+  font-weight: 600;
+}
+
+.wetravel-consent-status form {
+  margin-top: 15px;
+}
+
+.wetravel-consent-status button {
+  margin-right: 10px;
+}
+
+/* Plugin Action Links Styling */
+.plugin-action-links a {
+  color: #0073aa;
+  text-decoration: none;
+}
+
+.plugin-action-links a:hover {
+  color: #005a87;
+  text-decoration: underline;
 }
