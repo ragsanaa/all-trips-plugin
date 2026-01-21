@@ -9,6 +9,15 @@
 (function ($) {
   "use strict";
 
+  // Safety check for jQuery
+  if (typeof jQuery === "undefined" || typeof $ === "undefined") {
+    console.error("WeTravel Hydration: jQuery is not loaded");
+    return;
+  }
+
+  // Ensure we're using WordPress's jQuery in noConflict mode
+  $ = jQuery;
+
   // Global hydration function
   window.WeTravelTripsHydrate = function (blockId, config) {
     if (!blockId || !config) {
@@ -30,7 +39,7 @@
       block_id: blockId,
       slug: config.slug || "",
       env: config.env || "",
-      trip_type: config.tripType || "all",
+      trip_type: config.tripType || "",
       date_start: config.dateStart || "",
       date_end: config.dateEnd || "",
       locations: config.locations || "",
@@ -46,8 +55,11 @@
       wetravel_user_id: config.wetravelUserID || "",
     });
 
+    // Debug: Log the full API URL
+    const fullUrl = apiUrl + "?" + params.toString();
+
     // Fetch fresh data
-    fetch(apiUrl + "?" + params.toString())
+    fetch(fullUrl)
       .then((response) => {
         if (!response.ok) {
           throw new Error(
@@ -176,9 +188,89 @@
 
   // Auto-hydration based on data attributes
   $(document).ready(function () {
+    // Check if jQuery is available
+    if (typeof jQuery === "undefined" || typeof $ === "undefined") {
+      console.error("WeTravel Hydration: jQuery is not loaded");
+      return;
+    }
+
+    // Check if we're in Elementor editor mode
+    const isElementorEditor =
+      typeof elementor !== "undefined" ||
+      (typeof elementorFrontend !== "undefined" &&
+        elementorFrontend.isEditMode &&
+        elementorFrontend.isEditMode());
+
+    if (isElementorEditor) {
+      // Function to initialize containers
+      function initializeContainers() {
+        // Initialize carousels and other UI elements without re-fetching data
+        $(".wetravel-trips-container[data-hydrate='true']").each(function () {
+          const $container = $(this);
+          const blockId = this.id.replace("trips-container-", "");
+          const displayType = $container.data("display-type");
+
+          // For carousel, check if Swiper is loaded
+          if (displayType === "carousel") {
+            if (typeof Swiper === "undefined") {
+              return;
+            }
+          }
+
+          // Trigger initialization event for carousel/pagination without fetching new data
+          $container.trigger("tripsRendered");
+
+          // Initialize search filters if needed
+          const searchVisibility =
+            $container.data("search-visibility") === "true";
+          if (searchVisibility) {
+            initializeSearchFilters(blockId);
+          }
+
+          // Hide loading spinner for this block
+          $("#loading-" + blockId).fadeOut();
+        });
+      }
+
+      // Wait for Swiper to be loaded before initializing
+      let attempts = 0;
+      const maxAttempts = 20; // 10 seconds max
+
+      function checkAndInitialize() {
+        const hasCarousel =
+          $(
+            '.wetravel-trips-container[data-hydrate="true"][data-display-type="carousel"]'
+          ).length > 0;
+
+        if (!hasCarousel || typeof Swiper !== "undefined") {
+          initializeContainers();
+        } else if (attempts < maxAttempts) {
+          attempts++;
+          setTimeout(checkAndInitialize, 500);
+        } else {
+          // Try to initialize anyway
+          initializeContainers();
+        }
+      }
+
+      // Start checking
+      setTimeout(checkAndInitialize, 100);
+
+      return;
+    }
+
     $('.wetravel-trips-container[data-hydrate="true"]').each(function () {
       const $container = $(this);
       const blockId = this.id.replace("trips-container-", "");
+
+      // Validate that we have a valid block ID and container
+      if (!blockId || !this.id) {
+        console.error(
+          "WeTravel Hydration: Invalid block ID for container",
+          this
+        );
+        return;
+      }
 
       const config = {
         slug: $container.data("slug"),

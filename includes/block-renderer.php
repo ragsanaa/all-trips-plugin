@@ -753,38 +753,9 @@ function wtwidget_trips_block_render( $attributes ) {
 		wetravel_track_widget_view( $event_data );
 	}
 
-	// Add hydration initialization script
-	$hydration_config = json_encode(array(
-		'slug' => $slug,
-		'env' => $env,
-		'wetravelUserID' => $wetravel_trips_user_id,
-		'tripType' => $trip_type,
-		'dateStart' => $date_start,
-		'dateEnd' => $date_end,
-		'locations' => !empty($locations) ? implode(';', $locations) : '',
-		'displayType' => $display_type,
-		'buttonType' => $button_type,
-		'buttonText' => $button_text,
-		'buttonColor' => $button_color,
-		'itemsPerPage' => $items_per_page,
-		'itemsPerRow' => $items_per_row,
-		'searchVisibility' => $search_visibility,
-		'blockId' => $block_id,
-	));
-
-	$hydration_script = "
-		jQuery(document).ready(function($) {
-			// Initialize hydration after a short delay to ensure SSR content is visible
-			setTimeout(function() {
-				if (window.WeTravelTripsHydrate) {
-					const config = " . $hydration_config . ";
-					window.WeTravelTripsHydrate('" . esc_js($block_id) . "', config);
-				}
-			}, 1000);
-		});
-	";
-
-	wp_add_inline_script( 'wetravel-trips-hydration', $hydration_script );
+	// Note: Hydration is now handled automatically by the wetravel-hydration.js script
+	// based on the data-hydrate="true" attribute. No need for inline script initialization.
+	// The container already has all necessary data attributes for auto-hydration.
 
 	return ob_get_clean();
 }
