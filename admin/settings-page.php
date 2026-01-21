@@ -321,6 +321,19 @@ function wetravel_trips_admin_enqueue_scripts( $hook ) {
 		wp_enqueue_script( 'wp-color-picker' );
 		wp_enqueue_style( 'wetravel-trips-admin-styles', WETRAVEL_WIDGETS_PLUGIN_URL . 'admin/css/admin-styles.css', array(), filemtime( WETRAVEL_WIDGETS_PLUGIN_DIR . 'admin/css/admin-styles.css' ) );
 		wp_enqueue_script( 'wetravel-trips-admin-scripts', WETRAVEL_WIDGETS_PLUGIN_URL . 'admin/js/admin-scripts.js', array( 'jquery', 'wp-color-picker' ), filemtime( WETRAVEL_WIDGETS_PLUGIN_DIR . 'admin/js/admin-scripts.js' ), true );
+
+		// Localize script for AJAX - pass data to admin-scripts.js
+		wp_localize_script( 'wetravel-trips-admin-scripts', 'wetravel_ajax', array(
+			'ajaxurl'      => admin_url( 'admin-ajax.php' ),
+			'rest_url'     => esc_url_raw( rest_url() ),
+			'nonce'        => wp_create_nonce( 'wetravel_trips_nonce' ),
+			'organizer_id' => get_option( 'wetravel_trips_user_id', '' )
+		) );
+
+		// Localize plugin settings
+		wp_localize_script( 'wetravel-trips-admin-scripts', 'wetravelTripsSettings', array(
+			'pluginUrl' => plugins_url( '', dirname( __FILE__ ) ) . '/'
+		) );
 	}
 }
 add_action( 'admin_enqueue_scripts', 'wetravel_trips_admin_enqueue_scripts' );

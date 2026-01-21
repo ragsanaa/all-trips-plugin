@@ -25,9 +25,6 @@ if ( ! defined( 'WETRAVEL_MAX_VISIBLE_PAGES' ) ) {
 if ( ! defined( 'WETRAVEL_API_TIMEOUT' ) ) {
 	define( 'WETRAVEL_API_TIMEOUT', 15 ); // API request timeout in seconds
 }
-if ( ! defined( 'WETRAVEL_HYDRATION_DELAY' ) ) {
-	define( 'WETRAVEL_HYDRATION_DELAY', 1000 ); // Hydration delay in milliseconds
-}
 
 /**
  * Helper function to verify admin nonce from GET or POST requests

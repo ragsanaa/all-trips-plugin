@@ -90,13 +90,8 @@ class WetravelTracking {
 	 * Enqueue tracking scripts
 	 */
 	public function enqueue_tracking_scripts() {
-		// Skip if tracking is disabled
-		if ( ! $this->is_tracking_enabled() ) {
-			return;
-		}
-
-		// Skip tracking in admin, edit, preview, or customizer contexts
-		if ( $this->is_admin_or_edit_context() ) {
+		// Skip if tracking is disabled or in admin context (consolidated check)
+		if ( ! $this->is_tracking_enabled() || $this->is_admin_or_edit_context() ) {
 			return;
 		}
 
@@ -557,18 +552,11 @@ class WetravelTracking {
 	 * Lightweight check to keep user_state current without detailed event tracking
 	 */
 	public function update_user_state_on_widget_change( $post_id, $post, $update ) {
-		// Skip if tracking is disabled
-		if ( ! $this->is_tracking_enabled() ) {
-			return;
-		}
-
-		// Skip autosaves and revisions
-		if ( wp_is_post_autosave( $post_id ) || wp_is_post_revision( $post_id ) ) {
-			return;
-		}
-
-		// Only track published posts
-		if ( $post->post_status !== 'publish' ) {
+		// Consolidated checks: tracking enabled, not autosave/revision, published status
+		if ( ! $this->is_tracking_enabled() ||
+		     wp_is_post_autosave( $post_id ) ||
+		     wp_is_post_revision( $post_id ) ||
+		     $post->post_status !== 'publish' ) {
 			return;
 		}
 

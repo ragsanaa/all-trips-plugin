@@ -266,38 +266,22 @@ require_once WETRAVEL_WIDGETS_PLUGIN_DIR . 'includes/tracking.php';
 require_once WETRAVEL_WIDGETS_PLUGIN_DIR . 'admin/deactivation-form.php';
 
 /**
- * Add database indexes for better performance
+ * Clear WeTravel-specific transients on activation
  */
-function wtwidget_add_database_indexes() {
-	global $wpdb;
-
-	// Check if indexes already exist to avoid errors
-	$indexes = $wpdb->get_results("SHOW INDEX FROM {$wpdb->posts} WHERE Key_name IN ('idx_post_content_wetravel', 'idx_post_status_type')");
-
-	if (empty($indexes)) {
-		// Add index for post_content searches (first 100 characters)
-		$wpdb->query("ALTER TABLE {$wpdb->posts} ADD INDEX idx_post_content_wetravel (post_content(100))");
-
-		// Add composite index for post_status and post_type
-		$wpdb->query("ALTER TABLE {$wpdb->posts} ADD INDEX idx_post_status_type (post_status, post_type)");
-	}
-}
-
-/**  Add this function to clear transient timeouts. */
 function wtwidget_clear_transients() {
+	// Clear only WeTravel-specific transients
 	global $wpdb;
 
-	// Fetch all options (cached by WordPress).
-	$all_options = wp_load_alloptions();
+	// Use more specific pattern to avoid affecting other plugins
+	$transients = $wpdb->get_col(
+		"SELECT option_name FROM {$wpdb->options}
+		WHERE option_name LIKE '_transient_wetravel_%'
+		OR option_name LIKE '_transient_timeout_wetravel_%'"
+	);
 
-	foreach ( $all_options as $option_name => $value ) {
-		if ( strpos( $option_name, 'transient_timeout_settings_errors' ) !== false ) {
-			delete_option( $option_name );
-		}
+	foreach ($transients as $transient) {
+		delete_option($transient);
 	}
-
-	// Clear cache after deleting.
-	wp_cache_flush();
 }
 register_activation_hook( __FILE__, 'wtwidget_clear_transients' );
 
@@ -353,9 +337,6 @@ function wtwidget_activation() {
 
 	// Trigger plugin activation action for tracking
 	do_action( 'wetravel_plugin_activated' );
-
-	// Add database indexes for better performance
-	wtwidget_add_database_indexes();
 
 	// Track plugin activation state
 	if ( function_exists( 'wetravel_track_plugin_state' ) ) {

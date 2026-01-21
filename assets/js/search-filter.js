@@ -5,7 +5,21 @@
   const state = {
     selectedLocations: {},
     isDropdownOpen: {},
+    searchDebounceTimers: {},
   };
+
+  // Debounce function to prevent too many API calls while typing
+  function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+      const later = () => {
+        clearTimeout(timeout);
+        func(...args);
+      };
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+    };
+  }
 
   // Initialize Select2 for location filter with AJAX search
   // Uses the centralized WeTravelSelect2 utility
@@ -14,6 +28,13 @@
     if (!wetravelSearchData || typeof window.WeTravelSelect2 === "undefined") {
       return;
     }
+
+    // Get design-selected locations from container data attribute
+    const container = $(`#trips-container-${blockId}`);
+    const designLocations = container.data("locations") || "";
+    const designLocationsArray = designLocations
+      ? designLocations.split(";").filter(Boolean)
+      : [];
 
     // Use centralized Select2 initialization
     window.WeTravelSelect2.initializeLocationSelect2({
@@ -24,6 +45,15 @@
       dropdownParent: ".filter-dropdown",
       placeholder: "Type to search locations (min 3 characters)...",
       withEventHandlers: true, // Enable frontend-specific event handlers
+      // Pass design locations as filter to limit destination search results
+      getAdditionalFilters: function () {
+        if (designLocationsArray.length > 0) {
+          return {
+            destinations: designLocationsArray.join(";"),
+          };
+        }
+        return {};
+      },
       onChange: function ($select, blockId) {
         const selectedValues = $select.val() || [];
         state.selectedLocations[blockId] = selectedValues;
@@ -44,87 +74,260 @@
     });
   }
 
-  // Filter trips based on search text, selected locations, and date range
+  // Reload original data without clearing filter inputs
+  // Used when search is cleared or no filters are active
+  function reloadOriginalData(blockId) {
+    const container = $(`#trips-container-${blockId}`);
+
+    // Show loading state
+    container.css("opacity", "0.5");
+
+    // Get original configuration from container data attributes (without any user filters)
+    const config = {
+      slug: container.data("slug"),
+      env: container.data("env"),
+      wetravelUserID: container.data("wetravel-user-id"),
+      tripType: container.data("trip-type") || "",
+      dateStart: container.data("date-start") || "",
+      dateEnd: container.data("date-end") || "",
+      locations: container.data("locations") || "",
+      displayType: container.data("display-type") || "vertical",
+      buttonType: container.data("button-type") || "book_now",
+      buttonText: container.data("button-text") || "",
+      buttonColor: container.data("button-color") || "#33ae3f",
+      itemsPerPage: parseInt(container.data("items-per-page")) || 10,
+      itemsPerRow: parseInt(container.data("items-per-row")) || 3,
+      page: 1,
+    };
+
+    // Build API URL to reload original data
+    const apiUrl = "/wp-json/wetravel/v1/trips";
+    const params = new URLSearchParams({
+      block_id: blockId,
+      slug: config.slug || "",
+      env: config.env || "",
+      trip_type: config.tripType || "",
+      date_start: config.dateStart || "",
+      date_end: config.dateEnd || "",
+      locations: config.locations || "",
+      query: "",
+      display_type: config.displayType || "vertical",
+      button_type: config.buttonType || "book_now",
+      button_text: config.buttonText || "",
+      button_color: config.buttonColor || "#33ae3f",
+      page: config.page,
+      per_page: config.itemsPerPage || 10,
+      items_per_row: config.itemsPerRow || 3,
+      wetravel_user_id: config.wetravelUserID || "",
+    });
+
+    // Fetch original data from API
+    fetch(apiUrl + "?" + params.toString())
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("HTTP " + response.status);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        if (data.success && data.html) {
+          container.html(data.html);
+
+          if (data.pagination) {
+            const paginationContainer = $(`#pagination-${blockId}`);
+            if (paginationContainer.length > 0) {
+              paginationContainer.show();
+            }
+
+            if (window.renderServerPaginationControls) {
+              window.renderServerPaginationControls(
+                blockId,
+                data.pagination,
+                container.data("button-color")
+              );
+
+              const newPaginationElement = $("#pagination-" + blockId);
+              if (
+                newPaginationElement.length &&
+                window.initializeServerPagination
+              ) {
+                window.initializeServerPagination(
+                  container,
+                  newPaginationElement,
+                  blockId
+                );
+              }
+            }
+          }
+
+          container.css("opacity", "1");
+
+          container.trigger("tripsFiltered", {
+            visibleCount: data.trips_count || 0,
+            totalCount: data.pagination ? data.pagination.total_count : 0,
+          });
+
+          // Re-initialize WeTravel checkout buttons if needed
+          // Use setTimeout to ensure DOM is fully updated before re-initializing
+          setTimeout(function () {
+            if (window.wtrvl && window.wtrvl.init) {
+              window.wtrvl.init();
+            }
+            // Trigger a custom event that the embed_checkout script might listen to
+            document.dispatchEvent(new Event("DOMContentLoaded"));
+          }, 100);
+        }
+      })
+      .catch((error) => {
+        console.error("Failed to reload trips:", error);
+        container.css("opacity", "1");
+      });
+  }
+
+  // Filter trips based on search text (title only), selected locations, and date range
+  // Makes API request to search across all trips (not just current page)
   function filterTrips(blockId) {
     const container = $(`#trips-container-${blockId}`);
     const rawSearch = $(`#search-filter-${blockId} .search-input`).val();
-    const searchText = (rawSearch || "").toString().toLowerCase();
+    const searchText = (rawSearch || "").toString().trim();
     const selectedLocs = state.selectedLocations[blockId] || [];
     const dateStart = $(`#search-filter-${blockId} .date-start-input`).val();
     const dateEnd = $(`#search-filter-${blockId} .date-end-input`).val();
 
-    // First, remove any existing filtered class and show all items
-    container.find(".trip-item").removeClass("filtered").show();
+    // Validate search text - must be at least 3 characters or empty
+    const hasValidSearch = searchText.length === 0 || searchText.length >= 3;
+    const effectiveSearch =
+      hasValidSearch && searchText.length >= 3 ? searchText : "";
 
-    // Apply filters
-    container.find(".trip-item").each(function () {
-      const tripItem = $(this);
-      const rawTitle = tripItem.find("h3").text();
-      const rawLocation = tripItem.find(".trip-location").text();
-      const title = (rawTitle || "").toString().toLowerCase();
-      const location = (rawLocation || "").toString().toLowerCase();
+    // Check if any filters are active
+    const hasFilters =
+      effectiveSearch || selectedLocs.length > 0 || dateStart || dateEnd;
 
-      const matchesSearch =
-        !searchText ||
-        title.includes(searchText) ||
-        location.includes(searchText);
-      const matchesLocation =
-        selectedLocs.length === 0 ||
-        selectedLocs.some((loc) => {
-          const normalized = (loc || "").toString().toLowerCase();
-          return normalized && location.includes(normalized);
-        });
-
-      // Date filtering logic - this is a basic implementation
-      // You may need to adjust this based on your specific date format and requirements
-      let matchesDate = true;
-      if (dateStart || dateEnd) {
-        // Extract date from trip item - you'll need to adjust this based on your HTML structure
-        const tripDateElement = tripItem.find(".trip-date, .trip-tag");
-        if (tripDateElement.length > 0) {
-          const tripDateText = (tripDateElement.text() || "").toString().trim();
-          // Basic date matching - you may want to implement more sophisticated date parsing
-          if (dateStart && tripDateText < dateStart) {
-            matchesDate = false;
-          }
-          if (dateEnd && tripDateText > dateEnd) {
-            matchesDate = false;
-          }
-        }
+    // If no filters are active, reload original data from API
+    if (!hasFilters) {
+      // Clear the search input if it's less than 3 characters
+      if (searchText.length > 0 && searchText.length < 3) {
+        return; // Don't do anything until user types at least 3 characters
       }
 
-      if (!(matchesSearch && matchesLocation && matchesDate)) {
-        tripItem.addClass("filtered").hide();
-      }
-    });
-
-    // Handle no results
-    const visibleItems = container.find(".trip-item:not(.filtered)");
-    const noTripsMsg = container.find(".no-trips");
-
-    if (visibleItems.length === 0) {
-      if (noTripsMsg.length === 0) {
-        container.append(
-          '<div class="no-trips">No trips found matching your criteria</div>'
-        );
-      }
-      noTripsMsg.show();
-      // Hide pagination when no results
-      $(`#pagination-${blockId}`).hide();
-    } else {
-      noTripsMsg.hide();
-      // Show pagination if it exists and there are visible items
-      const paginationContainer = $(`#pagination-${blockId}`);
-      if (paginationContainer.length > 0) {
-        paginationContainer.show();
-      }
+      // Reload original data by calling clearAllFilters without clearing inputs
+      reloadOriginalData(blockId);
+      return;
     }
 
-    // Trigger a custom event to notify pagination system about the filter change
-    container.trigger("tripsFiltered", {
-      visibleCount: visibleItems.length,
-      totalCount: container.find(".trip-item").length,
+    // Show loading state
+    container.css("opacity", "0.5");
+
+    // Get current configuration from container data attributes
+    const config = {
+      slug: container.data("slug"),
+      env: container.data("env"),
+      wetravelUserID: container.data("wetravel-user-id"),
+      tripType: container.data("trip-type") || "",
+      dateStart: dateStart || container.data("date-start") || "",
+      dateEnd: dateEnd || container.data("date-end") || "",
+      locations:
+        selectedLocs.length > 0
+          ? selectedLocs.join(";")
+          : container.data("locations") || "",
+      displayType: container.data("display-type") || "vertical",
+      buttonType: container.data("button-type") || "book_now",
+      buttonText: container.data("button-text") || "",
+      buttonColor: container.data("button-color") || "#33ae3f",
+      itemsPerPage: parseInt(container.data("items-per-page")) || 10,
+      itemsPerRow: parseInt(container.data("items-per-row")) || 3,
+      query: effectiveSearch, // Use validated search text (min 3 chars or empty)
+      page: 1, // Reset to page 1 when filtering
+    };
+
+    // Build API URL
+    const apiUrl = "/wp-json/wetravel/v1/trips";
+    const params = new URLSearchParams({
+      block_id: blockId,
+      slug: config.slug || "",
+      env: config.env || "",
+      trip_type: config.tripType || "",
+      date_start: config.dateStart || "",
+      date_end: config.dateEnd || "",
+      locations: config.locations || "",
+      query: config.query || "",
+      display_type: config.displayType || "vertical",
+      button_type: config.buttonType || "book_now",
+      button_text: config.buttonText || "",
+      button_color: config.buttonColor || "#33ae3f",
+      page: config.page,
+      per_page: config.itemsPerPage || 10,
+      items_per_row: config.itemsPerRow || 3,
+      wetravel_user_id: config.wetravelUserID || "",
     });
+
+    // Fetch filtered data from API
+    fetch(apiUrl + "?" + params.toString())
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("HTTP " + response.status);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        if (data.success && data.html) {
+          // Update trips container with new HTML
+          container.html(data.html);
+
+          // Update pagination controls if included in response
+          if (data.pagination && window.renderServerPaginationControls) {
+            window.renderServerPaginationControls(
+              blockId,
+              data.pagination,
+              container.data("button-color")
+            );
+
+            // Re-attach click handlers after regenerating HTML
+            const newPaginationElement = $("#pagination-" + blockId);
+            if (
+              newPaginationElement.length &&
+              window.initializeServerPagination
+            ) {
+              window.initializeServerPagination(
+                container,
+                newPaginationElement,
+                blockId
+              );
+            }
+          } else if (!data.trips_count || data.trips_count === 0) {
+            // Hide pagination if no results
+            $(`#pagination-${blockId}`).hide();
+          }
+
+          // Restore opacity
+          container.css("opacity", "1");
+
+          // Trigger custom event
+          container.trigger("tripsFiltered", {
+            visibleCount: data.trips_count || 0,
+            totalCount: data.pagination ? data.pagination.total_count : 0,
+          });
+
+          // Re-initialize WeTravel checkout buttons if needed
+          // Use setTimeout to ensure DOM is fully updated before re-initializing
+          setTimeout(function () {
+            if (window.wtrvl && window.wtrvl.init) {
+              window.wtrvl.init();
+            }
+            // Trigger a custom event that the embed_checkout script might listen to
+            document.dispatchEvent(new Event("DOMContentLoaded"));
+          }, 100);
+        }
+      })
+      .catch((error) => {
+        console.error("Failed to filter trips:", error);
+        container.css("opacity", "1");
+        // Show error message
+        container.html(
+          '<div class="no-trips">Failed to load trips. Please try again.</div>'
+        );
+        $(`#pagination-${blockId}`).hide();
+      });
   }
 
   // Update clear button visibility
@@ -197,7 +400,7 @@
     searchInput.focus();
   }
 
-  // Clear all filters
+  // Clear all filters and reload original data
   function clearAllFilters(blockId) {
     const container = $(`#trips-container-${blockId}`);
 
@@ -218,34 +421,145 @@
       $locationSelect.val(null).trigger("change");
     }
 
-    // Show all items
-    container.find(".trip-item").removeClass("filtered").show();
-    container.find(".no-trips").hide();
-
-    // Show pagination if it exists
-    const paginationContainer = $(`#pagination-${blockId}`);
-    if (paginationContainer.length > 0) {
-      paginationContainer.show();
-    }
-
     // Update clear button and filter count
     updateClearButton(blockId);
     updateFilterCount(blockId);
 
-    // Trigger filter event
-    container.trigger("tripsFiltered", {
-      visibleCount: container.find(".trip-item").length,
-      totalCount: container.find(".trip-item").length,
+    // Show loading state
+    container.css("opacity", "0.5");
+
+    // Get original configuration from container data attributes (without any filters)
+    const config = {
+      slug: container.data("slug"),
+      env: container.data("env"),
+      wetravelUserID: container.data("wetravel-user-id"),
+      tripType: container.data("trip-type") || "",
+      dateStart: container.data("date-start") || "",
+      dateEnd: container.data("date-end") || "",
+      locations: container.data("locations") || "",
+      displayType: container.data("display-type") || "vertical",
+      buttonType: container.data("button-type") || "book_now",
+      buttonText: container.data("button-text") || "",
+      buttonColor: container.data("button-color") || "#33ae3f",
+      itemsPerPage: parseInt(container.data("items-per-page")) || 10,
+      itemsPerRow: parseInt(container.data("items-per-row")) || 3,
+      page: 1, // Reset to page 1
+    };
+
+    // Build API URL to reload original data
+    const apiUrl = "/wp-json/wetravel/v1/trips";
+    const params = new URLSearchParams({
+      block_id: blockId,
+      slug: config.slug || "",
+      env: config.env || "",
+      trip_type: config.tripType || "",
+      date_start: config.dateStart || "",
+      date_end: config.dateEnd || "",
+      locations: config.locations || "",
+      query: "", // No search query
+      display_type: config.displayType || "vertical",
+      button_type: config.buttonType || "book_now",
+      button_text: config.buttonText || "",
+      button_color: config.buttonColor || "#33ae3f",
+      page: config.page,
+      per_page: config.itemsPerPage || 10,
+      items_per_row: config.itemsPerRow || 3,
+      wetravel_user_id: config.wetravelUserID || "",
     });
+
+    // Fetch original data from API
+    fetch(apiUrl + "?" + params.toString())
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("HTTP " + response.status);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        if (data.success && data.html) {
+          // Update trips container with original HTML
+          container.html(data.html);
+
+          // Update pagination controls if included in response
+          if (data.pagination) {
+            const paginationContainer = $(`#pagination-${blockId}`);
+            if (paginationContainer.length > 0) {
+              paginationContainer.show();
+            }
+
+            if (window.renderServerPaginationControls) {
+              window.renderServerPaginationControls(
+                blockId,
+                data.pagination,
+                container.data("button-color")
+              );
+
+              // Re-attach click handlers after regenerating HTML
+              const newPaginationElement = $("#pagination-" + blockId);
+              if (
+                newPaginationElement.length &&
+                window.initializeServerPagination
+              ) {
+                window.initializeServerPagination(
+                  container,
+                  newPaginationElement,
+                  blockId
+                );
+              }
+            }
+          }
+
+          // Restore opacity
+          container.css("opacity", "1");
+
+          // Trigger custom event
+          container.trigger("tripsFiltered", {
+            visibleCount: data.trips_count || 0,
+            totalCount: data.pagination ? data.pagination.total_count : 0,
+          });
+
+          // Re-initialize WeTravel checkout buttons if needed
+          // Use setTimeout to ensure DOM is fully updated before re-initializing
+          setTimeout(function () {
+            if (window.wtrvl && window.wtrvl.init) {
+              window.wtrvl.init();
+            }
+            // Trigger a custom event that the embed_checkout script might listen to
+            document.dispatchEvent(new Event("DOMContentLoaded"));
+          }, 100);
+        }
+      })
+      .catch((error) => {
+        console.error("Failed to reload trips:", error);
+        container.css("opacity", "1");
+        alert("Failed to reload trips. Please try again.");
+      });
   }
 
   // Event handlers
   $(document).ready(function () {
-    // Search input handler
+    // Search input handler with debouncing (wait 500ms after user stops typing)
     $(document).on("input", ".search-input", function () {
       const blockId = $(this).data("block-id");
+      const searchValue = $(this).val().trim();
+
       updateClearButton(blockId);
-      filterTrips(blockId);
+
+      // Clear existing timer
+      if (state.searchDebounceTimers[blockId]) {
+        clearTimeout(state.searchDebounceTimers[blockId]);
+      }
+
+      // Early return: Don't trigger search for inputs with 1-2 characters
+      // Only search when empty (to reset) or >= 3 characters
+      if (searchValue.length > 0 && searchValue.length < 3) {
+        return;
+      }
+
+      // Debounce the API call to avoid too many requests while typing
+      state.searchDebounceTimers[blockId] = setTimeout(function () {
+        filterTrips(blockId);
+      }, 500); // Wait 500ms after user stops typing
     });
 
     // Clear button handler
@@ -326,10 +640,10 @@
         .attr("id")
         .replace("search-filter-", "");
 
-      // Clear date inputs
-      $(`#search-filter-${blockId} .date-input`).val("");
+      // Hide the filter dropdown
+      $(`#search-filter-${blockId} .filter-dropdown`).hide();
 
-      // Clear all other filters
+      // Clear all filters and reload original data
       clearAllFilters(blockId);
     });
 
@@ -382,7 +696,7 @@
       // Initialize location Select2 for this block
       initializeLocationSelect2(blockId);
 
-      filterTrips(blockId);
+      // Only update UI states, don't reload trips (they're already loaded)
       updateClearButton(blockId);
       updateFilterCount(blockId);
     });

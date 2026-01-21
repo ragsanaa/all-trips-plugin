@@ -233,6 +233,28 @@ function wtwidget_trips_block_render( $attributes ) {
 		}
 	}
 
+	// Optimize carousel loading for small trip counts
+	// If total trips fit in one API call (≤ per_page), load all at once to avoid unnecessary progressive loading
+	$carousel_optimized = false;
+	if ( 'carousel' === $display_type && !empty($pagination['total_count']) ) {
+		$total_trips = intval($pagination['total_count']);
+		// If total trips fit in one page (≤ per_page), fetch all in one go
+		if ($total_trips <= $items_per_page && $total_trips > 0) {
+			// Only re-fetch if we haven't loaded all trips yet
+			if (count($enhanced_trips) < $total_trips) {
+				$api_params['per_page'] = $total_trips; // Fetch all trips
+				$api_url_optimized = wtwidget_build_api_url($env, $wetravel_trips_user_id, $api_params);
+				$api_response_optimized = wtwidget_get_fresh_trips_data($api_url_optimized);
+
+				if ($api_response_optimized !== false) {
+					$enhanced_trips = $api_response_optimized['trips'];
+					$pagination = $api_response_optimized['pagination'];
+					$carousel_optimized = true;
+				}
+			}
+		}
+	}
+
 	// Enqueue necessary assets based on display type.
 	if ( 'carousel' === $display_type ) {
 		wp_enqueue_style(
@@ -375,7 +397,7 @@ function wtwidget_trips_block_render( $attributes ) {
 				<div class="search-input-wrapper">
 						<input type="text"
 										class="search-input"
-										placeholder="Search trips by name or location..."
+										placeholder="Search trips by name (min 3 characters)..."
 										data-block-id="<?php echo esc_attr( $block_id ); ?>"
 						/>
 						<button type="button" class="search-clear-btn"
@@ -476,6 +498,9 @@ function wtwidget_trips_block_render( $attributes ) {
 			data-hydrate="true"
 			data-search-visibility="<?php echo $search_visibility ? 'true' : 'false'; ?>"
 			data-cache-status="<?php echo $is_using_cache ? 'cached' : 'fresh'; ?>"
+			data-total-pages="<?php echo esc_attr( $pagination['total_pages'] ?? 1 ); ?>"
+			data-total-trips="<?php echo esc_attr( $pagination['total_count'] ?? 0 ); ?>"
+			data-current-page="<?php echo esc_attr( $pagination['page'] ?? 1 ); ?>"
 			>
 			<?php
 				$allowed_html_tags = array(

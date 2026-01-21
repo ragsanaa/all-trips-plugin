@@ -329,99 +329,109 @@
     // Initialize destinations Select2 with AJAX search
     initializeLocationsSelect2();
 
-    // Update preview initially
-    updatePreview();
+    // Update preview initially (only if we're on the design page)
+    if ($("#display_type").length > 0) {
+      updatePreview();
+    }
 
-    // Run on page load
-    toggleDisplayTypeFields();
+    // Only initialize design page specific functionality if we're on that page
+    if ($("#display_type").length > 0) {
+      // Run on page load
+      toggleDisplayTypeFields();
 
-    // Update preview when form fields change
-    $(
-      "#display_type, #button_type, #button_text, #button_color, #trip_type, #items_per_page, #items_per_row, #items_per_slide, #border_radius, #search_visibility, #trip_location"
-    ).on("change input", function () {
-      // Force immediate update when any field changes
-      setTimeout(updatePreview, 0);
-    });
+      // Update preview when form fields change
+      $(
+        "#display_type, #button_type, #button_text, #button_color, #trip_type, #items_per_page, #items_per_row, #items_per_slide, #border_radius, #search_visibility, #trip_location"
+      ).on("change input", function () {
+        // Force immediate update when any field changes
+        setTimeout(updatePreview, 0);
+      });
 
-    // Run when display type changes
-    $("#display_type").on("change", toggleDisplayTypeFields);
+      // Run when display type changes
+      $("#display_type").on("change", toggleDisplayTypeFields);
 
-    // Reinitialize Select2 when filters change
-    $("#trip_type, #departure_date_gte, #departure_date_lte").on(
-      "change",
-      function () {
-        // Reinitialize the locations select with new filter context
-        initializeLocationsSelect2();
+      // Reinitialize Select2 when filters change
+      $("#trip_type, #departure_date_gte, #departure_date_lte").on(
+        "change",
+        function () {
+          // Reinitialize the locations select with new filter context
+          initializeLocationsSelect2();
 
-        // Trigger preview update
+          // Trigger preview update
+          updatePreview();
+        }
+      );
+
+      // Update button text based on button type if it has default value
+      $("#button_type").on("change", function () {
+        const buttonType = $(this).val();
+        const buttonText = $("#button_text");
+
+        if (
+          buttonText.val() === "Book Now" ||
+          buttonText.val() === "View Trip"
+        ) {
+          buttonText.val(buttonType === "book_now" ? "Book Now" : "View Trip");
+        }
+
+        // Force update preview immediately after changing button type
         updatePreview();
-      }
-    );
+      });
+    }
 
-    // Init copy shortcode functionality
+    // Init copy shortcode functionality (works on both pages)
     initCopyShortcode();
 
-    // Update button text based on button type if it has default value
-    $("#button_type").on("change", function () {
-      const buttonType = $(this).val();
-      const buttonText = $("#button_text");
+    // Real-time keyword uniqueness checker (only on design page)
+    if ($("#design_keyword").length > 0) {
+      var checkKeywordTimeout;
+      $("#design_keyword").on("keyup blur", function () {
+        var keyword = $(this).val().trim();
+        clearTimeout(checkKeywordTimeout);
 
-      if (buttonText.val() === "Book Now" || buttonText.val() === "View Trip") {
-        buttonText.val(buttonType === "book_now" ? "Book Now" : "View Trip");
-      }
+        // Clear any existing validation messages
+        $("#keyword-validation-message").remove();
 
-      // Force update preview immediately after changing button type
-      updatePreview();
-    });
-
-    // Real-time keyword uniqueness checker
-    var checkKeywordTimeout;
-    $("#design_keyword").on("keyup blur", function () {
-      var keyword = $(this).val().trim();
-      clearTimeout(checkKeywordTimeout);
-
-      // Clear any existing validation messages
-      $("#keyword-validation-message").remove();
-
-      // Only check if keyword has content
-      if (keyword.length > 0) {
-        // Add a small delay to prevent too many requests
-        checkKeywordTimeout = setTimeout(function () {
-          $.ajax({
-            url: wetravel_ajax.ajaxurl,
-            type: "POST",
-            data: {
-              action: "check_keyword_unique",
-              keyword: keyword,
-              design_id: wetravel_ajax.design_id || "",
-              nonce: wetravel_ajax.nonce,
-            },
-            success: function (response) {
-              if (response && typeof response.unique !== "undefined") {
-                if (!response.unique) {
-                  // Display validation message
-                  $(
-                    '<p id="keyword-validation-message" class="validation-error" style="color:red; margin-top: 5px; font-size: 12px;">⚠️ This keyword is already in use. Please choose a unique keyword.</p>'
-                  ).insertAfter("#design_keyword");
-                } else {
-                  // Show success message
-                  $(
-                    '<p id="keyword-validation-message" class="validation-success" style="color:green; margin-top: 5px; font-size: 12px;">✓ Keyword is available!</p>'
-                  ).insertAfter("#design_keyword");
+        // Only check if keyword has content
+        if (keyword.length > 0) {
+          // Add a small delay to prevent too many requests
+          checkKeywordTimeout = setTimeout(function () {
+            $.ajax({
+              url: wetravel_ajax.ajaxurl,
+              type: "POST",
+              data: {
+                action: "check_keyword_unique",
+                keyword: keyword,
+                design_id: wetravel_ajax.design_id || "",
+                nonce: wetravel_ajax.nonce,
+              },
+              success: function (response) {
+                if (response && typeof response.unique !== "undefined") {
+                  if (!response.unique) {
+                    // Display validation message
+                    $(
+                      '<p id="keyword-validation-message" class="validation-error" style="color:red; margin-top: 5px; font-size: 12px;">⚠️ This keyword is already in use. Please choose a unique keyword.</p>'
+                    ).insertAfter("#design_keyword");
+                  } else {
+                    // Show success message
+                    $(
+                      '<p id="keyword-validation-message" class="validation-success" style="color:green; margin-top: 5px; font-size: 12px;">✓ Keyword is available!</p>'
+                    ).insertAfter("#design_keyword");
+                  }
                 }
-              }
-            },
-            error: function (xhr, status, error) {
-              console.log("Keyword check error:", error);
-              // Optionally show an error message to user
-              $(
-                '<p id="keyword-validation-message" class="validation-error" style="color:orange; margin-top: 5px; font-size: 12px;">⚠️ Could not verify keyword uniqueness. Please try again.</p>'
-              ).insertAfter("#design_keyword");
-            },
-          });
-        }, 500);
-      }
-    });
+              },
+              error: function (xhr, status, error) {
+                console.log("Keyword check error:", error);
+                // Optionally show an error message to user
+                $(
+                  '<p id="keyword-validation-message" class="validation-error" style="color:orange; margin-top: 5px; font-size: 12px;">⚠️ Could not verify keyword uniqueness. Please try again.</p>'
+                ).insertAfter("#design_keyword");
+              },
+            });
+          }, 500);
+        }
+      });
+    }
   });
 
   // Initialize Select2 with AJAX search for locations

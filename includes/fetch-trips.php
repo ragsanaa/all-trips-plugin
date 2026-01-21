@@ -205,8 +205,6 @@ function wtwidget_build_api_url($env, $wetravel_user_id, $params = array()) {
         }
     }
 
-
-
     // Trip type filter (transform to recurring boolean for API)
     if (isset($params['trip_type']) && $params['trip_type'] !== '') {
         $recurring_value = wtwidget_convert_trip_type_to_recurring($params['trip_type']);
@@ -220,6 +218,11 @@ function wtwidget_build_api_url($env, $wetravel_user_id, $params = array()) {
     $locations_array = array();
     if (!empty($params['locations']) && is_array($params['locations'])) {
         $locations_array = $params['locations'];
+    }
+
+    // Search/query parameter for searching by title
+    if (!empty($params['query'])) {
+        $query_params['query'] = urlencode($params['query']);
     }
 
     // Sorting parameters (new)
@@ -421,6 +424,10 @@ function wtwidget_register_rest_endpoints() {
                 'required' => false,
                 'sanitize_callback' => 'sanitize_text_field',
             ),
+            'query' => array(
+                'required' => false,
+                'sanitize_callback' => 'sanitize_text_field',
+            ),
             'sort_by' => array(
                 'required' => false,
                 'sanitize_callback' => 'sanitize_text_field',
@@ -509,6 +516,11 @@ function wtwidget_register_rest_endpoints() {
                 'required' => false,
                 'sanitize_callback' => 'sanitize_text_field',
             ),
+            'destinations' => array(
+                'required' => false,
+                'sanitize_callback' => 'sanitize_text_field',
+                'description' => 'Semicolon-separated list of destinations to filter results by (from design)',
+            ),
         ),
     ));
 }
@@ -530,6 +542,7 @@ function wtwidget_rest_get_fresh_trips( $request ) {
     $date_end = $request->get_param('date_end');
     $trip_type = $request->get_param('trip_type');
     $locations_param = $request->get_param('locations');
+    $search_query = $request->get_param('query');
     $sort_by = $request->get_param('sort_by');
     $sort_order = $request->get_param('sort_order');
 
@@ -587,6 +600,10 @@ function wtwidget_rest_get_fresh_trips( $request ) {
     if (!empty($locations_array)) {
         $api_params['locations'] = $locations_array;
     }
+    // Add search query for title search
+    if (!empty($search_query)) {
+        $api_params['query'] = $search_query;
+    }
     if (!empty($sort_by)) {
         $api_params['sort_by'] = $sort_by;
     }
@@ -635,9 +652,31 @@ function wtwidget_rest_get_fresh_trips( $request ) {
     $cache_duration = defined( 'WETRAVEL_CACHE_DURATION' ) ? WETRAVEL_CACHE_DURATION : ( 5 * MINUTE_IN_SECONDS );
     set_transient($cache_key, $api_response, $cache_duration);
 
+    // For carousel display, also return rendered HTML for each trip for progressive loading
+    $structured_trips = array();
+    if ($display_type === 'carousel') {
+        foreach ($trips as $trip) {
+            // Render each trip using the same PHP function to ensure consistent styling
+            $trip_html = wtwidget_render_trip_item($trip, array(
+                'env' => $env,
+                'wetravelUserID' => $wetravel_user_id,
+                'displayType' => $display_type,
+                'buttonType' => $button_type,
+                'buttonText' => $button_text,
+                'buttonColor' => $button_color,
+            ));
+
+            $structured_trips[] = array(
+                'id' => $trip['id'] ?? $trip['uuid'] ?? '',
+                'html' => $trip_html, // Fully rendered HTML
+            );
+        }
+    }
+
     return rest_ensure_response(array(
         'success' => true,
         'html' => $html,
+        'trips' => $structured_trips, // Include structured data for carousel progressive loading
         'trips_count' => count($trips),
         'pagination' => $pagination,
     ));
@@ -821,6 +860,7 @@ function wtwidget_rest_search_destinations( $request ) {
     $date_start = $request->get_param('date_start');
     $date_end = $request->get_param('date_end');
     $trip_type = $request->get_param('trip_type');
+    $destinations = $request->get_param('destinations');
 
     // Validate required parameters
     if (empty($query) || empty($organizer_id)) {
@@ -944,6 +984,27 @@ function wtwidget_rest_search_destinations( $request ) {
             'Invalid response structure from WeTravel API',
             array('status' => 500)
         );
+    }
+
+    // Filter destinations if design locations are provided
+    if (!empty($destinations)) {
+        $allowed_destinations = array_map('trim', explode(';', $destinations));
+        $allowed_destinations = array_filter($allowed_destinations); // Remove empty entries
+
+        // Filter API results to only include destinations that match the design locations
+        // Use case-insensitive matching
+        if (!empty($allowed_destinations)) {
+            $data = array_filter($data, function($destination) use ($allowed_destinations) {
+                foreach ($allowed_destinations as $allowed) {
+                    if (stripos($destination, $allowed) !== false || stripos($allowed, $destination) !== false) {
+                        return true;
+                    }
+                }
+                return false;
+            });
+            // Re-index array after filtering
+            $data = array_values($data);
+        }
     }
 
     // Prepare response in consistent format

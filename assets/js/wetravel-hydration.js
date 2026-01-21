@@ -38,6 +38,8 @@
       button_type: config.buttonType || "book_now",
       button_text: config.buttonText || "",
       button_color: config.buttonColor || "#33ae3f",
+      page: config.page || 1,
+      per_page: config.itemsPerPage || 10,
       items_per_page: config.itemsPerPage || 10,
       items_per_row: config.itemsPerRow || 3,
       items_per_slide: config.itemsPerSlide || 1,
@@ -198,7 +200,7 @@
       // Delay hydration slightly to allow server-rendered content to be visible first
       setTimeout(function () {
         window.WeTravelTripsHydrate(blockId, config);
-      }, 1000);
+      }, 300);
     });
   });
 
