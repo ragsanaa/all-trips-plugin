@@ -426,7 +426,7 @@ function wtwidget_trips_block_render( $attributes ) {
 						<div class="filter-group">
 								<div class="filter-label-row">
 									<label class="filter-label">Location</label>
-									<button type="button" class="location-clear-btn" data-block-id="<?php echo esc_attr( $block_id ); ?>" style="display: none;">Clear</button>
+									<button type="button" class="location-clear-btn" data-block-id="<?php echo esc_attr( $block_id ); ?>" style="display: none;">Clear Location</button>
 								</div>
 								<div class="location-filter-wrapper">
 									<select

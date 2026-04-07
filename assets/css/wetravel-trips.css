@@ -398,7 +398,10 @@ a {
   pointer-events: auto;
 }
 
-.wetravel-trips-container.grid-view .trip-item a {
+.wetravel-trips-container.grid-view .trip-item a,
+.wetravel-trips-container.carousel-view .trip-item .learn-more-link,
+.wetravel-trips-container.carousel-view .trip-item .wtrvl-checkout_button,
+.wetravel-trips-container.grid-view .trip-item .wtrvl-checkout_button {
   pointer-events: auto;
 }
 
