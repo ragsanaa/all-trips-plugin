@@ -10,8 +10,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-require_once dirname(__FILE__, 2) . '/includes/functions.php';
-
 /**
  * Handle design deletion action
  */
@@ -25,6 +23,8 @@ function wetravel_trips_handle_design_deletion() {
 	if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'wetravel_trips_delete_nonce' ) ) {
 		return; // Silently return if nonce verification fails
 	}
+
+	// TODO: Add current_user_can( 'manage_options' ) check here to prevent unauthorized deletions
 
 	// Now safely check the sanitized GET parameters
 	$page = isset( $_GET['page'] ) ? sanitize_text_field( wp_unslash( $_GET['page'] ) ) : '';

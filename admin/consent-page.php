@@ -144,21 +144,6 @@ function wetravel_redirect_to_consent() {
 add_action( 'admin_init', 'wetravel_redirect_to_consent' );
 
 /**
- * TODO: REMOVE this before push the changes
- * Force redirect to consent page for testing
- */
-function wetravel_force_consent_redirect() {
-    // Only for testing - remove in production
-    if ( isset( $_GET['force_consent'] ) && current_user_can( 'manage_options' ) ) {
-        set_transient( 'wetravel_activation_consent_notice', true, 60 * 60 * 24 * 7 );
-        delete_option( 'wetravel_consent_given' );
-        wp_safe_redirect( admin_url( 'admin.php?page=wetravel-consent' ) );
-        exit;
-    }
-}
-add_action( 'admin_init', 'wetravel_force_consent_redirect' );
-
-/**
  * Add consent page to admin menu as submenu
  */
 function wetravel_add_consent_page() {

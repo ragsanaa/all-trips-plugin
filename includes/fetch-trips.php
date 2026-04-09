@@ -16,22 +16,6 @@ add_action( 'rest_api_init', 'wtwidget_register_rest_endpoints' );
 // All frontend functionality now uses the REST API endpoint '/wp-json/wetravel/v1/trips'
 
 /**
- * Get trips data from WeTravel API with caching (legacy function)
- *
- * Note: This function is kept for backward compatibility but the optimized
- * version wtwidget_get_fresh_trips_data() is now preferred for better performance.
- *
- * @param string $api_url The API URL to fetch data from.
- * @return array|false Array with 'trips' and 'pagination' keys, or false on error.
- */
-function wtwidget_get_trips_data( $api_url ) {
-	// For backward compatibility, just call the fresh data function
-	// The caching is now handled at a higher level with enhanced data
-	return wtwidget_get_fresh_trips_data( $api_url );
-}
-
-
-/**
  * Get currency configuration including symbol and exponent (decimal places)
  *
  * @param string $currency_code The currency code.
@@ -557,6 +541,7 @@ function wtwidget_rest_get_fresh_trips( $request ) {
 
     // Validate required parameters
     if (empty($wetravel_user_id) || empty($env)) {
+        wtwidget_log_error( 'REST trips request missing required params', array( 'user_id' => $wetravel_user_id, 'env' => $env, 'block_id' => $block_id ) );
         return new WP_Error(
             'missing_params',
             'Missing required parameters: wetravel_user_id and env are required',
@@ -617,6 +602,7 @@ function wtwidget_rest_get_fresh_trips( $request ) {
     $api_response = wtwidget_get_fresh_trips_data($api_url);
 
     if (false === $api_response) {
+        wtwidget_log_error( 'REST endpoint: WeTravel API request failed', array( 'api_url' => $api_url, 'block_id' => $block_id ) );
         return new WP_Error(
             'api_error',
             'Failed to fetch trips from WeTravel API',
@@ -808,6 +794,7 @@ function wtwidget_render_trips_html( $trips, $options ) {
             'style' => true,
             'href' => true,
             'target' => true,
+            'data-trip-uuid' => true,
         ),
     );
 

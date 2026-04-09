@@ -115,8 +115,8 @@
           updatedAttributes.itemsPerRow = parseInt(settings.itemsPerRow);
         if (attributes.itemsPerSlide === 3 && settings.itemsPerSlide)
           updatedAttributes.itemsPerSlide = parseInt(settings.itemsPerSlide);
-        if (attributes.searchVisibility === false && settings.searchVisibility)
-          updatedAttributes.searchVisibility = settings.searchVisibility;
+        if (attributes.searchVisibility === false && settings.searchVisibility !== undefined)
+          updatedAttributes.searchVisibility = !!settings.searchVisibility;
         if (attributes.borderRadius === 6 && settings.borderRadius)
           updatedAttributes.borderRadius = parseInt(settings.borderRadius);
 
@@ -145,7 +145,7 @@
             buttonType: design.buttonType || attributes.buttonType,
             buttonText: design.buttonText || buttonText,
             tripType: design.tripType || "all",
-            searchVisibility: design.searchVisibility || searchVisibility,
+            searchVisibility: design.searchVisibility !== undefined ? !!design.searchVisibility : searchVisibility,
           };
 
           setAttributes(designAttributes);

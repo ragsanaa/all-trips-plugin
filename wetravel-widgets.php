@@ -3,7 +3,7 @@
  * Plugin Name: WeTravel Widgets
  * Plugin URI:  https://github.com/ragsanaa/all-trips-plugin
  * Description: A plugin to display WeTravel widgets on your WordPress site.
- * Version:     1.2.3
+ * Version:     1.3
  * Author:      WeTravel
  * Author URI:  https://github.com/wetravel-com
  * License:     GPLv2 or later
@@ -355,11 +355,10 @@ register_activation_hook( __FILE__, 'wtwidget_activation' );
 
 // Add deactivation hook to clean up if needed
 function wtwidget_deactivation() {
-	// Clean up transients
-	wtwidget_clear_transients();
-
-	// Track deactivation state
-	if ( function_exists( 'wetravel_track_user_state' ) ) {
+	// Track deactivation state BEFORE clearing transients (they hold the feedback data)
+	// Skip if already tracked via the AJAX feedback form handler
+	$already_tracked = get_transient( 'wetravel_deactivation_tracked' );
+	if ( ! $already_tracked && function_exists( 'wetravel_track_user_state' ) ) {
 		$wt_user_id = get_option( 'wetravel_trips_user_id', '' );
 		$wt_user_slug = get_option( 'wetravel_trips_slug', '' );
 		$consent_given = get_option( 'wetravel_consent_given', false );
@@ -384,9 +383,12 @@ function wtwidget_deactivation() {
 		}
 	}
 
-	if ( function_exists( 'wetravel_track_plugin_state' ) ) {
+	if ( ! $already_tracked && function_exists( 'wetravel_track_plugin_state' ) ) {
 		wetravel_track_plugin_state( 'deactivated' );
 	}
+
+	// Clean up transients AFTER tracking is done
+	wtwidget_clear_transients();
 }
 register_deactivation_hook( __FILE__, 'wtwidget_deactivation' );
 

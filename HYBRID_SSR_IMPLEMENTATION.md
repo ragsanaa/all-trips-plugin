@@ -17,9 +17,9 @@ The hybrid SSR + JS hydration pattern provides the best of both worlds:
 
 **Enhanced caching strategy:**
 
-- Added `wetravel_trips_ssr_` cache key prefix for hybrid rendering
-- Implemented 15-minute cache duration (900 seconds) to balance performance and freshness
-- Cache key includes API URL and location filters for proper cache isolation
+- Uses `wetravel_trips_` cache key prefix with MD5 hash of the API URL
+- Uses `WETRAVEL_CACHE_DURATION` constant (5 minutes / 300 seconds) for cache TTL
+- Cache key includes API URL which encodes location filters for proper cache isolation
 - Falls back to fresh API call if cache is empty
 
 **New data attributes:**
@@ -30,17 +30,20 @@ The hybrid SSR + JS hydration pattern provides the best of both worlds:
 
 ### 2. REST API Endpoint (`fetch-trips.php`)
 
-**New endpoint:** `/wp-json/wetravel/v1/trips`
+**Endpoints:**
+
+1. `/wp-json/wetravel/v1/trips` — Main trip data endpoint
+2. `/wp-json/wetravel/v1/destinations/search` — Location/destination search
 
 **Features:**
 
-- Fetches fresh data bypassing cache
+- Fetches fresh data from WeTravel API
 - Accepts all necessary parameters (slug, env, trip_type, dates, locations, etc.)
 - Returns rendered HTML ready for DOM replacement
 - Implements proper error handling and validation
-- Caches results for next server render (300 seconds)
+- Caches results using `WETRAVEL_CACHE_DURATION` (5 minutes) for next server render
 
-**Parameters:**
+**Parameters (trips endpoint):**
 
 - `block_id` (required): Unique identifier for the block instance
 - `slug`, `env`: WeTravel configuration
@@ -146,10 +149,10 @@ $(document).on("wetravel:search-filters-init", function (event, data) {
 
 ## Cache Strategy
 
-- **SSR Cache**: 5 minutes (300 seconds) for server rendering
-- **Trip Details Cache**: 1 minute (60 seconds) for individual trip enhancement
-- **Cache Keys**: Include API URL and filters for proper isolation
-- **Cache Warm-up**: Hydration results update SSR cache for next page load
+- **SSR & Hydration Cache**: 5 minutes (300 seconds), controlled by `WETRAVEL_CACHE_DURATION` constant
+- **Destinations Cache**: 5 minutes (300 seconds) for location/destination search results
+- **Cache Keys**: `wetravel_trips_` + MD5 of API URL (includes filters for proper isolation)
+- **Cache Warm-up**: Hydration results update the cache for next server render
 
 ## Backward Compatibility
 
@@ -169,8 +172,8 @@ $(document).on("wetravel:search-filters-init", function (event, data) {
 ## Files Modified
 
 1. `includes/block-renderer.php`: SSR caching and hydration setup
-2. `includes/fetch-trips.php`: REST API endpoint and fresh data fetching
-3. `assets/js/wetravel-hydration.js`: Client-side hydration logic (new file)
+2. `includes/fetch-trips.php`: REST API endpoints (trips + destinations search) and fresh data fetching
+3. `assets/js/wetravel-hydration.js`: Client-side hydration logic
 
 ## Configuration
 

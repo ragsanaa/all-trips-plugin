@@ -1,7 +1,7 @@
 /**
  * WeTravel Widgets Tracking System - Frontend JavaScript
  *
- * Tracks widget loads, clicks, and button clicks with GDPR compliance
+ * Tracks widget loads with GDPR compliance
  */
 
 (function ($) {
@@ -90,7 +90,7 @@
     },
 
     /**
-     * Setup event listeners for the three tracking events
+     * Setup event listeners for tracking events
      */
     setupEventListeners: function () {
       if (!this.hasConsent) {
@@ -104,12 +104,6 @@
 
       // Track widget loads
       this.trackWidgetLoads();
-
-      // Track widget clicks
-      this.trackWidgetClicks();
-
-      // Track button clicks
-      this.trackButtonClicks();
     },
 
     /**
@@ -189,117 +183,6 @@
     },
 
     /**
-     * Track widget clicks (clicks anywhere on the widget)
-     */
-    trackWidgetClicks: function () {
-      $(document).on("click", this.getWidgetSelectors(), (e) => {
-        const $widget = $(e.currentTarget);
-
-        // Skip if click was on a button or link (to avoid double tracking with button clicks)
-        const $target = $(e.target);
-        if (
-          $target.is("button, a, .trip-button") ||
-          $target.closest("button, a, .trip-button").length > 0
-        ) {
-          return;
-        }
-
-        const widgetData = this.getWidgetData($widget);
-
-        this.trackEvent("widget_click", widgetData.widget_id, {
-          ...widgetData,
-          click_target: e.target.tagName.toLowerCase(),
-          click_class: e.target.className,
-          click_position: {
-            x: e.pageX,
-            y: e.pageY,
-          },
-        });
-      });
-    },
-
-    /**
-     * Track button clicks specifically
-     */
-    trackButtonClicks: function () {
-      const buttonSelectors = [
-        ".wetravel-book-now",
-        ".book-now-btn",
-        ".wetravel-button",
-        ".wetravel-cta",
-        "[data-wetravel-button]",
-        ".wetravel-trips-container button",
-        ".wetravel-trips-container .button",
-        ".wetravel-trips-container .trip-button", // Grid view trip buttons
-        '.wetravel-trips-container a[href*="book"]',
-        '.wetravel-trips-container a[href*="reserve"]',
-      ].join(", ");
-
-      $(document).on("click", buttonSelectors, (e) => {
-        const $button = $(e.currentTarget);
-        const $widget = $button.closest(this.getWidgetSelectors());
-        const widgetData = this.getWidgetData($widget);
-
-        // Get trip UUID from button data attributes
-        const tripUuid =
-          $button.data("uuid") ||
-          $button.data("trip-uuid") ||
-          $button.closest("[data-trip-uuid]").data("trip-uuid") ||
-          "";
-
-        this.trackEvent("button_click", widgetData.widget_id, {
-          ...widgetData,
-          button_text: $button.text().trim(),
-          button_href: $button.attr("href") || "",
-          button_type: this.getButtonType($button),
-          button_class: $button.attr("class") || "",
-          trip_uuid: tripUuid,
-          trip_id:
-            tripUuid ||
-            $button.data("trip-id") ||
-            $button.closest("[data-trip-id]").data("trip-id") ||
-            "",
-          click_target: "button",
-          layout_type: widgetData.display_type,
-        });
-      });
-
-      // Track carousel and grid trip item clicks (these act as buttons)
-      $(document).on("click", ".wetravel-trips-container .trip-item", (e) => {
-        const $tripItem = $(e.currentTarget);
-        const $widget = $tripItem.closest(this.getWidgetSelectors());
-
-        // Skip if click was on a button element (to avoid double tracking)
-        if ($(e.target).closest(".trip-button, button, a").length > 0) {
-          return;
-        }
-
-        // Only track as button click for carousel and grid layouts where trip items are clickable
-        const displayType = $widget.data("display-type") || "vertical";
-        if (displayType !== "carousel" && displayType !== "grid") {
-          return;
-        }
-
-        const widgetData = this.getWidgetData($widget);
-
-        this.trackEvent("button_click", widgetData.widget_id, {
-          ...widgetData,
-          button_text:
-            $tripItem.find(".trip-title").text().trim() || "Trip Item",
-          button_href: $tripItem.attr("href") || "",
-          button_type:
-            widgetData.button_type || this.getCarouselButtonType($widget),
-          button_class: $tripItem.attr("class") || "",
-          trip_uuid: $tripItem.data("trip-uuid") || "",
-          trip_id:
-            $tripItem.data("trip-uuid") || $tripItem.data("trip-id") || "",
-          click_target: "trip-item",
-          layout_type: displayType,
-        });
-      });
-    },
-
-    /**
      * Get widget selectors
      */
     getWidgetSelectors: function () {
@@ -349,45 +232,6 @@
       return (
         "widget_" + index + "_" + classes.replace(/\s+/g, "_").substr(0, 20)
       );
-    },
-
-    /**
-     * Get button type based on button characteristics
-     */
-    getButtonType: function ($button) {
-      const text = $button.text().toLowerCase();
-      const href = $button.attr("href") || "";
-      const classes = $button.attr("class") || "";
-
-      if (
-        text.includes("book") ||
-        href.includes("book") ||
-        classes.includes("book")
-      ) {
-        return "book_now";
-      }
-      if (text.includes("reserve") || href.includes("reserve")) {
-        return "reserve";
-      }
-      if (
-        text.includes("learn") ||
-        text.includes("more") ||
-        text.includes("detail")
-      ) {
-        return "learn_more";
-      }
-      if (text.includes("view") || text.includes("see")) {
-        return "view_details";
-      }
-
-      return "other";
-    },
-
-    /**
-     * Get button type for carousel/grid widgets from widget data
-     */
-    getCarouselButtonType: function ($widget) {
-      return $widget.data("button-type") || "book_now";
     },
 
     /**

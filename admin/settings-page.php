@@ -7,24 +7,6 @@
 
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 
-/**
- * Sanitize embed code
- *
- * @param string $input User embed code.
- */
-function wtwidget_sanitize_embed_code( $input ) {
-	return wp_kses_post( $input ); // Allows safe HTML while stripping dangerous elements.
-}
-
-/**
- * Sanitize save time
- *
- * @param string $input Setting save time.
- */
-function wtwidget_sanitize_text( $input ) {
-	return sanitize_text_field( $input ); // Ensures plain text only.
-}
-
 /** Note: Settings are handled by custom save function in includes/functions.php */
 
 /**
@@ -104,7 +86,7 @@ function wetravel_trips_setup_page() {
 
 		<?php
 		// Display consent message if user just completed consent
-		$consent_param = isset( $_GET['consent'] ) ? sanitize_text_field( wp_unslash( $_GET['consent'] ) ) : '';
+		$consent_param = isset( $_GET['consent'] ) ? sanitize_text_field( wp_unslash( $_GET['consent'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Display-only parameter, no data is processed.
 
 		if ( $consent_param === 'allowed' ) : ?>
 			<div class="notice notice-success is-dismissible" id="wetravel-consent-notice">
@@ -307,8 +289,93 @@ function wetravel_trips_add_admin_menu() {
 		'wetravel-trips-setup',
 		'wetravel_trips_setup_page'
 	);
+
+	// Hidden error log page — not shown in menu, accessible via URL only.
+	add_submenu_page(
+		null,
+		'Error Log',
+		'Error Log',
+		'manage_options',
+		'wetravel-trips-error-log',
+		'wetravel_trips_error_log_page'
+	);
 }
 add_action( 'admin_menu', 'wetravel_trips_add_admin_menu' );
+
+/**
+ * Render the error log page.
+ * Access via: admin.php?page=wetravel-trips-error-log
+ */
+function wetravel_trips_error_log_page() {
+	$error_log = get_option( 'wetravel_error_log', array() );
+	?>
+	<div class="wrap">
+		<h1>WeTravel Widgets — Error Log</h1>
+		<p>Recent errors logged by the plugin (last 50 entries).</p>
+
+		<?php if ( ! empty( $error_log ) ) : ?>
+			<div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
+				<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=wetravel-trips-error-log&clear_error_log=true' ), 'wetravel_clear_error_log' ) ); ?>"
+				   class="button button-secondary"
+				   onclick="return confirm('Are you sure you want to clear the error log?');">
+					Clear Log
+				</a>
+			</div>
+			<div style="max-height: 600px; overflow-y: auto;">
+				<table class="widefat striped">
+					<thead>
+						<tr>
+							<th style="width: 160px;">Time</th>
+							<th>Message</th>
+							<th>Context</th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php foreach ( array_reverse( $error_log ) as $entry ) : ?>
+							<tr>
+								<td><code><?php echo esc_html( $entry['time'] ); ?></code></td>
+								<td><?php echo esc_html( $entry['message'] ); ?></td>
+								<td>
+									<?php if ( ! empty( $entry['context'] ) ) : ?>
+										<code style="word-break: break-all;"><?php echo esc_html( wp_json_encode( $entry['context'] ) ); ?></code>
+									<?php else : ?>
+										&mdash;
+									<?php endif; ?>
+								</td>
+							</tr>
+						<?php endforeach; ?>
+					</tbody>
+				</table>
+			</div>
+		<?php else : ?>
+			<p style="color: #666; font-style: italic;">No errors logged.</p>
+		<?php endif; ?>
+	</div>
+	<?php
+}
+
+/**
+ * Handle clearing the error log.
+ */
+function wetravel_trips_handle_clear_error_log() {
+	$page = isset( $_GET['page'] ) ? sanitize_text_field( wp_unslash( $_GET['page'] ) ) : '';
+	if ( 'wetravel-trips-error-log' !== $page || ! isset( $_GET['clear_error_log'] ) ) {
+		return;
+	}
+
+	if ( ! current_user_can( 'manage_options' ) ) {
+		return;
+	}
+
+	if ( ! isset( $_GET['_wpnonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'wetravel_clear_error_log' ) ) {
+		return;
+	}
+
+	wtwidget_clear_error_log();
+	wp_safe_redirect( admin_url( 'admin.php?page=wetravel-trips-error-log' ) );
+	exit;
+}
+add_action( 'admin_init', 'wetravel_trips_handle_clear_error_log' );
 
 /**
  * Enqueue admin scripts and styles.

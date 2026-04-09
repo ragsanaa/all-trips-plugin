@@ -83,11 +83,11 @@ function wetravel_trips_instructions_page() {
 
 						<ul>
 							<li><strong>Layout Type:</strong> Choose between vertical, grid, or carousel layouts</li>
-							<li><strong>Button Customization:</strong> Set button type (Book Now or View Trip), custom text, and colors</li>
+							<li><strong>Button Customization:</strong> Set button type (Book Now or Trip Link), custom text, and colors</li>
 							<li><strong>Display Settings:</strong> Configure items per page, row, or slide</li>
 							<li><strong>Trip Filtering:</strong> Filter by trip type (all, one-time, or recurring)</li>
 							<li><strong>Date Ranges:</strong> Set specific date ranges for one-time trips</li>
-							<li><strong>Location Filtering:</strong> Focus on specific locations (version 1.1+)</li>
+							<li><strong>Location Filtering:</strong> Focus on specific locations</li>
 							<li><strong>Search Functionality:</strong> Enable/disable search bar for trip name and location filtering</li>
 						</ul>
 
@@ -145,7 +145,7 @@ function wetravel_trips_instructions_page() {
 								</tr>
 								<tr>
 									<td><code>button_type</code></td>
-									<td>Type of button: "book_now" or "view_trip"</td>
+									<td>Type of button: "book_now" or "trip_link"</td>
 									<td>"book_now"</td>
 								</tr>
 								<tr>
@@ -194,9 +194,14 @@ function wetravel_trips_instructions_page() {
 									<td>false</td>
 								</tr>
 								<tr>
+									<td><code>locations</code></td>
+									<td>Semicolon-separated list of locations to filter by</td>
+									<td>-</td>
+								</tr>
+								<tr>
 									<td><code>border_radius</code></td>
-									<td>Border radius for the widget design (default: 0)</td>
-									<td>0</td>
+									<td>Border radius for the widget design</td>
+									<td>6</td>
 								</tr>
 							</tbody>
 						</table>
@@ -260,7 +265,7 @@ function wetravel_trips_instructions_page() {
 					<div class="wetravel-instructions-section">
 						<h2>Advanced Features</h2>
 
-						<h3>Search Functionality (Version 1.1+)</h3>
+						<h3>Search Functionality</h3>
 						<p>The search bar allows visitors to filter trips by name and location:</p>
 
 						<ul>
@@ -315,7 +320,7 @@ function wetravel_trips_instructions_page() {
 						<ul>
 							<li>Search functionality is not available for carousel layouts</li>
 							<li>Ensure search visibility is enabled in your widget design</li>
-							<li>Check that you're using version 1.1 or higher</li>
+							<li>Check that you're using the latest version of the plugin</li>
 						</ul>
 
 						<h4>Button Not Functioning</h4>

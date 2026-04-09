@@ -172,18 +172,15 @@ class WeTravel_Deactivation_Form {
             'php_version' => PHP_VERSION
         );
 
-        // Save to options table for potential later use
+        // TODO: This option is written but never read back — remove if not needed, or implement retrieval logic
         update_option( 'wetravel_deactivation_feedback', $feedback_data );
 
         // Store deactivation reason details in transients for the tracking system
         set_transient( 'wetravel_deactivation_reason', $feedback_reason, HOUR_IN_SECONDS );
         set_transient( 'wetravel_deactivation_reason_details', $feedback_text, HOUR_IN_SECONDS );
 
-        // Try to send feedback to WeTravel if consent was given
-        if ( get_option( 'wetravel_consent_given', false ) ) {
-            // Track user state with deactivation details
-            $this->track_deactivation_state( $feedback_reason, $feedback_text );
-        }
+        // Track deactivation state (anonymous if no consent, full data if consent given)
+        $this->track_deactivation_state( $feedback_reason, $feedback_text );
 
         wp_send_json_success( array( 'message' => esc_html__( 'Thank you for your feedback!', 'wetravel-widgets' ) ) );
     }
@@ -217,6 +214,14 @@ class WeTravel_Deactivation_Form {
 			// User skipped consent - track with anonymous data + deactivation details
 			wetravel_track_user_state( $wt_user_id, $wt_user_slug, false, true, $deactivation_data, true );
 		}
+
+		// Also send plugin state event
+		if ( function_exists( 'wetravel_track_plugin_state' ) ) {
+			wetravel_track_plugin_state( 'deactivated' );
+		}
+
+		// Flag that deactivation was already tracked via AJAX to prevent duplicate in deactivation hook
+		set_transient( 'wetravel_deactivation_tracked', true, 5 * MINUTE_IN_SECONDS );
     }
 }
 

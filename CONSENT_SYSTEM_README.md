@@ -32,15 +32,16 @@ The plugin listing page shows different action links based on consent status:
 The consent page (`admin/consent-page.php`) displays:
 
 - A modern, responsive design with WeTravel branding
-- Two options: "Allow & Continue" or "Skip"
+- Two options: "Accept & Continue" or "Skip"
 - Clear information about what tracking data is collected and why
 - Links to WeTravel's Privacy Policy and Terms of Service
 
 ### 4. Consent Handling
 
-- **Allow**: Sets `wetravel_consent_given` to `true`, `wetravel_consent_type` to `allowed`
-- **Skip**: Sets `wetravel_consent_given` to `false`, `wetravel_consent_type` to `skipped`
+- **Accept**: Sets `wetravel_consent_given` to `true`, `wetravel_consent_type` to `allowed`
+- **Skip**: Sets `wetravel_consent_given` to `0`, `wetravel_consent_type` to `skipped`
 - Both actions set a timestamp and remove the activation notice
+- Both actions trigger a plugin state tracking event (`allowed_consent` or `skipped_consent`)
 
 ### 5. Consent Management
 
@@ -62,7 +63,7 @@ When the plugin is uninstalled:
 
 The system creates these options:
 
-- `wetravel_consent_given` - Boolean: true/false
+- `wetravel_consent_given` - `true`/`1` when allowed, `0` when skipped or opted out
 - `wetravel_consent_timestamp` - Unix timestamp
 - `wetravel_consent_type` - String: 'allowed', 'skipped', or 'opted_out'
 

@@ -1,9 +1,9 @@
 === WeTravel Widgets ===
 Contributors: wtragsana
 Tags: travel, widget, multi-day, booking, wetravel
-Requires at least: 5.2
-Tested up to: 6.8
-Stable tag: 1.2.3
+Requires at least: 5.0
+Tested up to: 6.9.4
+Stable tag: 1.3
 Requires PHP: 7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -47,6 +47,13 @@ This plugin connects to WeTravel's services for two main purposes:
    - The checkout process is handled entirely by WeTravel's secure platform
    - User data collected during booking is subject to WeTravel's privacy policy
 
+3. **Event Tracking (Optional, Consent Required)**
+   - When you accept consent during plugin activation, WeTravel may track basic usage data
+   - Tracked data includes widget interactions and plugin activity
+   - No sensitive or personal data is tracked
+   - All tracking is GDPR-compliant
+   - You can opt out at any time from the plugin settings
+
 For more information about how WeTravel handles data and provides services, please review:
 - Terms of Service: https://www.wetravel.com/terms
 - Privacy Policy: https://www.wetravel.com/privacy
@@ -78,11 +85,12 @@ For complete information about data handling and privacy practices, please revie
 
 == Installation ==
 
-1. Upload the plugin files to the `/wp-content/plugins/wetravel-widgets` directory, or install the plugin through the WordPress plugins screen directly
+1. Upload the plugin files to the `/wp-content/plugins/wetravel-widgets` directory, or install the plugin through the WordPress plugins screen
 2. Activate the plugin through the 'Plugins' screen in WordPress
-3. Go to WeTravel Widgets > Settings to configure your WeTravel embed code
-4. Create your first widget design in WeTravel Widgets > Create Widget
-5. Use the generated shortcode or Gutenberg block to display your customized widget
+3. Review the consent page and choose to accept or skip (you can change this later)
+4. Go to WeTravel Widgets > Setup to paste your WeTravel embed code
+5. Go to WeTravel Widgets > Create Widget to build your first widget design
+6. Use the generated shortcode or Gutenberg block to display your widget on any page or post
 
 == Frequently Asked Questions ==
 
@@ -201,6 +209,22 @@ This is perfect for creating region-specific trip displays.
 * New Changes
   - Added locations attribute to shortcode
 
+= 1.3 =
+* New Features
+  - Consent management system for privacy compliance
+  - Deactivation feedback form
+  - Optional usage tracking (consent-gated)
+  - "See More" trip description expansion
+  - Date range filter for trips
+  - Location-based filtering with search
+  - Mock data preview in widget builder
+
+* Bug Fixes
+  - Fixed checkout popup behavior
+  - Fixed pagination and carousel issues
+  - Fixed location-based shortcode
+  - Fixed editor page issues
+
 == Upgrade Notice ==
 
 = 1.0 =
@@ -212,13 +236,16 @@ Improved search bar functionality and widget design options. Broken trip button 
 = 1.2 =
 Added detailed instructions for using the plugin. Changed generated shortcode format. Modified widget design slightly.
 
+= 1.3 =
+New consent management, location-based filtering, date range filter, and improved caching and performance.
+
 == Shortcode Parameters ==
 
 The `[wetravel_trips]` shortcode accepts the following parameters:
 
 * `widget` - The ID or keyword of your saved widget design
 * `display_type` - Layout style: "vertical", "grid", or "carousel" (default: "vertical")
-* `button_type` - Type of button: "book_now" or "view_trip"
+* `button_type` - Type of button: "book_now" or "trip_link" (default: "book_now")
 * `button_text` - Custom text for the button
 * `button_color` - Color of the button (hex code, e.g., "#33ae3f")
 * `items_per_page` - Number of trips to display per page (default: 10)
@@ -227,9 +254,9 @@ The `[wetravel_trips]` shortcode accepts the following parameters:
 * `trip_type` - Filter trips by type: "all", "one-time", or "recurring"
 * `date_start` - Start date for filtering trips (format: YYYY-MM-DD)
 * `date_end` - End date for filtering trips (format: YYYY-MM-DD)
-* `search_visibility` - Toggle search bar visibility: true (1) or false(0) (default: false). This is not available for carousel display type.
-* `border_radius` - Border radius for the widget design (default: 0)
 * `locations` - Semicolon-separated list of locations to filter by
+* `search_visibility` - Toggle search bar visibility: 1 or 0 (default: 0). Not available for carousel layout.
+* `border_radius` - Border radius for the widget design in pixels (default: 6)
 
 Basic usage with a saved design:
 `[wetravel_trips widget="my-custom-design"]`

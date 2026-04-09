@@ -10,8 +10,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-require_once dirname(__FILE__, 2) . '/includes/functions.php';
-
 /**
  * Handle form submission for widget creation/editing during admin_init
  */

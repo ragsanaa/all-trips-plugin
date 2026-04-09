@@ -112,10 +112,10 @@ class WetravelTracking {
 				'nonce' => wp_create_nonce( 'wetravel_tracking_nonce' ),
 				'has_consent' => $this->is_tracking_enabled(),
 				'is_admin_context' => $this->is_admin_or_edit_context(),
-				'tracking_endpoint' => get_option( 'wetravel_tracking_endpoint', 'http://localhost:9292' ),
 				'events' => array(
 					'widget_load' => $this->is_tracking_enabled(),
-					'widget_click' => $this->is_tracking_enabled(),
+					'search_performed' => $this->is_tracking_enabled(),
+					'filter_applied' => $this->is_tracking_enabled(),
 					'button_click' => $this->is_tracking_enabled(),
 				),
 				'site_info' => array(
@@ -141,12 +141,21 @@ class WetravelTracking {
 		}
 
 
-		$widget_id = isset( $_POST['widget_id'] ) ? sanitize_text_field( wp_unslash( $_POST['widget_id'] ) ) : '';
-		$raw_event_data = isset( $_POST['event_data'] ) ? sanitize_text_field( wp_unslash( $_POST['event_data'] ) ) : array();
+		$event_type = isset( $_POST['event_type'] ) ? sanitize_text_field( wp_unslash( $_POST['event_type'] ) ) : '';
+		$raw_event_data = isset( $_POST['event_data'] ) ? wp_unslash( $_POST['event_data'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via sanitize_event_data() below.
+
+		// Handle JSON string from sendBeacon or array from AJAX
+		if ( is_string( $raw_event_data ) ) {
+			$decoded = json_decode( $raw_event_data, true );
+			if ( json_last_error() === JSON_ERROR_NONE && is_array( $decoded ) ) {
+				$raw_event_data = $decoded;
+			}
+		}
+
 		$event_data = $this->sanitize_event_data( $raw_event_data );
 
-		// Send directly to wt_widgets_tracking endpoint
-		$sent = $this->send_tracking_data( $event_data );
+		// Route through track_event to ensure consistent payload structure
+		$sent = $this->track_event( $event_type, $event_data );
 
 		if ( $sent ) {
 			wp_send_json_success( 'Event tracked successfully' );
@@ -159,28 +168,40 @@ class WetravelTracking {
 	 * Track a plugin event
 	 */
 	public function track_event( $event_type, $event_data = array() ) {
-		// Extract widget and layout information from event data
-		$wt_widget_type = $event_data['wt_widget_type'] ?? 'unknown';
-		$layout_type = $event_data['display_type'] ?? 'vertical';
-		$button_type = $event_data['button_type'] ?? 'book_now';
-		$page_url = $event_data['page_url'] ?? ( isset( $_SERVER['REQUEST_URI'] ) ? esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '' );
-		$integration_type = $event_data['integration_type'] ?? 'block';
-
+		// Send all fields flat — backend slices them into metadata
 		$data = array(
 			'wt_user_id'       => $event_data['wt_user_id'] ?? '',
 			'base_url'         => home_url(),
-			'wt_widget_type'   => $wt_widget_type,
-			'version'          => WETRAVEL_PLUGIN_VERSION,
-			'full_page_url'    => $page_url,
 			'event_type'       => $event_type,
-			'layout_type'      => $layout_type,
-			'button_type'      => $button_type,
-			'integration_type' => $integration_type,
+			'full_page_url'    => $event_data['page_url'] ?? ( isset( $_SERVER['REQUEST_URI'] ) ? esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '' ),
+			'layout_type'      => $event_data['display_type'] ?? 'vertical',
+			'button_type'      => $event_data['button_type'] ?? 'book_now',
+			'integration_type' => $event_data['integration_type'] ?? 'block',
+			'wt_widget_type'   => $event_data['wt_widget_type'] ?? 'unknown',
 			'trip_uuid'        => $event_data['trip_uuid'] ?? '',
 			'trip_type'        => $event_data['trip_type'] ?? '',
 			'user_agent'       => $event_data['user_agent'] ?? '',
 			'requested_for'    => 'wp_plugin_event',
+			'plugin_version'   => WETRAVEL_PLUGIN_VERSION,
 		);
+
+		// Add event-specific fields (flat — backend slices what it needs)
+		if ( 'search_performed' === $event_type ) {
+			$data['search_query']  = $event_data['search_query'] ?? '';
+			$data['results_count'] = intval( $event_data['results_count'] ?? 0 );
+		}
+
+		if ( 'filter_applied' === $event_type ) {
+			$data['filter_locations']  = $event_data['filter_locations'] ?? '';
+			$data['filter_date_start'] = $event_data['filter_date_start'] ?? '';
+			$data['filter_date_end']   = $event_data['filter_date_end'] ?? '';
+			$data['results_count']     = intval( $event_data['results_count'] ?? 0 );
+		}
+
+		if ( 'button_click' === $event_type ) {
+			$data['button_text'] = $event_data['button_text'] ?? '';
+			$data['button_href'] = $event_data['button_href'] ?? '';
+		}
 
 		return $this->send_tracking_data( $data, false );
 	}
@@ -342,10 +363,14 @@ class WetravelTracking {
 		) );
 
 		if ( is_wp_error( $response ) ) {
+			wtwidget_log_error( 'Tracking request failed', array( 'url' => $tracking_url, 'error' => $response->get_error_message(), 'payload' => $payload ) );
 			return false;
 		}
 
 		$response_code = wp_remote_retrieve_response_code( $response );
+		if ( $response_code < 200 || $response_code >= 300 ) {
+			wtwidget_log_error( 'Tracking request returned non-success status', array( 'url' => $tracking_url, 'status' => $response_code, 'payload' => $payload ) );
+		}
 		return $response_code >= 200 && $response_code < 300;
 	}
 

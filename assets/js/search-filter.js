@@ -308,6 +308,27 @@
             totalCount: data.pagination ? data.pagination.total_count : 0,
           });
 
+          // Track search/filter events
+          if (window.WetravelTracking && window.WetravelTracking.hasConsent) {
+            var widgetData = window.WetravelTracking.getWidgetData(container);
+            if (effectiveSearch) {
+              window.WetravelTracking.trackEvent("search_performed", widgetData.widget_id, {
+                ...widgetData,
+                search_query: effectiveSearch,
+                results_count: data.trips_count || 0,
+              });
+            }
+            if (selectedLocs.length > 0 || dateStart || dateEnd) {
+              window.WetravelTracking.trackEvent("filter_applied", widgetData.widget_id, {
+                ...widgetData,
+                filter_locations: selectedLocs.join(";"),
+                filter_date_start: dateStart || "",
+                filter_date_end: dateEnd || "",
+                results_count: data.trips_count || 0,
+              });
+            }
+          }
+
           // Re-initialize WeTravel checkout buttons if needed
           // Use setTimeout to ensure DOM is fully updated before re-initializing
           setTimeout(function () {

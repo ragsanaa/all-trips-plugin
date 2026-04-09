@@ -36,10 +36,12 @@ function wtwidget_trips_block_render( $attributes ) {
 	$items_per_page         = intval( $attributes['itemsPerPage'] ?? get_option( 'wetravel_trips_items_per_page', 10 ) );
 	$items_per_row          = intval( $attributes['itemsPerRow'] ?? get_option( 'wetravel_trips_items_per_row', 3 ) );
 	$items_per_slide        = intval( $attributes['itemsPerSlide'] ?? get_option( 'wetravel_trips_items_per_slide', 1 ) );
-	$search_visibility      = $attributes['searchVisibility'] ?? get_option( 'wetravel_trips_search_visibility', false );
+	$search_visibility      = (bool) ( $attributes['searchVisibility'] ?? get_option( 'wetravel_trips_search_visibility', false ) );
 	$border_radius          = intval( $attributes['borderRadius'] ?? get_option( 'wetravel_trips_border_radius', 6 ) );
 	$integration_type       = $attributes['integrationType'] ?? 'block';
 	$wt_widget_type            = $attributes['wtWidgetType'] ?? get_option( 'wetravel_trips_wt_widget_type', 'all-trips' );
+
+	$custom_css_design = '';
 
 	// Override with design settings if a design is selected.
 	if ( ! empty( $selected_design_id ) ) {
@@ -83,8 +85,8 @@ function wtwidget_trips_block_render( $attributes ) {
 			if ( empty( $attributes['buttonColor'] ) && isset( $design['buttonColor'] ) ) {
 				$button_color = $design['buttonColor'];
 			}
-			if ( ! isset( $attributes['searchVisibility'] ) && isset( $design['searchVisibility'] ) ) {
-				$search_visibility = $design['searchVisibility'];
+			if ( isset( $design['searchVisibility'] ) ) {
+				$search_visibility = (bool) $design['searchVisibility'];
 			}
 			if ( empty( $attributes['borderRadius'] ) && isset( $design['borderRadius'] ) ) {
 				$border_radius = intval( $design['borderRadius'] );
@@ -214,6 +216,7 @@ function wtwidget_trips_block_render( $attributes ) {
 		$api_response = wtwidget_get_fresh_trips_data($api_url);
 
 		if (false === $api_response) {
+			wtwidget_log_error( 'API request failed during block render', array( 'api_url' => $api_url, 'block_id' => $block_id ) );
 			$trips = array(); // Set to empty array to show "No trips found" message
 		} else {
 			// API already handles filtering and pagination
@@ -1087,25 +1090,25 @@ function wtwidget_get_mock_trips_data($attributes) {
 	$json_file_path = plugin_dir_path(dirname(__FILE__)) . 'assets/data/mock-trips.json';
 
 	if (!file_exists($json_file_path)) {
-		error_log('WeTravel Widgets: Mock trips JSON file not found at ' . $json_file_path);
+		wtwidget_log_error('Mock trips JSON file not found at ' . $json_file_path);
 		return array();
 	}
 
 	$json_content = file_get_contents($json_file_path);
 	if ($json_content === false) {
-		error_log('WeTravel Widgets: Failed to read mock trips JSON file');
+		wtwidget_log_error('Failed to read mock trips JSON file');
 		return array();
 	}
 
 	$json_data = json_decode($json_content, true);
 	if (json_last_error() !== JSON_ERROR_NONE) {
-		error_log('WeTravel Widgets: Invalid JSON in mock trips file: ' . json_last_error_msg());
+		wtwidget_log_error('Invalid JSON in mock trips file: ' . json_last_error_msg());
 		return array();
 	}
 
 	// Support new format ('data') - same as API response
 	if (!isset($json_data['data']) || !is_array($json_data['data'])) {
-		error_log('WeTravel Widgets: Invalid JSON structure in mock trips file');
+		wtwidget_log_error('Invalid JSON structure in mock trips file');
 		return array();
 	}
 

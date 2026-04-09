@@ -27,61 +27,39 @@ if ( ! defined( 'WETRAVEL_API_TIMEOUT' ) ) {
 }
 
 /**
- * Helper function to verify admin nonce from GET or POST requests
- *
- * @param string $action The nonce action name.
- * @param string $nonce_key The nonce key name (default: '_wpnonce').
- * @return bool True if nonce is valid, false otherwise.
- */
-function wtwidget_verify_nonce( $action, $nonce_key = '_wpnonce' ) {
-	$nonce = '';
-
-	// Check POST first, then GET
-	if ( isset( $_POST[ $nonce_key ] ) ) {
-		$nonce = sanitize_text_field( wp_unslash( $_POST[ $nonce_key ] ) );
-	} elseif ( isset( $_GET[ $nonce_key ] ) ) {
-		$nonce = sanitize_text_field( wp_unslash( $_GET[ $nonce_key ] ) );
-	}
-
-	return wp_verify_nonce( $nonce, $action );
-}
-
-/**
- * Helper function to get sanitized GET parameter
- *
- * @param string $key The parameter key.
- * @param string $default Default value if not set.
- * @return string Sanitized parameter value.
- */
-function wtwidget_get_param( $key, $default = '' ) {
-	return isset( $_GET[ $key ] ) ? sanitize_text_field( wp_unslash( $_GET[ $key ] ) ) : $default;
-}
-
-/**
- * Helper function to get sanitized POST parameter
- *
- * @param string $key The parameter key.
- * @param string $default Default value if not set.
- * @return string Sanitized parameter value.
- */
-function wtwidget_post_param( $key, $default = '' ) {
-	return isset( $_POST[ $key ] ) ? sanitize_text_field( wp_unslash( $_POST[ $key ] ) ) : $default;
-}
-
-/**
- * Helper function to log errors consistently
+ * Helper function to log errors consistently.
+ * Stores recent errors in a WP option for admin visibility,
+ * and writes to debug.log when WP_DEBUG is enabled.
  *
  * @param string $message Error message.
  * @param mixed  $context Additional context data.
  */
 function wtwidget_log_error( $message, $context = null ) {
-	if ( defined( 'WP_DEBUG' ) && WP_DEBUG === true ) {
-		$log_message = 'WeTravel Widgets: ' . $message;
-		if ( $context !== null ) {
-			$log_message .= ' | Context: ' . wp_json_encode( $context );
-		}
-		error_log( $log_message );
+	// Store in WP option so admins can view errors from the plugin settings page.
+	$log_entry = array(
+		'time'    => current_time( 'mysql' ),
+		'message' => $message,
+	);
+	if ( null !== $context ) {
+		$log_entry['context'] = $context;
 	}
+
+	$error_log   = get_option( 'wetravel_error_log', array() );
+	$error_log[] = $log_entry;
+
+	// Keep only the last 50 entries.
+	if ( count( $error_log ) > 50 ) {
+		$error_log = array_slice( $error_log, -50 );
+	}
+
+	update_option( 'wetravel_error_log', $error_log, false );
+}
+
+/**
+ * Clear the stored error log.
+ */
+function wtwidget_clear_error_log() {
+	delete_option( 'wetravel_error_log' );
 }
 
 /**
@@ -175,12 +153,17 @@ function wtwidget_save_embed_code() {
 	if ( isset( $_POST['wetravel_trips_embed_code'] ) ) {
 		check_admin_referer( 'wetravel_trips_options-options' ); // Verify nonce.
 
-		$original_embed_code = wp_unslash( $_POST['wetravel_trips_embed_code'] );
+		// Custom sanitization of the embed code.
+		$original_embed_code = wp_unslash( $_POST['wetravel_trips_embed_code'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via wtwidget_advanced_sanitize_embed_code() on the next line.
 		$new_embed_code = wtwidget_advanced_sanitize_embed_code( $original_embed_code );
 		update_option( 'wetravel_trips_embed_code', $new_embed_code );
 
 		// Extract and save the details.
 		$extracted_values = wtwidget_extract_settings( $new_embed_code );
+
+		if ( empty( $extracted_values['slug'] ) || empty( $extracted_values['env'] ) || empty( $extracted_values['wetravel_trips_user_id'] ) ) {
+			wtwidget_log_error( 'Embed code missing expected fields after extraction', $extracted_values );
+		}
 
 		update_option( 'wetravel_trips_slug', $extracted_values['slug'] );
 		update_option( 'wetravel_trips_env', $extracted_values['env'] );
@@ -382,7 +365,7 @@ function wtwidget_check_widget_usage() {
 
 		// Search for shortcodes in post_content directly
 		// Use caching for better performance
-		$cache_key = 'wetravel_widget_shortcode_usage_' . md5( serialize( array( $post_statuses, $post_types ) ) );
+		$cache_key = 'wetravel_widget_shortcode_usage_' . md5( wp_json_encode( array( $post_statuses, $post_types ) ) );
 		$shortcode_results = wp_cache_get( $cache_key );
 
 		if ( false === $shortcode_results ) {

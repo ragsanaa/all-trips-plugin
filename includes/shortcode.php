@@ -86,8 +86,8 @@ function wtwidget_trips_shortcode( $atts ) {
 			if (!empty($design['dateRangeEnd'])) {
 				$default_atts['date_end'] = $design['dateRangeEnd'];
 			}
-			if (!empty($design['searchVisibility'])) {
-				$default_atts['search_visibility'] = $design['searchVisibility'];
+			if (isset($design['searchVisibility'])) {
+				$default_atts['search_visibility'] = (bool) $design['searchVisibility'];
 			}
 			if (!empty($design['wtWidgetType'])) {
 				$default_atts['wt_widget_type'] = $design['wtWidgetType'];
