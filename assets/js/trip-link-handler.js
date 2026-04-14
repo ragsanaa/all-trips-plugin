@@ -7,6 +7,21 @@
     }
   }, true);
 
+  // Defensive capture-phase handler: ensure trip_link <a> buttons always navigate,
+  // even if another plugin/theme script calls preventDefault() later in the chain.
+  document.addEventListener('click', function (e) {
+    var button = e.target.closest('a.trip-button[href]');
+    if (!button) {
+      return;
+    }
+    var container = button.closest('.wetravel-trips-container');
+    if (!container || container.getAttribute('data-button-type') !== 'trip_link') {
+      return;
+    }
+    e.stopImmediatePropagation();
+    window.open(button.getAttribute('href'), '_blank');
+  }, true);
+
   // Track button clicks using capture phase to fire before checkout/navigation
   document.addEventListener('click', function (e) {
     var button = e.target.closest('.trip-button, .wtrvl-checkout_button');
