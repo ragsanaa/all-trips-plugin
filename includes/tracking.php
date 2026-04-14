@@ -253,6 +253,7 @@ class WetravelTracking {
 			$hashed_wt_user_slug = hash('sha256', $salt . '|' . $wt_user_slug);
 
 			// Build the data payload with the specified structure
+			// Always insert — hashed IDs use random salt so records can't be matched for update
 			$data = array(
 				'site_url' => $hashed_site_url,
 				'wt_user_id' => $hashed_wt_user_id,
@@ -260,9 +261,11 @@ class WetravelTracking {
 				'plugin_version' => WETRAVEL_PLUGIN_VERSION,
 				'is_plugin_active' => $is_plugin_active,
 				'wp_consent_type' => $consent_type,
+				'update_mode' => 'insert',
 			);
 
 		} else {
+			// Upsert by site_url + wt_user_id — update existing record if found
 			$data = array(
 				'site_url' => home_url(),
 				'wt_user_id' => $wt_user_id,
@@ -278,6 +281,7 @@ class WetravelTracking {
 				'wp_consent_type' => $consent_type,
 				'is_multisite' => is_multisite(),
 				'wp_locale' => get_locale(),
+				'update_mode' => 'upsert',
 			);
 		}
 
@@ -353,25 +357,44 @@ class WetravelTracking {
 
 		// Use event data directly
 		$payload = $event_data;
+		$max_retries = 3;
 
-		$response = wp_remote_post( $tracking_url, array(
-			'timeout' => $timeout,
-			'headers' => array(
-				'Content-Type' => 'application/json',
-			),
-			'body' => json_encode( $payload ),
-		) );
+		for ( $attempt = 0; $attempt < $max_retries; $attempt++ ) {
+			$response = wp_remote_post( $tracking_url, array(
+				'timeout' => $timeout,
+				'headers' => array(
+					'Content-Type' => 'application/json',
+				),
+				'body' => wp_json_encode( $payload ),
+			) );
 
-		if ( is_wp_error( $response ) ) {
-			wtwidget_log_error( 'Tracking request failed', array( 'url' => $tracking_url, 'error' => $response->get_error_message(), 'payload' => $payload ) );
+			if ( is_wp_error( $response ) ) {
+				if ( $attempt < $max_retries - 1 ) {
+					sleep( 3 );
+					continue;
+				}
+				wtwidget_log_error( 'Tracking request failed', array( 'url' => $tracking_url, 'error' => $response->get_error_message(), 'payload' => $payload ) );
+				return false;
+			}
+
+			$response_code = wp_remote_retrieve_response_code( $response );
+
+			if ( $response_code >= 200 && $response_code < 300 ) {
+				return true;
+			}
+
+			// Retry on 5xx server errors
+			if ( $response_code >= 500 && $attempt < $max_retries - 1 ) {
+				sleep( 1 );
+				continue;
+			}
+
+			// Log non-success (4xx or final 5xx failure)
+			wtwidget_log_error( 'Tracking request returned non-success status', array( 'url' => $tracking_url, 'status' => $response_code, 'payload' => $payload ) );
 			return false;
 		}
 
-		$response_code = wp_remote_retrieve_response_code( $response );
-		if ( $response_code < 200 || $response_code >= 300 ) {
-			wtwidget_log_error( 'Tracking request returned non-success status', array( 'url' => $tracking_url, 'status' => $response_code, 'payload' => $payload ) );
-		}
-		return $response_code >= 200 && $response_code < 300;
+		return false;
 	}
 
 	/**
@@ -461,23 +484,23 @@ class WetravelTracking {
 			return (object) $counts;
 		}
 
-		foreach ( $designs as $design_id => $design ) {
-			$wt_widget_type = isset( $design['widgetType'] ) ? $design['widgetType'] : 'all-trips';
+		// Track which design IDs and keywords are linked to a specific design
+		$design_linked_ids = array();
 
-			// Legacy widget counting for backward compatibility
-			$has_src = ! empty( $design['src'] );
-			$has_slug = ! empty( $design['slug'] );
-			$has_user_id = ! empty( $design['wetravelUserID'] );
+		foreach ( $designs as $design_id => $design ) {
+			$wt_widget_type = isset( $design['wtWidgetType'] ) ? $design['wtWidgetType'] : 'all-trips';
 
 			// --- Check shortcode usage ---
 			// Check for both design ID and keyword patterns
 			$shortcode_patterns = array(
 				'[wetravel_trips widget="' . $design_id . '"',
 			);
+			$design_linked_ids[] = $design_id;
 
 			// Add keyword pattern if design has keyword
 			if ( ! empty( $design['keyword'] ) ) {
 				$shortcode_patterns[] = '[wetravel_trips widget="' . $design['keyword'] . '"';
+				$design_linked_ids[] = $design['keyword'];
 			}
 
 			$shortcode_count = 0;
@@ -546,6 +569,46 @@ class WetravelTracking {
 			if ( $block_count > 0 ) {
 				$counts[ $wt_widget_type ]['block']++;
 			}
+		}
+
+		// Count shortcodes without a widget attribute (bare [wetravel_trips] or inline params)
+		$cache_key = 'wetravel_bare_shortcode_count';
+		$bare_total = wp_cache_get( $cache_key );
+
+		if ( false === $bare_total ) {
+			$cache_duration = defined( 'WETRAVEL_USAGE_CACHE_DURATION' ) ? WETRAVEL_USAGE_CACHE_DURATION : HOUR_IN_SECONDS;
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Necessary for content analysis with caching
+			$bare_total = (int) $wpdb->get_var( $wpdb->prepare(
+				"SELECT COUNT(DISTINCT ID) FROM {$wpdb->posts}
+				 WHERE post_status='publish'
+				 AND post_content LIKE %s",
+				'%' . $wpdb->esc_like( '[wetravel_trips' ) . '%'
+			) );
+
+			// Subtract posts already counted via design-linked shortcodes
+			foreach ( $design_linked_ids as $linked_id ) {
+				$linked_pattern = '[wetravel_trips widget="' . $linked_id . '"';
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Necessary for content analysis
+				$linked_count = (int) $wpdb->get_var( $wpdb->prepare(
+					"SELECT COUNT(DISTINCT ID) FROM {$wpdb->posts}
+					 WHERE post_status='publish'
+					 AND post_content LIKE %s",
+					'%' . $wpdb->esc_like( $linked_pattern ) . '%'
+				) );
+				$bare_total -= $linked_count;
+			}
+			$bare_total = max( 0, $bare_total );
+			wp_cache_set( $cache_key, $bare_total, '', $cache_duration );
+		}
+
+		if ( $bare_total > 0 ) {
+			if ( ! isset( $counts['all-trips'] ) ) {
+				$counts['all-trips'] = array(
+					'shortcode' => 0,
+					'block' => 0,
+				);
+			}
+			$counts['all-trips']['shortcode'] += $bare_total;
 		}
 
 		return $counts;

@@ -238,13 +238,13 @@ function wetravel_handle_consent_actions() {
         update_option( 'wetravel_consent_timestamp', current_time( 'timestamp' ) );
         update_option( 'wetravel_consent_type', 'opted_out' );
 
-        // Track user state with anonymous data since consent was revoked
+        // Track user state non-anonymously — need to identify which WeTravel user revoked
         if ( function_exists( 'wetravel_track_user_state' ) ) {
             $wt_user_id = get_option( 'wetravel_trips_user_id', '' );
             $wt_user_slug = get_option( 'wetravel_trips_slug', '' );
 
-            // Track user state - bypass consent check for consent update
-            wetravel_track_user_state( $wt_user_id, $wt_user_slug, true, true, array(), true );
+            // Track non-anonymous — we need to know which WeTravel user revoked consent
+            wetravel_track_user_state( $wt_user_id, $wt_user_slug, true, false, array(), true );
             wetravel_track_plugin_state( 'skipped_consent' );
         }
 
